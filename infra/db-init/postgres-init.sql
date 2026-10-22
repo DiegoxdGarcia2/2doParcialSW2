@@ -261,15 +261,15 @@ ON CONFLICT (periodo) DO NOTHING;
 -- Usuario inicial Administrador y Perito
 INSERT INTO usuario (id, keycloak_sub, email, nombre_completo, rol, telefono, activo)
 VALUES
-    ('u0000001-0000-0000-0000-000000000001', 'kc-admin-001', 'admin@aegiscore.com', 'Administrador General AegisCore', 'ADMIN', '+591 70011223', TRUE),
-    ('u0000001-0000-0000-0000-000000000002', 'kc-perito-001', 'perito.campo@aegiscore.com', 'Ing. Roberto Paz (Perito)', 'PERITO', '+591 70044556', TRUE),
-    ('u0000001-0000-0000-0000-000000000003', 'kc-actuario-001', 'actuario@aegiscore.com', 'Lic. Mariana Vargas (Actuario)', 'ACTUARIO', '+591 70077889', TRUE),
-    ('u0000001-0000-0000-0000-000000000004', 'kc-cliente-001', 'carlos.mendoza@gmail.com', 'Carlos Mendoza Roca', 'CLIENTE', '+591 71099887', TRUE)
+    ('e0000001-0000-0000-0000-000000000001', 'kc-admin-001', 'admin@aegiscore.com', 'Administrador General AegisCore', 'ADMIN', '+591 70011223', TRUE),
+    ('e0000001-0000-0000-0000-000000000002', 'kc-perito-001', 'perito.campo@aegiscore.com', 'Ing. Roberto Paz (Perito)', 'PERITO', '+591 70044556', TRUE),
+    ('e0000001-0000-0000-0000-000000000003', 'kc-actuario-001', 'actuario@aegiscore.com', 'Lic. Mariana Vargas (Actuario)', 'ACTUARIO', '+591 70077889', TRUE),
+    ('e0000001-0000-0000-0000-000000000004', 'kc-cliente-001', 'carlos.mendoza@gmail.com', 'Carlos Mendoza Roca', 'CLIENTE', '+591 71099887', TRUE)
 ON CONFLICT (keycloak_sub) DO NOTHING;
 
 INSERT INTO cliente (id, usuario_id, tipo_documento, numero_documento, nombres, apellidos, email, telefono, direccion, score_crediticio, perfil_riesgo)
 VALUES
-    ('b0000001-0000-0000-0000-000000000001', 'u0000001-0000-0000-0000-000000000004', 'CI', '6234891-SC', 'Carlos', 'Mendoza Roca', 'carlos.mendoza@gmail.com', '+591 71099887', 'Av. San Martín #450, Equipetrol, Santa Cruz', 820, 'BAJO')
+    ('b0000001-0000-0000-0000-000000000001', 'e0000001-0000-0000-0000-000000000004', 'CI', '6234891-SC', 'Carlos', 'Mendoza Roca', 'carlos.mendoza@gmail.com', '+591 71099887', 'Av. San Martín #450, Equipetrol, Santa Cruz', 820, 'BAJO')
 ON CONFLICT (numero_documento) DO NOTHING;
 
 -- Póliza demostrativa para la Saga

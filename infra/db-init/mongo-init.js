@@ -138,7 +138,7 @@ dbInstance.expedientes_siniestros.insertOne({
     modelo_inferencia: 'TensorFlow-YOLO-CrashNet-v2.1'
   },
   peritaje_campo: {
-    perito_id: 'u0000001-0000-0000-0000-000000000002',
+    perito_id: 'e0000001-0000-0000-0000-000000000002',
     perito_nombre: 'Ing. Roberto Paz',
     fecha_inspeccion: new Date(),
     ocr_placa_detectada: '4028-PLK',

@@ -28,8 +28,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.db.connections import (
+    get_mongo_client,
+    get_mongo_db,
+    get_idempotency_table,
+    get_postgres_connection,
+)
+
 # ---------------------------------------------------------------------------
-# Health Check
+# Health Check General y de Bases de Datos Cloud
 # ---------------------------------------------------------------------------
 @app.get("/health")
 def health_check():
@@ -38,6 +45,11 @@ def health_check():
         "service": "ms4-ia-mcp-python",
         "framework": "FastAPI",
         "python_version": "3.11",
+        "cloud_persistence": {
+            "relational": "Neon Serverless PostgreSQL (CU12, CU15)",
+            "document": "MongoDB Atlas Cloud (CU06, CU11, CU14)",
+            "key_value": "Amazon DynamoDB Cloud us-east-2 (CU08, CU10)"
+        },
         "components": {
             "ml_supervised": "Scikit-Learn Random Forest (CU12)",
             "ml_unsupervised": "K-Means & Isolation Forest (CU13)",
@@ -46,6 +58,45 @@ def health_check():
             "mcp_voice_reports": "Model Context Protocol + Whisper STT + OWASP Anti-SQLi (CU15)"
         },
         "timestamp": datetime.datetime.utcnow().isoformat()
+    }
+
+@app.get("/health/cloud-dbs")
+def health_cloud_dbs():
+    results = {}
+    
+    # 1. Neon PostgreSQL
+    try:
+        conn = get_postgres_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT current_database(), current_user;")
+        db_name, db_user = cur.fetchone()
+        cur.close()
+        conn.close()
+        results["neon_postgresql"] = {"status": "CONNECTED", "database": db_name, "user": db_user}
+    except Exception as e:
+        results["neon_postgresql"] = {"status": "ERROR", "detail": str(e)}
+
+    # 2. MongoDB Atlas
+    try:
+        client = get_mongo_client()
+        ping = client.admin.command("ping")
+        results["mongodb_atlas"] = {"status": "CONNECTED", "ping": ping}
+    except Exception as e:
+        results["mongodb_atlas"] = {"status": "ERROR", "detail": str(e)}
+
+    # 3. Amazon DynamoDB Cloud
+    try:
+        table = get_idempotency_table()
+        table_status = table.table_status
+        results["dynamodb_cloud"] = {"status": "CONNECTED", "table": table.name, "table_status": table_status}
+    except Exception as e:
+        results["dynamodb_cloud"] = {"status": "ERROR", "detail": str(e)}
+
+    all_ok = all(v.get("status") == "CONNECTED" for v in results.values())
+    return {
+        "status": "ALL_HEALTHY" if all_ok else "DEGRADED",
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "databases": results
     }
 
 # ---------------------------------------------------------------------------

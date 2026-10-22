@@ -16,8 +16,32 @@ if ($uri === '/health') {
         'service' => 'ms1-polizas-php',
         'pattern' => 'Domain-Driven Design (DDD)',
         'language' => 'PHP ' . PHP_VERSION,
+        'cloud_database' => 'Neon Serverless PostgreSQL (SSL required)',
         'timestamp' => date(DATE_ATOM)
     ]);
+    exit;
+}
+
+if ($uri === '/health/db') {
+    try {
+        $dsn = getenv('DATABASE_URL') ?: ('pgsql:host=' . (getenv('DB_HOST') ?: '127.0.0.1') . ';port=' . (getenv('DB_PORT') ?: '5432') . ';dbname=' . (getenv('DB_DATABASE') ?: 'neondb') . ';sslmode=' . (getenv('DB_SSLMODE') ?: 'require'));
+        $user = getenv('DB_USERNAME') ?: 'neondb_owner';
+        $pass = getenv('DB_PASSWORD') ?: '';
+        $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_TIMEOUT => 5]);
+        $version = $pdo->query('SELECT version()')->fetchColumn();
+        echo json_encode([
+            'status' => 'CONNECTED',
+            'database' => 'Neon PostgreSQL',
+            'version' => substr((string)$version, 0, 40),
+            'timestamp' => date(DATE_ATOM)
+        ]);
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'ERROR',
+            'error' => $e->getMessage()
+        ]);
+    }
     exit;
 }
 

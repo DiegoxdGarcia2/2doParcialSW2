@@ -5,10 +5,18 @@ spring:
   application:
     name: ms3-actuarial-springboot
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:aegiscore_erp}
-    username: ${POSTGRES_USER:aegis_admin}
-    password: ${POSTGRES_PASSWORD:AegisCore2026Secure!}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/neondb}
+    username: ${SPRING_DATASOURCE_USERNAME:neondb_owner}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      pool-name: AegisCoreHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 20000
+      connection-test-query: SELECT 1
   jpa:
     hibernate:
       ddl-auto: none
@@ -16,14 +24,23 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: ms3-saga-orchestrator-group
       auto-offset-reset: earliest
 
+aws:
+  region: ${AWS_REGION:us-east-2}
+  accessKeyId: ${AWS_ACCESS_KEY_ID:}
+  secretAccessKey: ${AWS_SECRET_ACCESS_KEY:}
+  dynamodb:
+    table:
+      idempotency: ${DYNAMODB_TABLE_IDEMPOTENCY:AegisCore_IdempotencyRecords}
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics

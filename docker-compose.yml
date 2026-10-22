@@ -188,16 +188,17 @@ services:
     ports:
       - "8001:8001"
     environment:
-      DB_HOST: postgres-erp
-      DB_PORT: 5432
-      DB_DATABASE: ${POSTGRES_DB:-aegiscore_erp}
-      DB_USERNAME: ${POSTGRES_USER:-aegis_admin}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-AegisCore2026Secure!}
+      DATABASE_URL: ${DATABASE_URL}
+      DB_HOST: ${DB_HOST:-127.0.0.1}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: ${DB_DATABASE:-neondb}
+      DB_USERNAME: ${DB_USERNAME:-neondb_owner}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSLMODE: ${DB_SSLMODE:-require}
       KAFKA_BROKERS: kafka:29092
-      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
-    depends_on:
-      postgres-erp:
-        condition: service_healthy
+      AWS_REGION: ${AWS_REGION:-us-east-2}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     networks:
       - aegiscore-network
 
@@ -212,12 +213,13 @@ services:
       - "8002:8002"
     environment:
       PORT: 8002
-      MONGO_URI: mongodb://mongo-siniestros:27017/${MONGO_DB:-aegiscore_siniestros}
-      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
+      MONGODB_URI: ${MONGODB_URI}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-aegiscore_siniestros_db}
+      AWS_REGION: ${AWS_REGION:-us-east-2}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      DYNAMODB_TABLE_IDEMPOTENCY: ${DYNAMODB_TABLE_IDEMPOTENCY:-AegisCore_IdempotencyRecords}
       KAFKA_BROKER: kafka:29092
-    depends_on:
-      mongo-siniestros:
-        condition: service_healthy
     networks:
       - aegiscore-network
 
@@ -231,16 +233,15 @@ services:
     ports:
       - "8003:8003"
     environment:
-      POSTGRES_HOST: postgres-erp
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:-aegiscore_erp}
-      POSTGRES_USER: ${POSTGRES_USER:-aegis_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-AegisCore2026Secure!}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-neondb_owner}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      AWS_REGION: ${AWS_REGION:-us-east-2}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      DYNAMODB_TABLE_IDEMPOTENCY: ${DYNAMODB_TABLE_IDEMPOTENCY:-AegisCore_IdempotencyRecords}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
     depends_on:
-      postgres-erp:
-        condition: service_healthy
       kafka:
         condition: service_started
     networks:
@@ -256,13 +257,13 @@ services:
     ports:
       - "8004:8004"
     environment:
-      POSTGRES_URI: postgresql://${POSTGRES_USER:-aegis_admin}:${POSTGRES_PASSWORD:-AegisCore2026Secure!}@postgres-erp:5432/${POSTGRES_DB:-aegiscore_erp}
-      MONGO_URI: mongodb://mongo-siniestros:27017/${MONGO_DB:-aegiscore_siniestros}
+      DATABASE_URL: ${DATABASE_URL}
+      MONGODB_URI: ${MONGODB_URI}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-aegiscore_siniestros_db}
+      AWS_REGION: ${AWS_REGION:-us-east-2}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      DYNAMODB_TABLE_IDEMPOTENCY: ${DYNAMODB_TABLE_IDEMPOTENCY:-AegisCore_IdempotencyRecords}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-    depends_on:
-      postgres-erp:
-        condition: service_healthy
-      mongo-siniestros:
-        condition: service_healthy
     networks:
       - aegiscore-network
