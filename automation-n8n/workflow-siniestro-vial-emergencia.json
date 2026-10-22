@@ -1,0 +1,84 @@
+{
+  "name": "CU06 - Reportar Siniestro Vial de Emergencia por WhatsApp con Triaje IA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-siniestro-emergencia",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "id": "node-webhook-siniestro",
+      "name": "Webhook Emergencia WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body || {};\nreturn [{\n  json: {\n    telefono: payload.from || '+59171099887',\n    numero_poliza: payload.numero_poliza || 'POL-2026-AUT-00892',\n    latitud: payload.lat || -17.7833,\n    longitud: payload.lng || -63.1812,\n    direccion: payload.ubicacion || '4to Anillo y Av. San Martin',\n    foto_url: payload.foto_url || 'https://storage.aegiscore.local/evidencias/choque-urgente.jpg'\n  }\n}];"
+      },
+      "id": "node-parse-siniestro",
+      "name": "Parsear Ubicacion y Evidencia",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ms4-ia-mcp-python:8004/api/dl/detect-damage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"imagen_url\": \"{{ $json.foto_url }}\",\n  \"numero_reclamo\": \"AUTOTRIAGE-TEMP\"\n}"
+      },
+      "id": "node-triaje-tensorflow",
+      "name": "Triaje Daños con TensorFlow (MS4)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ms2-siniestros-nestjs:8002/api/siniestros",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"numero_poliza\": \"{{ $('Parsear Ubicacion y Evidencia').item.json.numero_poliza }}\",\n  \"tipo_siniestro\": \"CHOQUE_VIAL\",\n  \"latitud\": {{ $('Parsear Ubicacion y Evidencia').item.json.latitud }},\n  \"longitud\": {{ $('Parsear Ubicacion y Evidencia').item.json.longitud }},\n  \"ubicacion_texto\": \"{{ $('Parsear Ubicacion y Evidencia').item.json.direccion }}\",\n  \"triaje_ia\": {\n    \"gravedad\": \"{{ $json.severidad_global }}\",\n    \"costo_estimado\": {{ $json.costo_estimado_reparacion_usd }},\n    \"piezas\": {{ JSON.stringify($json.piezas_danadas) }}\n  }\n}"
+      },
+      "id": "node-crear-expediente-mongo",
+      "name": "Crear Expediente en MongoDB (MS2 NestJS)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ms2-siniestros-nestjs:8002/api/notificaciones/push-perito",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"titulo\": \"🚨 NUEVO SINIESTRO ASIGNADO\",\n  \"mensaje\": \"Choque vial reportado en Equipetrol. Gravedad MEDIA detectada por TensorFlow.\",\n  \"reclamo_id\": \"REC-2026-00492\",\n  \"lat\": -17.7833,\n  \"lng\": -63.1812\n}"
+      },
+      "id": "node-push-flutter",
+      "name": "Disparar Push a App Movil Flutter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Emergencia WhatsApp": {
+      "main": [[{ "node": "Parsear Ubicacion y Evidencia", "type": "main", "index": 0 }]]
+    },
+    "Parsear Ubicacion y Evidencia": {
+      "main": [[{ "node": "Triaje Daños con TensorFlow (MS4)", "type": "main", "index": 0 }]]
+    },
+    "Triaje Daños con TensorFlow (MS4)": {
+      "main": [[{ "node": "Crear Expediente en MongoDB (MS2 NestJS)", "type": "main", "index": 0 }]]
+    },
+    "Crear Expediente en MongoDB (MS2 NestJS)": {
+      "main": [[{ "node": "Disparar Push a App Movil Flutter", "type": "main", "index": 0 }]]
+    }
+  }
+}

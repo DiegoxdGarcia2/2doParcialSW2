@@ -1,0 +1,100 @@
+{
+  "name": "CU05 - Contratar y Renovar Poliza por WhatsApp y Emitir Factura PDF",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-pedido-poliza",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "id": "node-webhook-whatsapp",
+      "name": "Webhook WhatsApp Business API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body || {};\nreturn [{\n  json: {\n    telefono: payload.from || '+59171099887',\n    mensaje: payload.text || 'Deseo contratar seguro todo riesgo vehicular',\n    numero_documento: payload.documento || '6234891-SC',\n    placa: payload.placa || '4028-PLK',\n    plan_codigo: payload.plan || 'PLAN-AUTO-FULL'\n  }\n}];"
+      },
+      "id": "node-parse-whatsapp",
+      "name": "Extraer Datos del Pedido WhatsApp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ms1-polizas-php:8001/graphql",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"mutation EmitirPolizaWhatsApp($doc: String!, $placa: String!) { emitirPoliza(input: { documento: $doc, placa: $placa, canalVenta: WHATSAPP_N8N }) { id numeroPoliza primaAnual } }\",\n  \"variables\": {\n    \"doc\": \"{{ $json.numero_documento }}\",\n    \"placa\": \"{{ $json.placa }}\"\n  }\n}"
+      },
+      "id": "node-ms1-graphql",
+      "name": "Registrar Poliza en MS1 PHP (GraphQL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ms1-polizas-php:8001/api/facturas/generar-pdf",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"poliza_id\": \"{{ $json.data.emitirPoliza.id || 'd0000001-0000-0000-0000-000000000001' }}\",\n  \"tipo_comprobante\": \"FACTURA\",\n  \"formato\": \"PDF\"\n}"
+      },
+      "id": "node-generar-factura-pdf",
+      "name": "Generar Factura / Nota de Venta PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [950, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.whatsapp.com/v1/messages",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"{{ $('Extraer Datos del Pedido WhatsApp').item.json.telefono }}\",\n  \"type\": \"document\",\n  \"document\": {\n    \"link\": \"{{ $json.url_pdf || 'https://storage.aegiscore.local/facturas/FAC-2026-001.pdf' }}\",\n    \"caption\": \"Estimado cliente, su póliza AegisCore AI ha sido emitida exitosamente. Adjuntamos su factura oficial.\"\n  }\n}"
+      },
+      "id": "node-send-whatsapp",
+      "name": "Enviar Factura PDF por WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1180, 200]
+    },
+    {
+      "parameters": {
+        "fromEmail": "facturacion@aegiscore.ai",
+        "toEmail": "carlos.mendoza@gmail.com",
+        "subject": "Emisión Exitosa de Póliza de Seguro - AegisCore AI",
+        "text": "Estimado cliente, su póliza vehicular ha sido emitida exitosamente. Adjuntamos la Factura / Nota de Venta correspondiente."
+      },
+      "id": "node-send-email",
+      "name": "Enviar Factura al Correo SMTP",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1180, 420]
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp Business API": {
+      "main": [[{ "node": "Extraer Datos del Pedido WhatsApp", "type": "main", "index": 0 }]]
+    },
+    "Extraer Datos del Pedido WhatsApp": {
+      "main": [[{ "node": "Registrar Poliza en MS1 PHP (GraphQL)", "type": "main", "index": 0 }]]
+    },
+    "Registrar Poliza en MS1 PHP (GraphQL)": {
+      "main": [[{ "node": "Generar Factura / Nota de Venta PDF", "type": "main", "index": 0 }]]
+    },
+    "Generar Factura / Nota de Venta PDF": {
+      "main": [
+        [{ "node": "Enviar Factura PDF por WhatsApp", "type": "main", "index": 0 }],
+        [{ "node": "Enviar Factura al Correo SMTP", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}

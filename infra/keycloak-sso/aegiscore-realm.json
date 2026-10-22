@@ -1,0 +1,136 @@
+{
+  "realm": "aegiscore",
+  "displayName": "AegisCore AI Enterprise Identity",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "accessTokenLifespan": 3600,
+  "ssoSessionIdleTimeout": 7200,
+  "ssoSessionMaxLifespan": 28800,
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "Administrador general del ERP y BI"
+      },
+      {
+        "name": "AJUSTADOR",
+        "description": "Ajustador de siniestros y liquidaciones"
+      },
+      {
+        "name": "PERITO",
+        "description": "Perito de campo móvil con app Flutter"
+      },
+      {
+        "name": "ACTUARIO",
+        "description": "Actuario y analista de riesgos financieros"
+      },
+      {
+        "name": "CLIENTE",
+        "description": "Asegurado titular"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "aegiscore-frontend-sso",
+      "name": "AegisCore Multi-Frontend SSO Client",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "rootUrl": "http://localhost:4200",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "http://localhost:3000/*",
+        "http://localhost:8080/*",
+        "http://localhost:5000/*",
+        "http://localhost:8081/*",
+        "aegiscore-peritos://login-callback"
+      ],
+      "webOrigins": ["*"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://localhost:3000/*"
+      }
+    },
+    {
+      "clientId": "aegiscore-api-gateway",
+      "name": "AegisCore Backend Services Resource Server",
+      "enabled": true,
+      "bearerOnly": true,
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@aegiscore.com",
+      "email": "admin@aegiscore.com",
+      "firstName": "Admin",
+      "lastName": "General",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Admin123*",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"]
+    },
+    {
+      "username": "perito.campo@aegiscore.com",
+      "email": "perito.campo@aegiscore.com",
+      "firstName": "Roberto",
+      "lastName": "Paz",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Perito123*",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["PERITO"]
+    },
+    {
+      "username": "actuario@aegiscore.com",
+      "email": "actuario@aegiscore.com",
+      "firstName": "Mariana",
+      "lastName": "Vargas",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Actuario123*",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ACTUARIO"]
+    },
+    {
+      "username": "carlos.mendoza@gmail.com",
+      "email": "carlos.mendoza@gmail.com",
+      "firstName": "Carlos",
+      "lastName": "Mendoza Roca",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Cliente123*",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["CLIENTE"]
+    }
+  ]
+}

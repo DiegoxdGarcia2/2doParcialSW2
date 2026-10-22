@@ -1,0 +1,29 @@
+server:
+  port: 8003
+
+spring:
+  application:
+    name: ms3-actuarial-springboot
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:aegiscore_erp}
+    username: ${POSTGRES_USER:aegis_admin}
+    password: ${POSTGRES_PASSWORD:AegisCore2026Secure!}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ms3-saga-orchestrator-group
+      auto-offset-reset: earliest
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

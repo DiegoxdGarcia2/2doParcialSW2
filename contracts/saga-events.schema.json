@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aegiscore.ai/schemas/saga-events.schema.json",
+  "title": "AegisCore_Saga_Events_Contract",
+  "description": "Contrato formal de mensajería asíncrona para la Orquestación del Patrón Saga en Kafka (CU09: Liquidación Transversal en 3 Microservicios y Rollback Compensatorio).",
+  "type": "object",
+  "required": [
+    "saga_id",
+    "correlation_id",
+    "event_type",
+    "timestamp",
+    "source_service",
+    "payload"
+  ],
+  "properties": {
+    "saga_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador global único de la instancia de la transacción Saga."
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador de correlación para trazabilidad distribuida."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "SagaLiquidacionIniciadaEvent",
+        "MarcarReclamoEnLiquidacionCommand",
+        "ReclamoMarcadoEnLiquidacionEvent",
+        "ReclamoBloqueoFallidoEvent",
+        "DescontarCoberturaPolizaCommand",
+        "CoberturaPolizaDescontadaEvent",
+        "DescuentoCoberturaFallidoEvent",
+        "AprobarDesembolsoLiquidacionCommand",
+        "DesembolsoLiquidacionAprobadoEvent",
+        "DesembolsoFallidoEvent",
+        "CompensarCoberturaCommand",
+        "CoberturaRestituidaEvent",
+        "RevertirEstadoReclamoCommand",
+        "EstadoReclamoRevertidoEvent",
+        "SagaLiquidacionCompletadaEvent",
+        "SagaLiquidacionFallidaCompensadaEvent"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora ISO 8601 de emisión del mensaje."
+    },
+    "source_service": {
+      "type": "string",
+      "enum": [
+        "ms1-polizas-php",
+        "ms2-siniestros-nestjs",
+        "ms3-actuarial-springboot",
+        "ms4-ia-mcp-python"
+      ]
+    },
+    "target_topic": {
+      "type": "string",
+      "enum": [
+        "aegiscore.saga.commands",
+        "aegiscore.saga.events",
+        "aegiscore.saga.compensations"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "required": ["reclamo_id", "poliza_id"],
+      "properties": {
+        "reclamo_id": {
+          "type": "string",
+          "description": "ID del expediente de siniestro en MongoDB (ej. REC-2026-00492)."
+        },
+        "poliza_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID de la póliza en PostgreSQL."
+        },
+        "cliente_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "monto_indemnizacion": {
+          "type": "number",
+          "minimum": 0.01,
+          "description": "Monto total acordado para liquidar."
+        },
+        "deducible_aplicado": {
+          "type": "number",
+          "minimum": 0.00
+        },
+        "monto_neto_desembolso": {
+          "type": "number",
+          "minimum": 0.01
+        },
+        "saldo_cobertura_previo": {
+          "type": "number"
+        },
+        "saldo_cobertura_restante": {
+          "type": "number"
+        },
+        "cuenta_bancaria_destino": {
+          "type": "string"
+        },
+        "comprobante_bancario_id": {
+          "type": "string"
+        },
+        "motivo_fallo": {
+          "type": "string",
+          "description": "Obligatorio en eventos de fallo y comandos de compensación."
+        },
+        "paso_fallido": {
+          "type": "string",
+          "enum": ["PASO_1_NESTJS", "PASO_2_PHP", "PASO_3_SPRINGBOOT"]
+        }
+      }
+    }
+  }
+}

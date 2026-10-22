@@ -1,0 +1,460 @@
+"""
+=============================================================================
+ AEGISCORE AI - Esquema Federado GraphQL (Supergraph Contract)
+ Monorepo: AegisCore AI ERP & Peritaje Inteligente
+ Contrato congelado para desacoplar el trabajo paralelo de los 3 integrantes:
+   - Integrante A: MS1 (PHP 8.3 / Laravel DDD) + React PWA (GraphQL)
+   - Integrante B: MS2 (NestJS 10 Clean Arch) + MS3 (Spring Boot 3)
+   - Integrante C: MS4 (Python FastAPI / IA / MCP) + Angular ERP BI
+=============================================================================
+"""
+
+# ---------------------------------------------------------------------------
+# Directivas de Federacion Apollo
+# ---------------------------------------------------------------------------
+directive @key(fields: String!) repeatable on OBJECT | INTERFACE
+directive @extends on OBJECT | INTERFACE
+directive @external on FIELD_DEFINITION
+directive @requires(fields: String!) on FIELD_DEFINITION
+directive @provides(fields: String!) on FIELD_DEFINITION
+
+# ---------------------------------------------------------------------------
+# Tipos Escalares
+# ---------------------------------------------------------------------------
+scalar DateTime
+scalar JSON
+scalar UUID
+
+# ===========================================================================
+# 1. ENTIDADES DEL SUBGRAFO POLIZAS (MS1 - PHP 8.3 Laravel DDD)
+# ===========================================================================
+
+enum TipoPlan {
+  VEHICULAR
+  SALUD
+  VIDA
+  HOGAR
+}
+
+enum EstadoPoliza {
+  COTIZADA
+  EMITIDA
+  ACTIVA
+  SUSPENDIDA
+  VENCIDA
+  CANCELADA
+}
+
+enum CanalVenta {
+  WEB_REACT
+  WHATSAPP_N8N
+  OFICINA_ANGULAR
+  BROKER
+}
+
+enum TipoComprobante {
+  FACTURA
+  NOTA_VENTA
+}
+
+enum EstadoFactura {
+  EMITIDA
+  PAGADA
+  ANULADA
+}
+
+type Cliente @key(fields: "id") {
+  id: ID!
+  usuarioId: UUID
+  tipoDocumento: String!
+  numeroDocumento: String!
+  nombres: String!
+  apellidos: String!
+  nombreCompleto: String!
+  email: String!
+  telefono: String!
+  direccion: String
+  ciudad: String
+  scoreCrediticio: Int
+  perfilRiesgo: String
+  polizas: [Poliza!]!
+  createdAt: DateTime!
+}
+
+type PlanSeguro @key(fields: "id") {
+  id: ID!
+  codigo: String!
+  nombre: String!
+  tipo: TipoPlan!
+  descripcion: String
+  primaBaseAnual: Float!
+  deducibleBasePorcentaje: Float!
+  coberturas: [Cobertura!]!
+  activo: Boolean!
+}
+
+type Cobertura @key(fields: "id") {
+  id: ID!
+  planId: ID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  sumaAseguradaMax: Float!
+  deducibleMinimo: Float!
+  deduciblePorcentaje: Float!
+  obligatoria: Boolean!
+}
+
+type BienAseguradoVehiculo {
+  placa: String!
+  vin: String!
+  marca: String!
+  modelo: String!
+  anio: Int!
+  color: String
+  valorComercial: Float!
+}
+
+type Poliza @key(fields: "id") {
+  id: ID!
+  numeroPoliza: String!
+  cliente: Cliente!
+  plan: PlanSeguro!
+  estado: EstadoPoliza!
+  fechaEmision: DateTime
+  fechaInicio: DateTime!
+  fechaFin: DateTime!
+  primaAnual: Float!
+  primaMensual: Float!
+  moneda: String!
+  saldoCoberturaRestante: Float!
+  bienAsegurado: BienAseguradoVehiculo!
+  canalVenta: CanalVenta!
+  facturas: [FacturaNotaVenta!]!
+  # Relación federada con MS2 NestJS
+  siniestros: [ExpedienteSiniestro!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type FacturaNotaVenta @key(fields: "id") {
+  id: ID!
+  numeroFactura: String!
+  polizaId: ID!
+  clienteId: ID!
+  tipoComprobante: TipoComprobante!
+  fechaEmision: DateTime!
+  subtotal: Float!
+  impuestos: Float!
+  total: Float!
+  moneda: String!
+  estado: EstadoFactura!
+  urlPdfAlmacenado: String
+  hashDigitalSha256: String
+}
+
+# ===========================================================================
+# 2. ENTIDADES DEL SUBGRAFO SINIESTROS (MS2 - NestJS Clean Architecture)
+# ===========================================================================
+
+enum EstadoSiniestro {
+  REPORTADO
+  EN_REVISION_IA
+  ASIGNADO_PERITO
+  PERITAJE_COMPLETADO
+  EN_PROCESO_LIQUIDACION
+  OBSERVADO_FINANZAS
+  LIQUIDADO
+  RECHAZADO
+}
+
+enum TipoSiniestro {
+  CHOQUE_VIAL
+  ROBO_PARCIAL
+  ROBO_TOTAL
+  EMERGENCIA_MEDICA
+  VUELCO
+}
+
+type GeoPunto {
+  type: String! # "Point"
+  coordinates: [Float!]! # [longitud, latitud]
+}
+
+type EvidenciaFoto {
+  url: String!
+  categoria: String!
+  nitidezScore: Float!
+  esValidoTfJs: Boolean!
+  timestamp: DateTime
+}
+
+type PeritajeCampo {
+  peritoId: UUID!
+  peritoNombre: String!
+  fechaInspeccion: DateTime!
+  ocrPlacaDetectada: String
+  coincideConPoliza: Boolean!
+  agenteTfliteValido: Boolean!
+  notas: String
+}
+
+type TriajeIA {
+  gravedad: String!
+  scoreDanos: Float!
+  piezasDetectadas: [String!]!
+  modeloInferencia: String!
+}
+
+type ExpedienteSiniestro @key(fields: "id") {
+  id: ID! # MongoDB ObjectId
+  numeroReclamo: String!
+  polizaId: ID!
+  numeroPoliza: String!
+  # Extension federada hacia MS1
+  poliza: Poliza
+  estado: EstadoSiniestro!
+  tipoSiniestro: TipoSiniestro!
+  descripcion: String
+  canalOrigen: String!
+  idempotencyKey: String
+  geolocalizacion: GeoPunto!
+  ubicacionTexto: String
+  triajeIa: TriajeIA
+  peritajeCampo: PeritajeCampo
+  fotosEvidencia: [EvidenciaFoto!]!
+  montoEstimadoReparacion: Float
+  montoIndemnizacionAprobado: Float
+  deducibleCalculado: Float
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# ===========================================================================
+# 3. ENTIDADES DEL SUBGRAFO ACTUARIAL Y SAGA (MS3 - Spring Boot Hexagonal)
+# ===========================================================================
+
+enum EstadoSagaLiquidacion {
+  INICIADA
+  PASO1_SINIESTRO_BLOQUEADO
+  PASO2_COBERTURA_DESCONTADA
+  PASO3_PAGO_EMITIDO
+  SAGA_COMPLETADA
+  COMPENSANDO_COBERTURA
+  COMPENSANDO_SINIESTRO
+  SAGA_FALLIDA_COMPENSADA
+  FALLO_IRREVERSIBLE
+}
+
+type OrdenLiquidacionSaga @key(fields: "id") {
+  id: ID!
+  sagaId: String! # UUID
+  reclamoIdMongo: String!
+  polizaId: ID!
+  montoIndemnizacion: Float!
+  deducibleAplicado: Float!
+  montoNetoDesembolso: Float!
+  estadoSaga: EstadoSagaLiquidacion!
+  cuentaBancariaDestino: String
+  comprobanteTransferencia: String
+  motivoCompensacion: String
+  fechaInicio: DateTime!
+  fechaFinalizacion: DateTime
+}
+
+type PagoPrimaQR @key(fields: "id") {
+  id: ID!
+  polizaId: ID!
+  numeroCuota: Int!
+  monto: Float!
+  moneda: String!
+  idempotencyKey: String!
+  qrImagenPayload: String!
+  estado: String!
+  codigoAutorizacion: String
+  fechaPago: DateTime
+}
+
+# ===========================================================================
+# 4. ENTIDADES DEL SUBGRAFO IA & MCP (MS4 - Python FastAPI / Scikit-Learn)
+# ===========================================================================
+
+type PrediccionVentaYPrima {
+  mesPredicho: String!
+  ventasProyectadas: Int!
+  primaOptimaSugerida: Float!
+  intervaloConfianzaBajo: Float!
+  intervaloConfianzaAlto: Float!
+  scoreR2Modelo: Float!
+}
+
+type SegmentacionClienteCluster {
+  clienteId: ID!
+  clusterId: Int!
+  nombreCluster: String! # ej: "Conductores Prudentes VIP"
+  scoreRiesgo: Float!
+  probabilidadSiniestro: Float!
+  recomendacionTarifaria: String!
+}
+
+type AlertaAnomaliaFraude {
+  reclamoId: String!
+  scoreAnomalia: Float!
+  esSospechoso: Boolean!
+  motivoAnomalia: String!
+  fechaDeteccion: DateTime!
+}
+
+# ===========================================================================
+# INPUTS PARA MUTACIONES
+# ===========================================================================
+
+input BienAseguradoInput {
+  placa: String!
+  vin: String!
+  marca: String!
+  modelo: String!
+  anio: Int!
+  color: String
+  valorComercial: Float!
+}
+
+input CotizarPolizaInput {
+  tipoPlan: TipoPlan!
+  planId: ID!
+  edadConductor: Int!
+  datosBien: BienAseguradoInput!
+  ciudad: String
+}
+
+input EmitirPolizaInput {
+  clienteId: ID!
+  planId: ID!
+  datosBien: BienAseguradoInput!
+  fechaInicio: DateTime!
+  mesesVigencia: Int!
+  canalVenta: CanalVenta!
+  # Validacion de IA Local Web previa
+  tokenValidacionNitidezLocal: String
+}
+
+input RegistrarSiniestroEmergenciaInput {
+  polizaId: ID!
+  tipoSiniestro: TipoSiniestro!
+  descripcion: String!
+  canalOrigen: String!
+  latitud: Float!
+  longitud: Float!
+  ubicacionTexto: String
+  fotosEvidenciaUrls: [String!]!
+}
+
+input SincronizarPeritajeOfflineInput {
+  idempotencyKey: String! # UUIDv4 generado en SQLite móvil
+  reclamoId: String!
+  peritoId: UUID!
+  ocrPlaca: String!
+  partesAfectadas: [String!]!
+  montoEstimadoReparacion: Float!
+  notas: String
+}
+
+input IniciarLiquidacionSagaInput {
+  reclamoIdMongo: String!
+  polizaId: ID!
+  montoIndemnizacion: Float!
+  cuentaBancariaDestino: String!
+}
+
+input PagarPrimaQRInput {
+  polizaId: ID!
+  numeroCuota: Int!
+  monto: Float!
+  idempotencyKey: String!
+}
+
+# ===========================================================================
+# QUERIES UNIFICADAS (SUPERGRAPH ENTRYPOINT)
+# ===========================================================================
+
+type Query {
+  # --- Pólizas y Clientes (MS1 PHP) ---
+  obtenerClientePorId(id: ID!): Cliente
+  buscarClientePorDocumento(documento: String!): Cliente
+  listarPlanesSeguro(tipo: TipoPlan): [PlanSeguro!]!
+  obtenerPolizaPorNumero(numeroPoliza: String!): Poliza
+  listarPolizasPorCliente(clienteId: ID!): [Poliza!]!
+  obtenerFactura(id: ID!): FacturaNotaVenta
+
+  # --- Resumen Unificado Asegurado (CU02 - React Apollo Client) ---
+  resumenUnificadoAsegurado(clienteId: ID!): ResumenUnificadoPayload!
+
+  # --- Siniestros y Expedientes (MS2 NestJS) ---
+  obtenerExpedienteSiniestro(id: ID!): ExpedienteSiniestro
+  buscarSiniestroPorReclamo(numeroReclamo: String!): ExpedienteSiniestro
+  listarSiniestrosActivos(estado: EstadoSiniestro): [ExpedienteSiniestro!]!
+
+  # --- Actuarial y Liquidaciones (MS3 Spring Boot) ---
+  obtenerEstadoSaga(sagaId: String!): OrdenLiquidacionSaga
+  verificarReservaTecnica: ReservaTecnicaResumen!
+
+  # --- Inteligencia Artificial y BI (MS4 Python) ---
+  predecirDemandaYPrima(mesesFuturos: Int!): [PrediccionVentaYPrima!]!
+  segmentarClientesRiesgo: [SegmentacionClienteCluster!]!
+  listarAlertasFraudePendientes: [AlertaAnomaliaFraude!]!
+}
+
+# ===========================================================================
+# MUTACIONES UNIFICADAS
+# ===========================================================================
+
+type Mutation {
+  # --- MS1 PHP Laravel ---
+  cotizarPolizaEnLinea(input: CotizarPolizaInput!): CotizacionResultado!
+  emitirPoliza(input: EmitirPolizaInput!): Poliza!
+
+  # --- MS2 NestJS ---
+  reportarSiniestroEmergencia(input: RegistrarSiniestroEmergenciaInput!): ExpedienteSiniestro!
+  sincronizarPeritajeOffline(input: SincronizarPeritajeOfflineInput!): SincronizacionResultado!
+
+  # --- MS3 Spring Boot (Saga Transversal CU09) ---
+  iniciarSagaLiquidacion(input: IniciarLiquidacionSagaInput!): OrdenLiquidacionSaga!
+  generarCobroQRIdempotente(input: PagarPrimaQRInput!): PagoPrimaQR!
+}
+
+# ===========================================================================
+# PAYLOADS DE RESPUESTA AUXILIARES
+# ===========================================================================
+
+type ResumenUnificadoPayload {
+  cliente: Cliente!
+  polizasActivas: [Poliza!]!
+  totalSaldoCoberturaDisponible: Float!
+  siniestrosEnCurso: [ExpedienteSiniestro!]!
+  pagosPendientes: [FacturaNotaVenta!]!
+}
+
+type CotizacionResultado {
+  primaCalculadaAnual: Float!
+  primaCalculadaMensual: Float!
+  deduciblePorcentaje: Float!
+  descuentoScoreAplicado: Float!
+  validoHasta: DateTime!
+}
+
+type SincronizacionResultado {
+  idempotencyKey: String!
+  estadoSincronizacion: String!
+  fueIdempotente: Boolean!
+  mensaje: String!
+  expediente: ExpedienteSiniestro!
+}
+
+type ReservaTecnicaResumen {
+  periodo: String!
+  saldoFondoReserva: Float!
+  limiteSolvenciaMinimo: Float!
+  siniestrosLiquidadosAcumulado: Float!
+  ratioSolvencia: Float!
+  alertaLiquidez: Boolean!
+}

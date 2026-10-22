@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aegiscore.ai/schemas/idempotency-header.spec.json",
+  "title": "AegisCore_Idempotency_Contract",
+  "description": "Especificacion tecnica del protocolo de idempotencia distribuida (Idempotency-Key) respaldado por Amazon DynamoDB Local para garantizar tolerancia a reintentos ante mala senal (CU08 y CU10).",
+  "protocol": {
+    "header_name": "Idempotency-Key",
+    "format": "UUIDv4",
+    "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "hash_algorithm": "SHA-256",
+    "dynamodb_table": "IdempotencyRecords",
+    "ttl_seconds": 86400
+  },
+  "dynamodb_record_schema": {
+    "type": "object",
+    "required": [
+      "idempotency_key",
+      "payload_hash",
+      "status",
+      "created_at",
+      "ttl"
+    ],
+    "properties": {
+      "idempotency_key": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Partition Key en DynamoDB."
+      },
+      "payload_hash": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$",
+        "description": "Hash SHA-256 del cuerpo HTTP para detectar alteracion del payload entre reintentos."
+      },
+      "status": {
+        "type": "string",
+        "enum": ["PROCESSING", "COMPLETED", "FAILED"],
+        "description": "Estado de ejecucion de la operacion transaccional."
+      },
+      "http_status_code": {
+        "type": "integer",
+        "description": "Codigo HTTP original guardado en el primer intento exitoso (ej. 200, 201)."
+      },
+      "response_body_cached": {
+        "type": "string",
+        "description": "Cuerpo serializado en JSON devuelto en la primera ejecucion para replay instantaneo."
+      },
+      "client_id": {
+        "type": "string",
+        "description": "Identificador del dispositivo emisor (FLUTTER_MOBILE, REACT_PWA, N8N_GATEWAY)."
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "ttl": {
+        "type": "integer",
+        "description": "Timestamp Unix Epoch para expiracion automatica de DynamoDB."
+      }
+    }
+  },
+  "http_status_responses": {
+    "200_201_cached": {
+      "description": "Si la clave existe con status=COMPLETED y payload_hash coincide, el backend responde en <5ms con el JSON cacheado sin re-ejecutar.",
+      "headers": {
+        "X-Cache-Lookup": "HIT_IDEMPOTENCY_DYNAMODB"
+      }
+    },
+    "409_conflict": {
+      "description": "Si la clave existe con status=PROCESSING, indica que otra peticion identica esta en curso.",
+      "body": {
+        "error": "CONCURRENT_REQUEST_IN_PROGRESS",
+        "message": "Una transaccion con esta clave de idempotencia ya se encuentra en procesamiento."
+      }
+    },
+    "422_unprocessable_entity": {
+      "description": "Si la clave existe pero el payload_hash difiere, indica reutilizacion indebida de la clave con datos distintos.",
+      "body": {
+        "error": "IDEMPOTENCY_PAYLOAD_MISMATCH",
+        "message": "El cuerpo de la peticion no coincide con el payload original registrado para este Idempotency-Key."
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "nodes": [
+    {
+      "id": "node_banner",
+      "type": "text",
+      "text": "# 🏢 2doParcialSW2\n### Mapa de Arquitectura y Conocimiento\n\nBóveda de Obsidian activa en `D:\\Bovedas\\2doParcialSW2`.\nMemoria y diseño técnico sincronizado.",
+      "x": -200,
+      "y": -350,
+      "width": 600,
+      "height": 200,
+      "color": "1"
+    },
+    {
+      "id": "node_moc",
+      "type": "file",
+      "file": "00 - Indice Principal (MOC).md",
+      "x": -200,
+      "y": -100,
+      "width": 600,
+      "height": 400
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_banner_moc",
+      "fromNode": "node_banner",
+      "fromSide": "bottom",
+      "toNode": "node_moc",
+      "toSide": "top"
+    }
+  ]
+}
