@@ -1,0 +1,108 @@
+@startuml Robustez_Perfil_B_AegisCore
+!theme plain
+skinparam roundcorner 10
+skinparam stereotypeCBackgroundColor #F4D03F
+skinparam stereotypeBBackgroundColor #5DADE2
+skinparam stereotypeEBackgroundColor #58D68D
+
+title Metodología ICONIX — Diagramas de Robustez (Boundary, Control, Entity)\nPerfil B: Casos de Uso CU06 a CU10
+
+' ==============================================================================
+' CU06: Reportar Siniestro Vial de Emergencia Directo desde App Móvil Flutter
+' ==============================================================================
+package "CU06: Siniestro Emergencia App Móvil + Triaje" {
+    actor "Asegurado" as actor_cu06
+    boundary "ReporteSiniestroMovilView\n(Flutter SOS)" as b_cu06_movil <<boundary>>
+    boundary "PushNotificationFCMBoundary" as b_cu06_push <<boundary>>
+    control "RegistrarSiniestroEmergenciaUseCase\n(MS2 NestJS Clean Arch)" as c_cu06_ms2 <<control>>
+    entity "ExpedienteSiniestroDocument\n(MongoDB 7 - 2dsphere)" as e_cu06_mongo <<entity>>
+
+    actor_cu06 --> b_cu06_movil : 1. Pulsa SOS / Siniestro
+    b_cu06_movil --> c_cu06_ms2 : 2. POST /api/v1/siniestros/emergencia
+    c_cu06_ms2 --> e_cu06_mongo : 3. Guardar expediente con GeoJSON
+    c_cu06_ms2 --> b_cu06_push : 4. Notificar perito más cercano
+}
+
+' ==============================================================================
+' CU07: Inspeccionar Daños del Vehículo Offline con Agente de IA Local
+' ==============================================================================
+package "CU07: Inspección Móvil Offline + Agente TFLite" {
+    actor "Perito de Campo" as actor_cu07
+    boundary "CamaraInspeccionFlutterView" as b_cu07_cam <<boundary>>
+    boundary "SensorGpsHardwareBoundary" as b_cu07_gps <<boundary>>
+    control "AgentePericialLocalTFLiteControl\n(Edge AI Móvil)" as c_cu07_agent <<control>>
+    control "InspeccionLocalManagerControl\n(Flutter Bloc/Service)" as c_cu07_mgr <<control>>
+    entity "InspeccionOfflineSQLiteEntity\n(SQLite Local)" as e_cu07_sqlite <<entity>>
+
+    actor_cu07 --> b_cu07_cam : 1. Captura fotografía
+    b_cu07_cam --> c_cu07_agent : 2. inferirDanoOnDevice()
+    c_cu07_agent --> b_cu07_cam : 3. Guiado visual en pantalla
+    b_cu07_gps --> c_cu07_mgr : 4. Coordenadas GPS
+    b_cu07_cam --> c_cu07_mgr : 5. Confirmar guardado
+    c_cu07_mgr --> e_cu07_sqlite : 6. Guardar con Idempotency-Key
+}
+
+' ==============================================================================
+' CU08: Sincronizar Expediente de Siniestro con Control de Idempotencia
+' ==============================================================================
+package "CU08: Sincronización Idempotente (DynamoDB)" {
+    boundary "SyncBackgroundWorkerBoundary\n(Flutter WorkManager)" as b_cu08_sync <<boundary>>
+    control "IdempotencyGuardInterceptor\n(MS2 NestJS)" as c_cu08_guard <<control>>
+    control "SincronizarPeritajeUseCase\n(MS2 NestJS CQRS)" as c_cu08_usecase <<control>>
+    entity "IdempotencyRecord\n(Amazon DynamoDB Local)" as e_cu08_dynamo <<entity>>
+    entity "ExpedienteSiniestroDocument\n(MongoDB 7)" as e_cu08_mongo <<entity>>
+
+    b_cu08_sync --> c_cu08_guard : 1. POST con Idempotency-Key
+    c_cu08_guard --> e_cu08_dynamo : 2. GetItem / PutItem (Lock)
+    c_cu08_guard --> c_cu08_usecase : 3. Sincronizar si no duplicado
+    c_cu08_usecase --> e_cu08_mongo : 4. Actualizar expediente consolidado
+    c_cu08_guard --> e_cu08_dynamo : 5. Guardar respuesta HTTP 201
+}
+
+' ==============================================================================
+' CU09: Liquidar y Pagar Indemnización de Siniestro (Patrón Saga en 3 MS + n8n)
+' ==============================================================================
+package "CU09: Liquidación Transversal Saga en 3 Microservicios + n8n" {
+    actor "Ajustador de Seguros" as actor_cu09
+    boundary "LiquidacionAdminView\n(Angular)" as b_cu09_view <<boundary>>
+    boundary "EmailComprobanteBoundary\n(Asegurado)" as b_cu09_email <<boundary>>
+    boundary "AlertaAuditoriaBoundary\n(Telegram/Slack/Email)" as b_cu09_alert <<boundary>>
+    control "SagaLiquidacionOrchestrator\n(MS3 Spring Boot Hexagonal)" as c_cu09_saga <<control>>
+    control "WorkflowNotificacionSagaN8N\n(n8n Automation)" as c_cu09_n8n <<control>>
+    control "ReclamoEstadoService\n(MS2 NestJS Clean Arch)" as c_cu09_ms2 <<control>>
+    control "PolizaCoverageService\n(MS1 PHP Laravel DDD)" as c_cu09_ms1 <<control>>
+    entity "OrdenLiquidacion\n(PostgreSQL MS3)" as e_cu09_pg_ms3 <<entity>>
+    entity "ExpedienteSiniestro\n(MongoDB MS2)" as e_cu09_mg_ms2 <<entity>>
+    entity "ContratoPoliza\n(PostgreSQL MS1)" as e_cu09_pg_ms1 <<entity>>
+
+    actor_cu09 --> b_cu09_view : 1. Aprobar indemnización
+    b_cu09_view --> c_cu09_saga : 2. Iniciar transacción distribuida
+    c_cu09_saga --> c_cu09_ms2 : 3. Paso 1: Marcar reclamo en liquidación
+    c_cu09_ms2 --> e_cu09_mg_ms2 : 4. Estado = EN_PROCESO_LIQUIDACION
+    c_cu09_saga --> c_cu09_ms1 : 5. Paso 2: Descontar techo cobertura
+    c_cu09_ms1 --> e_cu09_pg_ms1 : 6. Descontar saldo póliza
+    c_cu09_saga --> e_cu09_pg_ms3 : 7. Paso 3: Asiento y desembolso contable
+    c_cu09_saga --> c_cu09_n8n : 8. Emitir evento final Saga (Kafka/Webhook)
+    c_cu09_n8n --> b_cu09_email : 9a. Enviar comprobante si éxito
+    c_cu09_n8n --> b_cu09_alert : 9b. Enviar alerta si hubo rollback
+}
+
+' ==============================================================================
+' CU10: Procesar Cobro Recurrente de Primas y Pago QR Idempotente
+' ==============================================================================
+package "CU10: Cobro QR Idempotente (Spring Boot Hexagonal)" {
+    actor "Asegurado" as actor_cu10
+    boundary "PasarelaPagoQRView\n(Flutter/React)" as b_cu10_view <<boundary>>
+    control "CobranzaPrimaQRUseCase\n(MS3 Spring Boot Port)" as c_cu10_port <<control>>
+    control "IdempotencyLockPaymentControl\n(MS3 Spring Boot)" as c_cu10_lock <<control>>
+    entity "IdempotencyLockRecord\n(DynamoDB Local)" as e_cu10_dynamo <<entity>>
+    entity "PagoPrimaTransaccion\n(PostgreSQL 16)" as e_cu10_pg <<entity>>
+
+    actor_cu10 --> b_cu10_view : 1. Paga mediante QR
+    b_cu10_view --> c_cu10_port : 2. POST /api/v1/pagos-qr
+    c_cu10_port --> c_cu10_lock : 3. verificarYAdquirirBloqueo()
+    c_cu10_lock --> e_cu10_dynamo : 4. Lock transaccional sub-ms
+    c_cu10_port --> e_cu10_pg : 5. Asiento contable del pago
+}
+
+@enduml

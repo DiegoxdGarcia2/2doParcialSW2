@@ -13,7 +13,7 @@ import java.util.Map;
 public class ActuarialApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ActuarialApplication.java, args);
+        SpringApplication.run(ActuarialApplication.class, args);
     }
 
     @GetMapping("/health")

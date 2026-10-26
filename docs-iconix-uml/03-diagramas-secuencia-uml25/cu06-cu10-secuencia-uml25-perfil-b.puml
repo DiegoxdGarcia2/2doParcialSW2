@@ -1,0 +1,205 @@
+@startuml Secuencia_UML25_Perfil_B_AegisCore
+!theme plain
+autonumber
+skinparam roundcorner 8
+
+title Metodología ICONIX — Diagramas de Secuencia UML 2.5+\nMétodos Operacionales Explícitos en Clases de Control (CU06 a CU10)
+
+' ==============================================================================
+' DIAGRAMA 1: CU06 - Siniestro Vial de Emergencia Directo desde App Móvil
+' ==============================================================================
+== CU06: Siniestro Emergencia Directo desde App Móvil ==
+
+actor "Asegurado" as user_cu06
+participant "movilView : ReporteSiniestroMovilView" as b_cu06 <<boundary>>
+participant "ms2Ctrl : RegistrarSiniestroEmergenciaUseCase" as c_ms2 <<control>>
+database "mongo : ExpedienteSiniestroDocument" as e_mongo <<entity>>
+participant "pushBnd : PushNotificationFCMBoundary" as b_push <<boundary>>
+actor "Perito" as perito_cu06
+
+user_cu06 -> b_cu06 : presionarBotonEmergenciaSOS()
+b_cu06 -> b_cu06 : capturarFotosYCoordenadasGPS()
+b_cu06 -> c_ms2 : registrarSiniestroEmergencia(datosSiniestroDTO)
+activate c_ms2
+c_ms2 -> c_ms2 : validarCamposObligatoriosYGeoJSON()
+c_ms2 -> c_ms2 : clasificarTriajePreliminar()
+c_ms2 -> e_mongo : insertOne(documentoSiniestro)
+e_mongo --> c_ms2 : idExpedienteGenerado = "REC-2026-00812"
+c_ms2 -> b_push : despacharNotificacionPeritoMasCercano(gps, idExpediente)
+b_push --> perito_cu06 : Alerta Push con coordenadas del accidente
+c_ms2 --> b_cu06 : SiniestroRegistradoResponse(REC-2026-00812, peritoAsignado)
+deactivate c_ms2
+b_cu06 --> user_cu06 : Pantalla de confirmación y asistencia en camino
+
+
+' ==============================================================================
+' DIAGRAMA 2: CU07 - Inspeccionar Daños Offline con Agente de IA Local
+' ==============================================================================
+== CU07: Inspección Offline con Agente Local TFLite ==
+
+actor "Perito" as perito_cu07
+participant "camView : CamaraInspeccionFlutterView" as b_cam <<boundary>>
+participant "tfliteCtrl : AgentePericialLocalTFLiteControl" as c_tflite <<control>>
+participant "mgrCtrl : InspeccionLocalManagerControl" as c_mgr <<control>>
+participant "gpsBnd : SensorGpsHardwareBoundary" as b_gps <<boundary>>
+database "sqlite : InspeccionOfflineSQLiteEntity" as e_sqlite <<entity>>
+
+perito_cu07 -> b_cam : presionarBotonCapturarFoto()
+b_cam -> c_tflite : analizarFotografiaEnDispositivo(bytesImagen)
+activate c_tflite
+c_tflite -> c_tflite : inferirModeloConTensoresTFLite(inputTensor)
+c_tflite -> c_tflite : verificarAnguloYCalidadFotografica()
+c_tflite --> b_cam : InferenciaResultadoDTO(pieza="Parachoques Frontal", severidad=82%)
+deactivate c_tflite
+b_cam --> perito_cu07 : Mostrar recuadro verde de confirmación visual
+
+perito_cu07 -> b_cam : confirmarGuardadoInspeccion()
+b_cam -> b_gps : capturarCoordenadasActuales()
+b_gps --> b_cam : CoordenadasDTO(-17.7833, -63.1821)
+b_cam -> c_mgr : almacenarInspeccionOffline(datosCompletosDTO)
+activate c_mgr
+c_mgr -> c_mgr : generarUUIDv4IdempotencyKey()
+c_mgr -> e_sqlite : insertInspeccionLocal(registroConIdempotencyKey)
+e_sqlite --> c_mgr : idLocalGuardado = 12, estado = "PENDIENTE_SYNC"
+c_mgr --> b_cam : ConfirmacionGuardadoLocalResponse()
+deactivate c_mgr
+b_cam --> perito_cu07 : "Inspección guardada 100% Offline"
+
+' ==============================================================================
+' DIAGRAMA 3: CU08 - Sincronizar Expediente de Siniestro con Control de Idempotencia
+' ==============================================================================
+== CU08: Sincronización Idempotente con DynamoDB ==
+
+participant "syncWorker : SyncBackgroundWorker" as b_worker <<boundary>>
+participant "guardCtrl : IdempotencyGuardInterceptor" as c_guard <<control>>
+database "dynamo : IdempotencyRecord" as e_dynamo <<entity>>
+participant "syncUseCase : SincronizarPeritajeUseCase" as c_sync <<control>>
+database "mongoDb : ExpedienteSiniestroDocument" as e_mongo_sync <<entity>>
+
+b_worker -> c_guard : sincronizarExpedienteHttp(payload, Header: Idempotency-Key)
+activate c_guard
+c_guard -> c_guard : calcularHashSHA256(payloadJson)
+c_guard -> e_dynamo : obtenerRegistroIdempotencia(idempotencyKey)
+
+alt Caso 1: Clave no existe (Primer intento)
+    e_dynamo --> c_guard : null (No encontrado)
+    c_guard -> e_dynamo : guardarBloqueoProcesamiento(idempotencyKey, hash, status="PROCESSING")
+    c_guard -> c_sync : ejecutarSincronizacion(expedienteDTO)
+    activate c_sync
+    c_sync -> c_sync : validarConsistenciaExpediente()
+    c_sync -> e_mongo_sync : actualizarExpedientePorId(idSiniestro, datosInspeccion)
+    e_mongo_sync --> c_sync : actualizado = true
+    c_sync --> c_guard : ResultadoSincronizacionDTO(201 Created)
+    deactivate c_sync
+    c_guard -> e_dynamo : actualizarRegistroCompletado(idempotencyKey, statusCode=201, jsonResponse)
+    c_guard --> b_worker : HTTP 201 Created (Expediente consolidado)
+
+else Caso 2: Clave existe con status = "COMPLETED" y mismo Hash (Reintento por mala señal)
+    e_dynamo --> c_guard : Record(status="COMPLETED", hashValido=true, responseBodyCached)
+    c_guard --> b_worker : HTTP 201 Created (X-Cache-Lookup: HIT_IDEMPOTENCY_DYNAMODB)
+    note right of c_guard: Respuesta instantánea (<5ms). No se re-escribe en MongoDB.
+end
+deactivate c_guard
+
+' ==============================================================================
+' DIAGRAMA 4: CU09 - Transacción Transversal Saga (Liquidación en 3 MS y Rollback)
+' ==============================================================================
+== CU09: Transacción Transversal Saga en 3 Microservicios con Compensación ==
+
+actor "Ajustador" as user_cu09
+participant "adminView : LiquidacionAdminView" as b_view <<boundary>>
+participant "sagaOrch : SagaLiquidacionOrchestrator" as c_saga <<control>>
+participant "kafkaBus : Apache Kafka" as k_bus
+participant "ms2Reclamo : ReclamoEstadoUseCase" as c_ms2_reclamo <<control>>
+participant "ms1Poliza : PolizaCoverageService" as c_ms1_poliza <<control>>
+database "postgresMS3 : OrdenLiquidacion" as e_pg_ms3 <<entity>>
+
+user_cu09 -> b_view : solicitarAprobacionLiquidacion(reclamoId, polizaId, monto=$3000)
+b_view -> c_saga : iniciarSagaLiquidacion(comandoSagaDTO)
+activate c_saga
+
+note over c_saga, k_bus: PASO 1: Bloqueo del Reclamo en MS2 (NestJS)
+c_saga -> k_bus : publicarEvento("MarcarReclamoEnLiquidacionCommand")
+k_bus -> c_ms2_reclamo : consumirComando()
+c_ms2_reclamo -> c_ms2_reclamo : actualizarEstado(EN_PROCESO_LIQUIDACION)
+c_ms2_reclamo -> k_bus : publicarEvento("ReclamoMarcadoEnLiquidacionEvent")
+
+note over c_saga, k_bus: PASO 2: Descuento de Cobertura en MS1 (PHP DDD)
+k_bus -> c_saga : consumirEventoMS2()
+c_saga -> k_bus : publicarEvento("DescontarCoberturaPolizaCommand")
+k_bus -> c_ms1_poliza : consumirComando()
+c_ms1_poliza -> c_ms1_poliza : descontarTechoAnualPoliza(monto=$3000)
+c_ms1_poliza -> k_bus : publicarEvento("CoberturaPolizaDescontadaEvent")
+
+note over c_saga, postgresMS3: PASO 3: Aprobación Contable y Reserva Actuarial en MS3 (Spring Boot)
+k_bus -> c_saga : consumirEventoMS1()
+c_saga -> c_saga : verificarDisponibilidadReservaTecnica(monto)
+
+participant "n8nSaga : WorkflowNotificacionSagaN8N" as c_n8n_saga <<control>>
+participant "emailBnd : EmailNotificacionBoundary" as b_email <<boundary>>
+
+alt Caso Éxito: Fondos de reserva suficientes
+    c_saga -> e_pg_ms3 : registrarOrdenLiquidacion(asientoContable)
+    c_saga -> k_bus : publicarEvento("SagaLiquidacionCompletadaEvent")
+    c_saga --> b_view : HTTP 200 OK (Liquidación Exitosa)
+    k_bus -> c_n8n_saga : consumirEvento("SagaLiquidacionCompletadaEvent")
+    activate c_n8n_saga
+    c_n8n_saga -> b_email : enviarCorreoComprobanteIndemnizacion(montoNeto, aseguradoEmail)
+    deactivate c_n8n_saga
+
+else Caso Fallo: Reserva insuficiente o error bancario -> ROLLBACK COMPENSATORIO
+    c_saga -> c_saga : registrarFalloYDispararCompensacion()
+    c_saga -> k_bus : publicarCompensacion("CompensarCoberturaCommand")
+    k_bus -> c_ms1_poliza : consumirCompensacion()
+    c_ms1_poliza -> c_ms1_poliza : restituirSaldoCobertura(monto=$3000)
+    c_ms1_poliza -> k_bus : publicarEvento("CoberturaRestituidaEvent")
+
+    c_saga -> k_bus : publicarCompensacion("RevertirEstadoReclamoCommand")
+    k_bus -> c_ms2_reclamo : consumirCompensacion()
+    c_ms2_reclamo -> c_ms2_reclamo : actualizarEstado(OBSERVADO_FINANZAS)
+    c_ms2_reclamo -> k_bus : publicarEvento("EstadoReclamoRevertidoEvent")
+
+    c_saga -> k_bus : publicarEvento("SagaLiquidacionFallidaCompensadaEvent")
+    c_saga --> b_view : HTTP 422 Unprocessable (Liquidación compensada por falta de reserva)
+    k_bus -> c_n8n_saga : consumirEvento("SagaLiquidacionFallidaCompensadaEvent")
+    activate c_n8n_saga
+    c_n8n_saga -> b_email : despacharAlertaAuditoriaYCompensacion(sagaId, motivo)
+    deactivate c_n8n_saga
+end
+deactivate c_saga
+
+' ==============================================================================
+' DIAGRAMA 5: CU10 - Cobro Recurrente de Primas y Pago QR Idempotente
+' ==============================================================================
+== CU10: Cobranza Prima y Pago QR Idempotente en Spring Boot Hexagonal ==
+
+actor "Asegurado" as user_cu10
+participant "qrView : PasarelaPagoQRView" as b_qr <<boundary>>
+participant "qrPort : CobranzaPrimaQRUseCasePort" as c_qr <<control>>
+participant "lockCtrl : IdempotencyLockPaymentControl" as c_lock <<control>>
+database "dynamoLock : IdempotencyLockRecord" as e_lock <<entity>>
+database "pgPagos : PagoPrimaTransaccion" as e_pg_pago <<entity>>
+
+user_cu10 -> b_qr : confirmarPagoQR(monto=$120, qrCode)
+b_qr -> c_qr : procesarCobroPrimaQR(pagoRequestDTO, Header: Idempotency-Key)
+activate c_qr
+c_qr -> c_lock : adquirirBloqueoTransaccional(idempotencyKey)
+activate c_lock
+c_lock -> e_lock : putItemIfNotExists(key, status="PROCESSING")
+e_lock --> c_lock : bloqueoAdquirido = true
+deactivate c_lock
+
+c_qr -> c_qr : calcularReglaActuarialYComision()
+c_qr -> e_pg_pago : persistirTransaccionPago(asientoPagoEntity)
+e_pg_pago --> c_qr : numeroRecibo = "RECIBO-QR-2026-0041"
+
+c_qr -> c_lock : liberarBloqueoConExito(idempotencyKey, numeroRecibo)
+activate c_lock
+c_lock -> e_lock : updateItem(key, status="COMPLETED", receiptId)
+deactivate c_lock
+
+c_qr --> b_qr : HTTP 200 OK (Recibo de Pago emitido y Póliza Renovada)
+deactivate c_qr
+b_qr --> user_cu10 : Mostrar Comprobante en pantalla
+
+@enduml

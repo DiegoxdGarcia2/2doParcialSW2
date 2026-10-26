@@ -1,0 +1,55 @@
+aegiscore-ai-erp/
+├── docker-compose.yml                  # Orquestación local de BD, SSO, Kafka, n8n y Microservicios
+├── README.md                           # Guía de arquitectura en 4 niveles y comandos de arranque
+├── contracts/                          # Contratos congelados para trabajo paralelo de los 3 integrantes
+│   ├── supergraph.graphql              # Esquema federado GraphQL (Pólizas, Clientes, Siniestros)
+│   ├── saga-events.schema.json         # Contrato JSON para Patrón Saga (3 MS) y Compensaciones
+│   └── idempotency-header.spec.json    # Especificación de Idempotency-Key (UUIDv4) en DynamoDB
+├── infra/
+│   ├── keycloak-sso/                   # Realm exportado con OAuth2/OIDC y roles unificados (SSO)
+│   ├── db-init/
+│   │   ├── postgres-init.sql           # Tablas ACID (Pólizas, Clientes, Facturas, Liquidación) + Dataset Sintético
+│   │   ├── mongo-init.js               # Colecciones de Expedientes de Siniestros y Peritajes IA
+│   │   └── dynamodb-init.sh            # Creación de tabla IdempotencyRecords y SesionesSSO
+│   └── k8s/                            # Manifiestos de despliegue Kubernetes Multi-Cloud
+├── backend/
+│   ├── ms1-polizas-php/                # [PHP 8.3 / Laravel] -> PATRÓN: DOMAIN-DRIVEN DESIGN (DDD)
+│   │   └── src/
+│   │       ├── Domain/                 # AggregateRoots (Poliza), Entities (Cliente, Factura), ValueObjects
+│   │       ├── Application/            # Commands, Queries y Servicios de Aplicación
+│   │       ├── Infrastructure/         # Repositorios Eloquent PostgreSQL y Consumidor Kafka Compensación
+│   │       └── Presentation/GraphQL/   # Resolvers, Queries y Mutations con Claves Foráneas (FK)
+│   ├── ms2-siniestros-nestjs/          # [TypeScript / NestJS 10] -> PATRÓN: CLEAN ARCHITECTURE + CQRS
+│   │   └── src/
+│   │       ├── domain/                 # Entidades puras de Siniestro y contratos de repositorio
+│   │       ├── application/            # Casos de Uso (UseCases), Commands y Queries (CQRS)
+│   │       ├── infrastructure/         # Schemas Mongoose (MongoDB), IdempotencyGuard (DynamoDB), Push FCM
+│   │       └── presentation/           # GraphQL Resolvers, REST Controllers y WebSockets Gateway
+│   ├── ms3-actuarial-springboot/       # [Java 21 / Spring Boot 3] -> PATRÓN: ARQUITECTURA HEXAGONAL
+│   │   └── src/main/java/com/aegiscore/actuarial/
+│   │       ├── domain/                 # Modelo Actuarial, Reserva Técnica y Lógica de Liquidación
+│   │       ├── application/ports/
+│   │       │   ├── in/                 # Puertos de Entrada (LiquidarSiniestroUseCase, CobrarPrimaQRUseCase)
+│   │       │   └── out/                # Puertos de Salida (ReservaRepositoryPort, SagaEventPublisherPort)
+│   │       └── infrastructure/adapters/
+│   │           ├── in/                 # Adaptadores Web REST, Orquestador Saga Kafka Listener
+│   │           └── out/                # Adaptadores JPA PostgreSQL, DynamoDB Lock y Kafka Producer
+│   └── ms4-ia-mcp-python/              # [Python 3.11 / FastAPI] -> PIPELINES IA, TENSORFLOW, AGENTES Y MCP
+│       └── app/
+│           ├── ml_supervised/          # Random Forest (Predicción de ventas de pólizas y prima óptima)
+│           ├── ml_unsupervised/        # K-Means (Segmentación clientes) + Isolation Forest (Fraude)
+│           ├── dl_tensorflow/          # Redes Convolucionales TensorFlow/Keras (Fotos/Videos de choques)
+│           ├── agents/                 # Agente Autónomo LangGraph basado en Goals & Skills (Kafka)
+│           └── mcp_voice_reports/      # Servidor MCP + Whisper STT + Filtro OWASP Anti-SQLi + Excel/PDF/Word
+├── frontend/
+│   ├── sso-shell-container/            # Integración OIDC Keycloak transversal
+│   ├── mf1-admin-angular/              # [Angular] ERP Admin, Dashboards KPIs en código, Consola Voz MCP
+│   ├── mf2-clientes-react/             # [React PWA] Cotizador GraphQL + IA Local Web (ONNX/TF.js) Offline
+│   └── app-peritos-flutter/            # [Flutter] App Móvil Offline (SQLite) + Agente IA Local (TFLite) + GPS/QR
+├── automation-n8n/
+│   ├── workflow-pedido-poliza-whatsapp-factura.json  # CU05: WhatsApp -> ERP PHP -> Factura PDF -> Correo
+│   └── workflow-siniestro-vial-emergencia.json       # CU06: WhatsApp -> TensorFlow -> NestJS Mongo -> Push
+└── docs-iconix-uml/
+    ├── 01-modelo-dominio-y-requisitos/
+    ├── 02-diagramas-robustez-bce/      # Objetos Boundary, Control y Entity (CU01 a CU15)
+    └── 03-diagramas-secuencia-uml25/   # Métodos explícitos en la Clase de Control

@@ -1,0 +1,174 @@
+{
+  "name": "CU09 - Notificaciones y Emisión de Liquidación Saga en 3 Microservicios",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "saga-liquidacion-notificaciones",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "id": "node-webhook-saga-event",
+      "name": "Webhook Evento Saga Kafka (MS3)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [220, 320]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.event_type }}",
+                    "rightValue": "SagaLiquidacionCompletadaEvent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.event_type }}",
+                    "rightValue": "SagaLiquidacionFallidaCompensadaEvent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        }
+      },
+      "id": "node-switch-saga-status",
+      "name": "Filtrar Exito vs Compensacion",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [480, 320]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body.payload || {};\nreturn [{\n  json: {\n    asunto: '✅ Liquidación Exitosa de Siniestro ' + payload.reclamo_id,\n    reclamo_id: payload.reclamo_id,\n    poliza_id: payload.poliza_id,\n    monto_indemnizacion: payload.monto_indemnizacion,\n    deducible_aplicado: payload.deducible_aplicado,\n    monto_neto_desembolso: payload.monto_neto_desembolso,\n    mensaje_cliente: `Estimado asegurado, su liquidación por ${payload.monto_neto_desembolso} USD ha sido aprobada e indemnizada con éxito tras la verificación actuarial.`,\n    fecha: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node-formatear-exito",
+      "name": "Formatear Comprobante Indemnización",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [750, 220]
+    },
+    {
+      "parameters": {
+        "fromEmail": "liquidaciones@aegiscore.ai",
+        "toEmail": "asegurado@aegiscore.local",
+        "subject": "={{ $json.asunto }}",
+        "text": "={{ $json.mensaje_cliente }}\n\nDetalle:\nReclamo: {{ $json.reclamo_id }}\nMonto Neto Desembolsado: ${{ $json.monto_neto_desembolso }} USD\nFecha: {{ $json.fecha }}"
+      },
+      "id": "node-enviar-correo-cliente",
+      "name": "Enviar Correo Comprobante Asegurado",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1000, 220]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body.payload || {};\nreturn [{\n  json: {\n    asunto: '⚠️ ALERTA: Compensación Rollback Ejecutada en Saga ' + ($input.first().json.body.saga_id || ''),\n    reclamo_id: payload.reclamo_id,\n    motivo_fallo: payload.motivo_rechazo || 'Reserva técnica actuarial insuficiente en MS3',\n    acciones_compensatorias: [\n      'MS1 PHP: Restitución de saldo de cobertura anual',\n      'MS2 NestJS: Reversión de estado a OBSERVADO_FINANZAS'\n    ],\n    prioridad: 'ALTA',\n    fecha: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node-formatear-alerta-fallo",
+      "name": "Formatear Alerta de Auditoría y Compensación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [750, 420]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alertas-saga@aegiscore.ai",
+        "toEmail": "auditoria-riesgos@aegiscore.local, ajustador@aegiscore.local",
+        "subject": "={{ $json.asunto }}",
+        "text": "ALERTA DE AUDITORÍA TRANSACCIONAL SAGA:\n\nReclamo: {{ $json.reclamo_id }}\nMotivo: {{ $json.motivo_fallo }}\n\nAcciones ejecutadas por el Orquestador:\n- {{ $json.acciones_compensatorias[0] }}\n- {{ $json.acciones_compensatorias[1] }}\n\nFecha: {{ $json.fecha }}"
+      },
+      "id": "node-alerta-auditoria-email",
+      "name": "Alerta Auditoría / Ajustador",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1000, 420]
+    }
+  ],
+  "connections": {
+    "Webhook Evento Saga Kafka (MS3)": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Exito vs Compensacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Exito vs Compensacion": {
+      "main": [
+        [
+          {
+            "node": "Formatear Comprobante Indemnización",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Formatear Alerta de Auditoría y Compensación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Comprobante Indemnización": {
+      "main": [
+        [
+          {
+            "node": "Enviar Correo Comprobante Asegurado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Alerta de Auditoría y Compensación": {
+      "main": [
+        [
+          {
+            "node": "Alerta Auditoría / Ajustador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
