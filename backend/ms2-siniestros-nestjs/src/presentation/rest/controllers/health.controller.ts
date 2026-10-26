@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+// Inyección de conexión activa MongoDB Atlas
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { DynamoIdempotencyRepository } from '../../../infrastructure/idempotency/dynamo-idempotency.repository';

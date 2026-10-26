@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
+// Persistencia Documental MongoDB Atlas Cloud (Índice 2dsphere)
 import { MongooseModule } from '@nestjs/mongoose';
 
 // MongoDB Schemas

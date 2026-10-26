@@ -10,8 +10,7 @@ export class FcmNotificationAdapter implements INotificationPort {
 
   async enviarNotificacionPush(payload: PushNotificationPayload): Promise<boolean> {
     this.logger.log(
-      `[Push FCM] Enviando notificación a topic/token: ${
-        payload.topic || payload.tokenDestinatario || 'ALL_DEVICES'
+      `[Push FCM] Enviando notificación a topic/token: ${payload.topic || payload.tokenDestinatario || 'ALL_DEVICES'
       } | Título: "${payload.titulo}" | Mensaje: "${payload.mensaje}"`,
     );
 
@@ -24,12 +23,12 @@ export class FcmNotificationAdapter implements INotificationPort {
     reclamoId: string,
     direccion?: string,
   ): Promise<boolean> {
+
     return this.enviarNotificacionPush({
       topic: `peritos_${peritoId}`,
-      titulo: '🚨 Nueva Asignación de Inspección de Siniestro',
-      mensaje: `Tienes asignado el reclamo ${reclamoId}. Ubicación: ${
-        direccion || 'Ubicación en mapa'
-      }.`,
+      titulo: 'Nueva Asignación de Inspección de Siniestro',
+      mensaje: `Tienes asignado el reclamo ${reclamoId}. Ubicación: ${direccion || 'Ubicación en mapa'
+        }.`,
       datosAdicionales: {
         tipo: 'ASIGNACION_PERITAJE',
         reclamoId,
