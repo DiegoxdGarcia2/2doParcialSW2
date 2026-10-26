@@ -1,29 +1,35 @@
-import express, { Request, Response } from 'express';
+import 'reflect-metadata';
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { AppModule } from './app.module';
 
-const app = express();
-const PORT = process.env.PORT || 8002;
+async function bootstrap() {
+  const logger = new Logger('MS2-Bootstrap');
+  const app = await NestFactory.create(AppModule);
 
-app.use(express.json());
-
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({
-    status: 'UP',
-    service: 'ms2-siniestros-nestjs',
-    pattern: 'Clean Architecture + CQRS',
-    runtime: 'Node.js / TypeScript',
-    timestamp: new Date().toISOString(),
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
   });
-});
 
-app.get('/api/siniestros/demo', (_req: Request, res: Response) => {
-  res.json({
-    reclamo_id: 'REC-2026-00492',
-    estado: 'PERITAJE_COMPLETADO',
-    poliza_id: 'd0000001-0000-0000-0000-000000000001',
-    monto_indemnizacion_aprobado: 2500.0,
-  });
-});
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: false,
+    }),
+  );
 
-app.listen(PORT, () => {
-  console.log(`[ms2-siniestros-nestjs] Corriendo en puerto ${PORT} bajo Clean Architecture + CQRS`);
-});
+  const port = process.env.PORT || 8002;
+  await app.listen(port);
+
+  logger.log(`==================================================================`);
+  logger.log(`🛡️  MS2 Siniestros NestJS 10 corriendo en puerto: ${port}`);
+  logger.log(`🏛️  Patrón: Clean Architecture + CQRS + Idempotency DynamoDB`);
+  logger.log(`🍃  Persistencia: MongoDB Atlas Cloud (2dsphere geospatial)`);
+  logger.log(`⚡  Endpoints base: http://localhost:${port}/health y /api/v1/siniestros`);
+  logger.log(`==================================================================`);
+}
+
+bootstrap();

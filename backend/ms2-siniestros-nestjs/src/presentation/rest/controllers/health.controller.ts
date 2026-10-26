@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
-import { DynamoIdempotencyRepository } from '../../../../infrastructure/idempotency/dynamo-idempotency.repository';
+import { DynamoIdempotencyRepository } from '../../../infrastructure/idempotency/dynamo-idempotency.repository';
 
 @Controller('health')
 export class HealthController {
