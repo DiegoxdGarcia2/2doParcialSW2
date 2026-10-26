@@ -11,12 +11,9 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "moduleResolution": "node",
-    "paths": {
-      "@nestjs/mongoose": ["node_modules/@nestjs/mongoose"],
-      "@nestjs/mongoose/*": ["node_modules/@nestjs/mongoose/*"]
-    },
     "typeRoots": [
-      "./node_modules/@types"
+      "./node_modules/@types",
+      "./src/types"
     ],
     "types": [
       "node",
