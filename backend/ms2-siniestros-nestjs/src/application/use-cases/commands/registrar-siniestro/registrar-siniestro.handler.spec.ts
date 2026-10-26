@@ -1,29 +1,28 @@
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { RegistrarSiniestroHandler } from './registrar-siniestro.handler';
 import { RegistrarSiniestroCommand } from './registrar-siniestro.command';
-import { IReclamoRepository } from '../../../../domain/repositories/reclamo.repository.interface';
-import { INotificationPort } from '../../../ports/notification.port';
 import { ReclamoSiniestro } from '../../../../domain/entities/reclamo-siniestro.entity';
 
 describe('Application: RegistrarSiniestroHandler (CU06)', () => {
   let handler: RegistrarSiniestroHandler;
-  let mockReclamoRepository: jest.Mocked<IReclamoRepository>;
-  let mockNotificationPort: jest.Mocked<INotificationPort>;
+  let mockReclamoRepository: any;
+  let mockNotificationPort: any;
 
   beforeEach(() => {
     mockReclamoRepository = {
-      save: jest.fn().mockResolvedValue(undefined),
-      update: jest.fn().mockResolvedValue(undefined),
+      save: jest.fn().mockImplementation(() => Promise.resolve()),
+      update: jest.fn().mockImplementation(() => Promise.resolve()),
       findById: jest.fn(),
       findByClienteId: jest.fn(),
       findByPolizaId: jest.fn(),
       findCercanos: jest.fn(),
-      generarSiguienteReclamoId: jest.fn().mockResolvedValue('REC-2026-00100'),
+      generarSiguienteReclamoId: jest.fn().mockImplementation(() => Promise.resolve('REC-2026-00100')),
     };
 
     mockNotificationPort = {
-      enviarNotificacionPush: jest.fn().mockResolvedValue(true),
-      notificarAsignacionPerito: jest.fn().mockResolvedValue(true),
-      notificarEstadoSiniestro: jest.fn().mockResolvedValue(true),
+      enviarNotificacionPush: jest.fn().mockImplementation(() => Promise.resolve(true)),
+      notificarAsignacionPerito: jest.fn().mockImplementation(() => Promise.resolve(true)),
+      notificarEstadoSiniestro: jest.fn().mockImplementation(() => Promise.resolve(true)),
     };
 
     handler = new RegistrarSiniestroHandler(mockReclamoRepository, mockNotificationPort);

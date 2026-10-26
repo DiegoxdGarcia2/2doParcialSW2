@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { ReclamoSiniestro } from './reclamo-siniestro.entity';
 import { UbicacionGeoVO } from '../value-objects/ubicacion-geo.vo';
 import { SeveridadVO } from '../value-objects/severidad.vo';

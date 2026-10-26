@@ -1,8 +1,6 @@
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { SincronizarPeritajeHandler } from './sincronizar-peritaje.handler';
 import { SincronizarPeritajeCommand } from './sincronizar-peritaje.command';
-import { IReclamoRepository } from '../../../../domain/repositories/reclamo.repository.interface';
-import { INotificationPort } from '../../../ports/notification.port';
-import { IEventPublisherPort } from '../../../ports/event-publisher.port';
 import { ReclamoSiniestro } from '../../../../domain/entities/reclamo-siniestro.entity';
 import { UbicacionGeoVO } from '../../../../domain/value-objects/ubicacion-geo.vo';
 import { SeveridadVO } from '../../../../domain/value-objects/severidad.vo';
@@ -10,14 +8,14 @@ import { EstadoReclamoVO } from '../../../../domain/value-objects/estado-reclamo
 
 describe('Application: SincronizarPeritajeHandler (CU07 / CU08)', () => {
   let handler: SincronizarPeritajeHandler;
-  let mockReclamoRepository: jest.Mocked<IReclamoRepository>;
-  let mockNotificationPort: jest.Mocked<INotificationPort>;
-  let mockEventPublisherPort: jest.Mocked<IEventPublisherPort>;
+  let mockReclamoRepository: any;
+  let mockNotificationPort: any;
+  let mockEventPublisherPort: any;
 
   beforeEach(() => {
     mockReclamoRepository = {
       save: jest.fn(),
-      update: jest.fn().mockResolvedValue(undefined),
+      update: jest.fn().mockImplementation(() => Promise.resolve()),
       findById: jest.fn(),
       findByClienteId: jest.fn(),
       findByPolizaId: jest.fn(),
@@ -26,13 +24,13 @@ describe('Application: SincronizarPeritajeHandler (CU07 / CU08)', () => {
     };
 
     mockNotificationPort = {
-      enviarNotificacionPush: jest.fn().mockResolvedValue(true),
-      notificarAsignacionPerito: jest.fn().mockResolvedValue(true),
-      notificarEstadoSiniestro: jest.fn().mockResolvedValue(true),
+      enviarNotificacionPush: jest.fn().mockImplementation(() => Promise.resolve(true)),
+      notificarAsignacionPerito: jest.fn().mockImplementation(() => Promise.resolve(true)),
+      notificarEstadoSiniestro: jest.fn().mockImplementation(() => Promise.resolve(true)),
     };
 
     mockEventPublisherPort = {
-      publicarEvento: jest.fn().mockResolvedValue(undefined),
+      publicarEvento: jest.fn().mockImplementation(() => Promise.resolve()),
     };
 
     handler = new SincronizarPeritajeHandler(
@@ -54,7 +52,7 @@ describe('Application: SincronizarPeritajeHandler (CU07 / CU08)', () => {
       new EstadoReclamoVO('REPORTADO_SOS'),
     );
 
-    mockReclamoRepository.findById.mockResolvedValue(reclamoExistente);
+    mockReclamoRepository.findById.mockImplementation(() => Promise.resolve(reclamoExistente));
 
     const command = new SincronizarPeritajeCommand(
       'REC-2026-00050',
