@@ -1,0 +1,47 @@
+name: aegiscore_peritos
+description: "AegisCore AI - App Móvil de Peritaje Técnico Offline, SOS Emergencias y Sincronización Idempotente (Perfil B)."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  
+  # Base de datos local SQLite para captura Offline (CU07)
+  sqflite: ^2.3.3
+  sqflite_common_ffi: ^2.3.3
+  path: ^1.9.0
+
+  # Criptografía e Idempotencia (Contrato CU08 y CU10)
+  crypto: ^3.0.3
+  uuid: ^4.3.3
+
+  # Conectividad y Networking hacia MS2 y MS3
+  http: ^1.2.1
+
+  # Generación y renderizado dinámico de Pagos QR (CU10)
+  qr_flutter: ^4.1.0
+
+  # Formateo de fechas y moneda BOB
+  intl: ^0.19.0
+
+  # Tipografía moderna y sobria (Inter / Outfit)
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/models/damage_classifier.tflite
+    - assets/models/labels.txt
