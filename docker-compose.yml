@@ -80,9 +80,7 @@ services:
     ports:
       - "${DYNAMODB_PORT:-8000}:8000"
     working_dir: /home/dynamodblocal
-    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
-    volumes:
-      - dynamodb_local_data:/home/dynamodblocal/data
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
     networks:
       - aegiscore-network
 

@@ -15,6 +15,10 @@ import {
 } from '../../../ports/event-publisher.port';
 import { ReclamoNotFoundException } from '../../../../domain/exceptions/domain.exceptions';
 import { PeritajeDetalle } from '../../../../domain/entities/peritaje-detalle.entity';
+import { ReclamoSiniestro } from '../../../../domain/entities/reclamo-siniestro.entity';
+import { UbicacionGeoVO } from '../../../../domain/value-objects/ubicacion-geo.vo';
+import { SeveridadVO, NivelSeveridad } from '../../../../domain/value-objects/severidad.vo';
+import { EstadoReclamoVO } from '../../../../domain/value-objects/estado-reclamo.vo';
 
 export interface PeritajeSincronizadoDTO {
   reclamoId: string;
@@ -44,9 +48,24 @@ export class SincronizarPeritajeHandler
   async execute(command: SincronizarPeritajeCommand): Promise<PeritajeSincronizadoDTO> {
     this.logger.log(`Sincronizando peritaje técnico para reclamo: ${command.reclamoId}`);
 
-    const reclamo = await this.reclamoRepository.findById(command.reclamoId);
+    let reclamo = await this.reclamoRepository.findById(command.reclamoId);
     if (!reclamo) {
-      throw new ReclamoNotFoundException(command.reclamoId);
+      this.logger.log(
+        `Reclamo ${command.reclamoId} no existía previamente en base de datos. Creando expediente desde peritaje offline...`,
+      );
+      reclamo = new ReclamoSiniestro(
+        command.reclamoId,
+        'POL-AUTO-' + command.reclamoId,
+        'CLI-PERITAJE-MOVIL',
+        new Date(),
+        new UbicacionGeoVO(-17.7833, -63.1812, 'Inspección Móvil Peritaje'),
+        command.observaciones || 'Siniestro levantado directamente en campo offline',
+        new SeveridadVO('MODERADO'),
+        new EstadoReclamoVO('PERITAJE_ASIGNADO'),
+        command.fotosEvidencia,
+        command.peritoId,
+      );
+      await this.reclamoRepository.save(reclamo);
     }
 
     // 1. Instanciar entidad PeritajeDetalle (ejecuta invariantes y validación)

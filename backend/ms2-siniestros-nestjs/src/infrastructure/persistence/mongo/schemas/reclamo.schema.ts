@@ -77,6 +77,12 @@ export class ReclamoMongoEntity {
   @Prop({ type: String, required: true, unique: true, index: true })
   reclamo_id: string;
 
+  @Prop({ type: String, required: false, index: true })
+  numero_reclamo?: string;
+
+  @Prop({ type: String, required: false, default: 'CHOQUE_VIAL' })
+  tipo_siniestro?: string;
+
   @Prop({ type: String, required: true, index: true })
   poliza_id: string;
 

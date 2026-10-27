@@ -31,7 +31,11 @@ export class MongoReclamoRepository implements IReclamoRepository {
   }
 
   async findById(reclamoId: string): Promise<ReclamoSiniestro | null> {
-    const doc = await this.reclamoModel.findOne({ reclamo_id: reclamoId }).exec();
+    const doc = await this.reclamoModel
+      .findOne({
+        $or: [{ reclamo_id: reclamoId }, { numero_reclamo: reclamoId }],
+      })
+      .exec();
     if (!doc) return null;
     return this.toDomain(doc);
   }
@@ -110,7 +114,7 @@ export class MongoReclamoRepository implements IReclamoRepository {
     }));
 
     return new ReclamoSiniestro(
-      doc.reclamo_id,
+      doc.reclamo_id || doc.numero_reclamo || '',
       doc.poliza_id,
       doc.cliente_id,
       doc.fecha_siniestro,
@@ -129,6 +133,8 @@ export class MongoReclamoRepository implements IReclamoRepository {
   private toRaw(reclamo: ReclamoSiniestro): any {
     return {
       reclamo_id: reclamo.reclamoId,
+      numero_reclamo: reclamo.reclamoId,
+      tipo_siniestro: 'CHOQUE_VIAL',
       poliza_id: reclamo.polizaId,
       cliente_id: reclamo.clienteId,
       fecha_siniestro: reclamo.fechaSiniestro,

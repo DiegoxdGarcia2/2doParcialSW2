@@ -24,7 +24,7 @@ export class IdempotencyGuard implements CanActivate {
     const req = http.getRequest();
     const res = http.getResponse();
 
-    const rawKey = req.headers['idempotency-key'] || req.headers['Idempotency-Key'];
+    const rawKey = req.headers['idempotency-key'] || req.headers['Idempotency-Key'] || req.headers['x-idempotency-key'] || req.headers['X-Idempotency-Key'];
 
     // Si la petición no incluye clave de idempotencia, se permite continuar o se exige si es POST/PUT
     if (!rawKey) {
