@@ -137,12 +137,90 @@ class _SyncQueueScreenState extends State<SyncQueueScreen> {
     });
   }
 
+  void _mostrarConfiguracionIp() {
+    final controller = TextEditingController(text: AppConfig.hostIp);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AegisTheme.surface,
+        title: const Text('Configurar IP del Backend (MS2)', style: TextStyle(color: AegisTheme.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Selecciona o escribe la dirección IP de tu PC:',
+              style: TextStyle(color: AegisTheme.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              style: const TextStyle(color: AegisTheme.textPrimary),
+              decoration: const InputDecoration(
+                labelText: 'Host IP / Dominio',
+                hintText: '127.0.0.1',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ActionChip(
+                  backgroundColor: AegisTheme.surfaceElevated,
+                  label: const Text('127.0.0.1 (USB Reverse)', style: TextStyle(color: AegisTheme.primary)),
+                  onPressed: () => controller.text = '127.0.0.1',
+                ),
+                ActionChip(
+                  backgroundColor: AegisTheme.surfaceElevated,
+                  label: const Text('192.168.1.148 (Wi-Fi)', style: TextStyle(color: AegisTheme.textPrimary)),
+                  onPressed: () => controller.text = '192.168.1.148',
+                ),
+                ActionChip(
+                  backgroundColor: AegisTheme.surfaceElevated,
+                  label: const Text('10.0.2.2 (Emulador)', style: TextStyle(color: AegisTheme.textSecondary)),
+                  onPressed: () => controller.text = '10.0.2.2',
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CANCELAR', style: TextStyle(color: AegisTheme.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                AppConfig.hostIp = controller.text.trim();
+              });
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: AegisTheme.primary,
+                  content: Text('Host IP cambiado a: ${AppConfig.hostIp}'),
+                ),
+              );
+            },
+            child: const Text('GUARDAR'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cola de Sincronización Idempotente (CU08)'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_ethernet),
+            tooltip: 'Ajustar IP Backend',
+            onPressed: _mostrarConfiguracionIp,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _cargarCola,

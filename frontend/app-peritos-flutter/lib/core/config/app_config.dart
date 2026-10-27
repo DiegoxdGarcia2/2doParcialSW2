@@ -1,7 +1,8 @@
 class AppConfig {
-  // En Android Emulator 10.0.2.2 apunta al host.
-  // En Windows o teléfono físico conectado por Wi-Fi se puede ajustar la IP local.
-  static String hostIp = '10.0.2.2'; 
+  // En teléfono físico conectado por USB con ADB reverse: 127.0.0.1
+  // En misma red Wi-Fi LAN: 192.168.1.148
+  // En emulador Android Studio: 10.0.2.2
+  static String hostIp = '127.0.0.1'; 
   
   static String get ms2BaseUrl => 'http://$hostIp:8002';
   static String get ms3BaseUrl => 'http://$hostIp:8003';
