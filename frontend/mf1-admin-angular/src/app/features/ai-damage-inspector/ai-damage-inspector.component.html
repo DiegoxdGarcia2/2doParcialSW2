@@ -14,7 +14,7 @@
         <span class="case-code">{{ assessment?.numero_reclamo || inputClaim.numero_reclamo }}</span>
         <span class="telemetry-pill">
           <span class="pulsing-dot-teal"></span>
-          REAL-TIME TELEMETRY
+          TELEMETRÍA EN TIEMPO REAL
         </span>
         <span class="verified-icon material-symbols-outlined">verified</span>
       </div>
@@ -70,10 +70,10 @@
             <span class="engine-name">{{ assessment?.modelo_deep_learning || 'TensorFlow CrashNet-CNN-v2.1' }}</span>
             <span class="pulsing-dot-indigo"></span>
           </div>
-          <span class="engine-subtext">Multi-Angle Semantic Segmentation • 100-FPS LiDAR Recon • Sensor ID: FL-04</span>
+          <span class="engine-subtext">Segmentación Semántica Multi-Ángulo • Recon LiDAR 100-FPS • Sensor ID: FL-04</span>
         </div>
       </div>
-      <span class="engine-valid-pill">99.4% VALID</span>
+      <span class="engine-valid-pill">99.4% VÁLIDO</span>
     </div>
   </section>
 
@@ -82,11 +82,11 @@
     <div class="visualizer-header">
       <div class="flex items-center gap-2">
         <span class="material-symbols-outlined text-primary text-[20px]">document_scanner</span>
-        <h2 class="visualizer-title">Crash Zone Diagnostic & 3D Sensor Recon</h2>
+        <h2 class="visualizer-title">Diagnóstico de Zona de Impacto y Reconstrucción 3D</h2>
       </div>
       <div class="lidar-recon-pill">
         <span class="material-symbols-outlined text-[14px] text-primary">sensors</span>
-        <span>LiDAR RECON V3.8</span>
+        <span>RECONSTRUCCIÓN LiDAR V3.8</span>
       </div>
     </div>
 
@@ -97,21 +97,21 @@
         [class.active]="activeMode === 'boxes'"
         (click)="switchMode('boxes')"
       >
-        AI Overlays
+        Superposiciones de IA (Bounding Boxes)
       </button>
       <button
         class="mode-btn"
         [class.active]="activeMode === 'lidar'"
         (click)="switchMode('lidar')"
       >
-        Raw Telemetry (LiDAR)
+        Telemetría Bruta (LiDAR)
       </button>
       <button
         class="mode-btn"
         [class.active]="activeMode === 'thermal'"
         (click)="switchMode('thermal')"
       >
-        Thermal Stress Strain
+        Esfuerzo Térmico y Deformación
       </button>
     </div>
 
@@ -148,9 +148,9 @@
         >
           <div class="tag-header">
             <span class="pulsing-dot-red"></span>
-            <span class="tag-title error">Front Bumper Core</span>
+            <span class="tag-title error">Núcleo de Parachoques Frontal</span>
           </div>
-          <span class="tag-meta">Impact 94.2% • Est. $3,450</span>
+          <span class="tag-meta">Impacto 94.2% • Est. $3,450</span>
         </div>
 
         <!-- Floating Bounding Tag: Left Headlamp -->
@@ -161,9 +161,9 @@
         >
           <div class="tag-header">
             <span class="dot-amber"></span>
-            <span class="tag-title amber">LED Matrix & Fender</span>
+            <span class="tag-title amber">Matriz LED y Guardabarros</span>
           </div>
-          <span class="tag-meta">Deform 88.7% • Est. $1,820</span>
+          <span class="tag-meta">Deformación 88.7% • Est. $1,820</span>
         </div>
 
         <!-- Floating Bounding Tag: Hood Structure -->
@@ -174,9 +174,9 @@
         >
           <div class="tag-header">
             <span class="dot-indigo"></span>
-            <span class="tag-title indigo">Hood Fracture</span>
+            <span class="tag-title indigo">Fractura Estructural de Capó</span>
           </div>
-          <span class="tag-meta">Stress 96.1% • Est. $2,100</span>
+          <span class="tag-meta">Tensión 96.1% • Est. $2,100</span>
         </div>
       </div>
 
@@ -191,7 +191,7 @@
           <path d="M 30,120 Q 80,40 170,90" fill="none" stroke="#80d5cb" stroke-width="1.5" stroke-dasharray="2 2"></path>
         </svg>
         <div class="lidar-hud-pill">
-          <span>{{ assessment?.lidar_telemetria?.['puntos_voxel_retorno'] || '1.28M Voxel Return' }} • Depth Delta +42mm</span>
+          <span>{{ assessment?.lidar_telemetria?.['puntos_voxel_retorno'] || 'Retorno 1.28M Vóxeles' }} • Delta Profundidad +42mm</span>
         </div>
       </div>
 
@@ -199,7 +199,7 @@
       <div class="layer-thermal-view" *ngIf="activeMode === 'thermal'">
         <div class="thermal-hud-card">
           <span class="material-symbols-outlined text-error text-[18px]">local_fire_department</span>
-          <span>Torsional Chassis Strain: {{ assessment?.estres_termico?.['estres_chasis_torsional_mpa'] || 780 }} MPa</span>
+          <span>Deformación Torsional del Chasis: {{ assessment?.estres_termico?.['estres_chasis_torsional_mpa'] || 780 }} MPa</span>
         </div>
       </div>
 
@@ -207,16 +207,16 @@
       <div class="viewport-bottom-hud">
         <div class="hud-sync-badge">
           <span class="material-symbols-outlined text-[14px] spin">sync</span>
-          <span>3D SEMANTIC SEGMENTATION SYNCED</span>
+          <span>SEGMENTACIÓN SEMÁNTICA 3D SINCRONIZADA</span>
         </div>
-        <span class="hud-camera-id">CAMERA SENSOR: FL-04</span>
+        <span class="hud-camera-id">SENSOR DE CÁMARA: FL-04</span>
       </div>
     </div>
 
     <!-- Active Damage Breakdown Pill Scroll -->
     <div class="damage-hotspots-container">
       <div class="hotspots-header">
-        <span class="hotspots-title">Validated Damage Hotspots</span>
+        <span class="hotspots-title">Puntos Críticos de Daño Validados</span>
         <span class="hotspots-count">{{ assessment?.piezas_averiadas?.length || 3 }} Detectadas</span>
       </div>
 
@@ -243,7 +243,7 @@
           </div>
           <div class="hotspot-right">
             <span class="part-cost">${{ part.costo_total_usd | number:'1.2-2' }}</span>
-            <span class="part-conf">{{ (part.confianza_deteccion * 100) | number:'1.1-1' }}% AI Conf</span>
+            <span class="part-conf">{{ (part.confianza_deteccion * 100) | number:'1.1-1' }}% Conf. IA</span>
           </div>
         </div>
       </div>
@@ -257,9 +257,9 @@
       <div class="section-title-row">
         <div class="flex items-center gap-1.5">
           <span class="material-symbols-outlined text-primary text-[20px]">build_circle</span>
-          <h3 class="section-title">OEM Parts Dispatch Matrix</h3>
+          <h3 class="section-title">Matriz de Despacho de Repuestos OEM</h3>
         </div>
-        <span class="epc-badge">EPC INTEGRATED</span>
+        <span class="epc-badge">INTEGRADO CON CATÁLOGO EPC</span>
       </div>
 
       <div class="oem-items-list">
@@ -282,7 +282,7 @@
           <div class="oem-bottom">
             <div class="flex items-center gap-1">
               <span class="material-symbols-outlined text-primary text-[14px]">local_shipping</span>
-              <span>Tesla Official Distribution Hub (In Stock)</span>
+              <span>Centro Oficial de Distribución (En Stock)</span>
             </div>
             <span class="oem-eta">{{ part.tiempo_estimado_despacho }}</span>
           </div>

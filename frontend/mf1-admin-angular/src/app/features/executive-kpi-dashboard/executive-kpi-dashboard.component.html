@@ -1,0 +1,325 @@
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+
+  <!-- Toast de Notificación -->
+  <div *ngIf="notificationMessage" 
+       class="p-3 rounded-lg border flex items-center gap-2 text-xs font-medium transition-all"
+       [ngClass]="{
+         'bg-primary-fixed/20 border-primary text-primary-container': notificationType === 'success',
+         'bg-surface-container border-outline-variant text-on-surface': notificationType === 'info'
+       }">
+    <span class="material-symbols-outlined text-sm">check_circle</span>
+    <span>{{ notificationMessage }}</span>
+  </div>
+
+  <!-- Encabezado Ejecutivo: Solvencia & Pulso de Riesgo -->
+  <section class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline/20">
+    <div>
+      <div class="flex items-center gap-2">
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-xs font-mono shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+          <span class="uppercase tracking-wider text-primary font-bold">Telemetría de Solvencia en Vivo</span>
+        </div>
+        <span class="text-xs font-mono text-outline-variant">Pilar I & II Solvencia II</span>
+      </div>
+      <h1 class="text-2xl font-bold font-headline text-on-surface mt-1 tracking-tight">
+        Panel Ejecutivo de KPIs &amp; Pulso de Riesgo
+      </h1>
+      <p class="text-xs text-on-surface-variant font-body">
+        Consolidado gerencial de índices de capital técnico, siniestralidad neta, primas brutas emitidas y automatización con IA.
+      </p>
+    </div>
+
+    <!-- Filtro de Periodos Trimestrales -->
+    <div class="flex items-center bg-surface-container-high rounded-full p-1 shadow-sm self-start md:self-auto">
+      <button 
+        type="button"
+        (click)="setPeriod('Q3')"
+        [class.bg-surface]="activePeriod === 'Q3'"
+        [class.text-primary]="activePeriod === 'Q3'"
+        [class.shadow-sm]="activePeriod === 'Q3'"
+        [class.font-bold]="activePeriod === 'Q3'"
+        [class.text-secondary]="activePeriod !== 'Q3'"
+        class="px-3 py-1 rounded-full text-xs font-mono transition-all">
+        Q3 2026
+      </button>
+      <button 
+        type="button"
+        (click)="setPeriod('YTD')"
+        [class.bg-surface]="activePeriod === 'YTD'"
+        [class.text-primary]="activePeriod === 'YTD'"
+        [class.shadow-sm]="activePeriod === 'YTD'"
+        [class.font-bold]="activePeriod === 'YTD'"
+        [class.text-secondary]="activePeriod !== 'YTD'"
+        class="px-3 py-1 rounded-full text-xs font-mono transition-all">
+        Acumulado (YTD)
+      </button>
+    </div>
+  </section>
+
+  <!-- Bento Grid de 4 KPIs Ejecutivos Principales -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <!-- KPI 1: Ratio de Solvencia II -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-mono text-secondary uppercase tracking-tight">Solvencia II</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
+            <span class="material-symbols-outlined text-[12px] mr-0.5">verified</span>
+            Óptimo
+          </span>
+        </div>
+        <div class="mt-2">
+          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">248.6%</div>
+          <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
+            <span class="material-symbols-outlined text-sm">trending_up</span>
+            <span class="font-mono font-bold">+4.2% Anual</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4">
+        <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+          <div class="bg-primary h-full rounded-full" style="width: 82%"></div>
+        </div>
+        <span class="text-[10px] text-secondary font-mono mt-1 block">Umbral regulatorio mínimo: 160%</span>
+      </div>
+    </div>
+
+    <!-- KPI 2: Ratio Neto de Siniestralidad (Net Loss Ratio) -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-mono text-secondary uppercase tracking-tight">Siniestralidad Neta</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container text-on-surface text-[10px] font-bold font-mono">
+            Meta &lt;85%
+          </span>
+        </div>
+        <div class="mt-2">
+          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">81.4%</div>
+          <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
+            <span class="material-symbols-outlined text-sm">trending_down</span>
+            <span class="font-mono font-bold">-2.6% vs Mercado</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4">
+        <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+          <div class="bg-primary-container h-full rounded-full" style="width: 71%"></div>
+        </div>
+        <span class="text-[10px] text-secondary font-mono mt-1 block">Vehicular: 78% • Otros: 84%</span>
+      </div>
+    </div>
+
+    <!-- KPI 3: Primas Brutas Emitidas (GWP) -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-mono text-secondary uppercase tracking-tight">Primas Emitidas</span>
+          <span class="text-xs font-mono text-tertiary font-bold">+14.1%</span>
+        </div>
+        <div class="mt-2">
+          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">$842.5M</div>
+          <div class="flex items-center gap-1 mt-1 text-secondary text-xs">
+            <span class="material-symbols-outlined text-sm text-tertiary">pie_chart</span>
+            <span class="font-mono text-[11px]">Auto 62% • Salud 38%</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4">
+        <div class="flex gap-1 w-full">
+          <div class="bg-primary h-1.5 rounded-l-full" style="width: 62%" title="Flotas Vehiculares"></div>
+          <div class="bg-tertiary h-1.5 rounded-r-full" style="width: 38%" title="Salud y Especiales"></div>
+        </div>
+        <span class="text-[10px] text-secondary font-mono mt-1 block">Ritmo Proyectado: $1.12B</span>
+      </div>
+    </div>
+
+    <!-- KPI 4: Automatización STP con IA -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-mono text-secondary uppercase tracking-tight">Liquidación STP (IA)</span>
+          <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+        </div>
+        <div class="mt-2">
+          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">76.8%</div>
+          <div class="flex items-center gap-1 mt-1 text-primary text-xs font-bold">
+            <span class="material-symbols-outlined text-sm">bolt</span>
+            <span class="font-mono">&lt;45s Auto-Liquidado</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4">
+        <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+          <div class="bg-tertiary h-full rounded-full" style="width: 76.8%"></div>
+        </div>
+        <span class="text-[10px] text-secondary font-mono mt-1 block">21,480 siniestros / mes</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gráfico de Incurrencia y Reservas Actuariales -->
+  <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high space-y-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-surface-container-high gap-2">
+      <div>
+        <h2 class="text-base font-bold text-on-surface font-headline">
+          Incurrencia de Siniestros &amp; Reservas Técnicas
+        </h2>
+        <p class="text-xs text-secondary">
+          Trayectoria móvil semestral con desglose por flota vehicular y coberturas de salud
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-1 rounded-full bg-surface-container text-xs font-mono font-semibold text-primary">
+          Reserva Actuarial: $214M USD
+        </span>
+        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono text-xs font-bold">
+          Riesgo Bajo
+        </span>
+      </div>
+    </div>
+
+    <!-- Chart Canvas -->
+    <div class="h-64 relative">
+      <canvas #lossTrendChart></canvas>
+    </div>
+  </section>
+
+  <!-- Bento Grid Inferior: Cohortes de Cartera & Alertas de Fraude -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Cohortes de Cartera (7 cols) -->
+    <section class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-surface-container-high">
+        <h2 class="text-sm font-bold text-on-surface font-headline flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-lg">pie_chart</span>
+          Exposición por Cohortes de Cartera
+        </h2>
+        <span class="text-xs font-mono text-secondary">Suscripción Actuarial</span>
+      </div>
+
+      <div class="space-y-3">
+        <!-- Cohorte 1: Flota Comercial -->
+        <div class="bg-surface-container-low rounded-lg p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined text-lg">directions_car</span>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-on-surface">Flotas Comerciales Nivel 1</div>
+                <div class="text-[10px] font-mono text-secondary">Telemetría IoT • 42,100 Unidades</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
+                Riesgo 0.24 Bajo
+              </span>
+              <div class="text-[10px] font-mono text-secondary mt-0.5">$522.4M Exposición</div>
+            </div>
+          </div>
+          <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+            <div class="bg-primary h-full rounded-full" style="width: 24%"></div>
+          </div>
+          <div class="flex justify-between items-center text-[10px] text-on-surface-variant font-mono">
+            <span>Límite de riesgo objetivo: &lt;0.45</span>
+            <span class="text-primary font-bold">99.1% Cumplimiento</span>
+          </div>
+        </div>
+
+        <!-- Cohorte 2: Colectivos Salud -->
+        <div class="bg-surface-container-low rounded-lg p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
+                <span class="material-symbols-outlined text-lg">medical_services</span>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-on-surface">Colectivos de Salud y Catastróficos</div>
+                <div class="text-[10px] font-mono text-secondary">Estratificación ML CIE-11 • 18 Planes Empresariales</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface text-[10px] font-bold font-mono">
+                Reserva $14.2M
+              </span>
+              <div class="text-[10px] font-mono text-secondary mt-0.5">$320.1M Exposición</div>
+            </div>
+          </div>
+          <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+            <div class="bg-tertiary h-full rounded-full" style="width: 68%"></div>
+          </div>
+          <div class="flex justify-between items-center text-[10px] text-on-surface-variant font-mono">
+            <span>Velocidad de adjudicación: 3.4 min</span>
+            <span class="text-tertiary font-bold">92.4% Tasa de Pérdida</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Centinela de Fraude & Auditoría Criptográfica (5 cols) -->
+    <div class="lg:col-span-5 space-y-4">
+
+      <!-- Ticker de Redes de Fraude Interceptadas -->
+      <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high">
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-full bg-error-container/40 text-error flex items-center justify-center shrink-0 mt-0.5">
+            <span class="material-symbols-outlined text-lg">security</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-xs font-bold text-error font-headline">14 Redes de Fraude Interceptadas</span>
+              <span class="px-1.5 py-0.5 rounded bg-error text-white text-[10px] font-mono font-bold">CRÍTICO</span>
+            </div>
+            <p class="text-xs text-on-surface mt-1 font-body">
+              El ensamble Isolation Forest neutralizó colisiones sindicadas en talleres mecánicos del sector norte.
+            </p>
+            <div class="flex items-center justify-between mt-3 pt-2 bg-surface-container-low rounded-lg px-2.5 py-1.5">
+              <span class="text-xs font-mono font-bold text-primary">Ahorro: $1,842,500 USD</span>
+              <span class="text-[10px] font-mono text-secondary">Latencia: 142ms</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Paquete de Auditoría Criptográfica Actuarial -->
+      <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-xl">verified_user</span>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-on-surface">Paquete de Auditoría Actuarial</div>
+            <div class="text-[10px] font-mono text-secondary">Sello Criptográfico SHA-256</div>
+          </div>
+        </div>
+        <button 
+          type="button"
+          (click)="descargarAuditoria()"
+          class="px-3 py-1.5 bg-primary text-on-primary text-xs font-bold rounded-lg shadow-sm hover:opacity-95 transition-all flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">download</span>
+          <span>Verificar</span>
+        </button>
+      </section>
+
+      <!-- Enlaces Rápidos a Módulos del Perfil C -->
+      <section class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container-high">
+        <span class="text-[11px] font-mono uppercase text-secondary font-bold block mb-2">Accesos Directos Perfil C:</span>
+        <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+          <a routerLink="/actuarial-dashboard" class="p-2 rounded bg-surface-container-low hover:bg-surface-container text-primary flex items-center gap-1.5 transition-colors">
+            <span class="material-symbols-outlined text-sm">stacked_line_chart</span>
+            <span>Motor Actuarial</span>
+          </a>
+          <a routerLink="/risk-fraud-sentinel" class="p-2 rounded bg-surface-container-low hover:bg-surface-container text-primary flex items-center gap-1.5 transition-colors">
+            <span class="material-symbols-outlined text-sm">shield_with_heart</span>
+            <span>Centinela Fraude</span>
+          </a>
+        </div>
+      </section>
+
+    </div>
+
+  </div>
+
+</div>
+

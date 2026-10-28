@@ -32,10 +32,10 @@
             <span class="badge-icon">
               <span class="material-symbols-outlined">hub</span>
             </span>
-            <span class="badge-text">Cluster State: {{ clusterState.cluster_estado }}</span>
+            <span class="badge-text">Estado del Cluster: {{ clusterState.cluster_estado }}</span>
           </div>
-          <h1 class="main-title">Autonomous Claims Orchestrator</h1>
-          <p class="subtitle">LangGraph Multi-Agent Cluster • 5 Active Micro-Agents • Event Mesh: {{ clusterState.kafka_broker }}</p>
+          <h1 class="main-title">Orquestador Autónomo de Siniestros (LangGraph)</h1>
+          <p class="subtitle">Cluster Multi-Agente LangGraph • 5 Micro-Agentes Activos • Malla de Eventos: {{ clusterState.kafka_broker }}</p>
         </div>
         <button class="btn-refresh" (click)="cargarDatosCluster()" title="Resincronizar Estado">
           <span class="material-symbols-outlined" [class.animate-spin]="isLoading">sync</span>
@@ -49,7 +49,7 @@
             <span class="material-symbols-outlined">verified</span>
           </div>
           <div class="kpi-meta">
-            <span class="kpi-label">Cluster Health</span>
+            <span class="kpi-label">Salud del Cluster</span>
             <span class="kpi-value text-teal">{{ clusterState.salud_cluster_pct }}%</span>
           </div>
         </div>
@@ -59,7 +59,7 @@
             <span class="material-symbols-outlined">speed</span>
           </div>
           <div class="kpi-meta">
-            <span class="kpi-label">Avg Mesh Latency</span>
+            <span class="kpi-label">Latencia Promedio de Malla</span>
             <span class="kpi-value text-navy">{{ clusterState.latencia_promedio_ms }}ms</span>
           </div>
         </div>
@@ -91,7 +91,7 @@
       <div class="section-header">
         <div class="title-with-icon">
           <span class="material-symbols-outlined text-indigo">account_tree</span>
-          <h2 class="section-title">LangGraph Mesh State</h2>
+          <h2 class="section-title">Estado del Grafo LangGraph</h2>
         </div>
         <div class="dag-status-pill">
           <span class="pulse-dot"></span>
@@ -292,10 +292,10 @@
       </div>
       <div class="hitl-content">
         <div class="hitl-tag">
-          <span class="tag-label">Safeguard Active</span>
+          <span class="tag-label">Salvaguarda Activa</span>
           <span class="pulse-dot-green"></span>
         </div>
-        <h3 class="hitl-title">HITL Fallback Threshold: Active</h3>
+        <h3 class="hitl-title">Umbral de Derivación Humana (HITL): Activo</h3>
         <p class="hitl-desc">
           Transferencia automática al auditor de siniestros si el score de confianza es menor al 85% o si la divergencia en el peritaje supera los $2,000 USD.
         </p>
@@ -311,7 +311,7 @@
         </div>
         <div class="live-indicator">
           <span class="pulse-dot"></span>
-          <span>LIVE</span>
+          <span>EN VIVO</span>
         </div>
       </div>
 
@@ -336,7 +336,7 @@
 
     <!-- 8. Swarm Control Operations -->
     <section class="card ops-card">
-      <span class="ops-title">Cluster Operations &amp; Swarm Control</span>
+      <span class="ops-title">Operaciones del Cluster &amp; Control de Enjambre</span>
       <div class="ops-buttons-grid">
         <button
           class="btn-ops btn-run-cycle"

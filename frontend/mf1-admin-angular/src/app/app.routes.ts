@@ -4,6 +4,7 @@ import { RiskFraudSentinelComponent } from './features/risk-fraud-sentinel/risk-
 import { AiDamageInspectorComponent } from './features/ai-damage-inspector/ai-damage-inspector.component';
 import { AutonomousAgentMonitorComponent } from './features/autonomous-agent-monitor/autonomous-agent-monitor.component';
 import { VoiceMcpReportsComponent } from './features/voice-mcp-reports/voice-mcp-reports.component';
+import { ExecutiveKpiDashboardComponent } from './features/executive-kpi-dashboard/executive-kpi-dashboard.component';
 
 export const routes: Routes = [
   {
@@ -14,6 +15,10 @@ export const routes: Routes = [
   {
     path: 'autonomous-agent-monitor',
     component: AutonomousAgentMonitorComponent
+  },
+  {
+    path: 'executive-kpi-dashboard',
+    component: ExecutiveKpiDashboardComponent
   },
   {
     path: 'ai-damage-inspector',

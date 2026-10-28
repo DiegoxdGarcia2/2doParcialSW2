@@ -13,7 +13,7 @@
       <div class="header-info">
         <div class="header-title-row">
           <span class="material-symbols-outlined text-primary text-[24px]">shield_with_heart</span>
-          <h1 class="header-title">Risk & Fraud Sentinel</h1>
+          <h1 class="header-title">Centinela de Riesgo y Detección de Fraude</h1>
           <span class="badge-tag">CU13 • ML No Supervisado</span>
         </div>
         <p class="header-subtitle">
@@ -47,7 +47,7 @@
       </div>
       <div class="guard-pill">
         <span class="material-symbols-outlined text-[14px]">verified</span>
-        <span>Active Guard Live</span>
+        <span>Vigilancia Activa en Vivo</span>
       </div>
     </div>
   </section>
@@ -57,7 +57,7 @@
     <!-- Circular SVG Gauge Bento -->
     <div class="gauge-card">
       <div class="gauge-card-header">
-        <span class="gauge-label">Fleet Threat Index</span>
+        <span class="gauge-label">Índice de Amenaza de Cartera</span>
         <span class="material-symbols-outlined text-secondary text-[18px]">radar</span>
       </div>
 
@@ -75,7 +75,7 @@
         </svg>
         <div class="gauge-center-content">
           <span class="gauge-number">{{ summary?.threat_index_percentage || 12.4 }}%</span>
-          <span class="gauge-badge">{{ summary?.threat_level_label || 'LOW-MODERATE' }}</span>
+          <span class="gauge-badge">{{ getEtiquetaNivelAmenaza(summary?.threat_level_label) }}</span>
         </div>
       </div>
       <p class="gauge-caption">Monitoreo de Exposición de Flota (Sub-Umbral Actuarial)</p>
@@ -87,7 +87,7 @@
         <div class="metric-icon-box teal">
           <span class="material-symbols-outlined text-[20px]">verified_user</span>
         </div>
-        <span class="metric-trend-pill positive">+3.4% MoM</span>
+        <span class="metric-trend-pill positive">+3.4% Mensual</span>
       </div>
       <div class="metric-data">
         <span class="metric-value teal">
@@ -103,7 +103,7 @@
         <div class="metric-icon-box error">
           <span class="material-symbols-outlined text-[20px]">warning</span>
         </div>
-        <span class="metric-trend-pill alert">SIU Priority</span>
+        <span class="metric-trend-pill alert">Prioridad SIU</span>
       </div>
       <div class="metric-data">
         <span class="metric-value error">
@@ -298,7 +298,7 @@
   <!-- Real-Time Flagged Claims Feed -->
   <section class="claims-feed-section">
     <div class="feed-header">
-      <h3 class="feed-title">Neural Detection Pipeline & Alertas Vivas</h3>
+      <h3 class="feed-title">Flujo de Detección Neuronal & Alertas Vivas</h3>
       <span class="feed-count">{{ filteredAlerts.length }} Expedientes Monitoreados</span>
     </div>
 
@@ -381,7 +381,7 @@
           >
             <span class="material-symbols-outlined text-[16px]">pause_circle</span>
             <span>
-              {{ alert.estado_pago === 'CONGELADO_PREVENTIVO_SAGA' ? 'Pago Congelado en Saga' : 'Freeze Payout' }}
+              {{ alert.estado_pago === 'CONGELADO_PREVENTIVO_SAGA' ? 'Pago Congelado en Saga' : 'Congelar Pago Preventivo' }}
             </span>
           </button>
 
@@ -409,7 +409,7 @@
     <div class="sec-top">
       <div class="sec-title-box">
         <span class="material-symbols-outlined text-tertiary text-[20px]">lock</span>
-        <span class="sec-title">OWASP API Shield & Keycloak Active</span>
+        <span class="sec-title">Escudo de Seguridad OWASP y Keycloak Activo</span>
       </div>
       <span class="pulsing-dot-green"></span>
     </div>

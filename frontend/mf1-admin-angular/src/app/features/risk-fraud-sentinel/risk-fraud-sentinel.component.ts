@@ -324,12 +324,27 @@ export class RiskFraudSentinelComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Traduce las etiquetas de nivel de amenaza a español para la interfaz
+   */
+  getEtiquetaNivelAmenaza(label?: string): string {
+    if (!label) return 'BAJO-MODERADO';
+    switch (label.toUpperCase()) {
+      case 'LOW': return 'BAJO';
+      case 'LOW-MODERATE': return 'BAJO-MODERADO';
+      case 'MODERATE': return 'MODERADO';
+      case 'HIGH': return 'ALTO';
+      case 'CRITICAL': return 'CRÍTICO';
+      default: return label;
+    }
+  }
+
+  /**
    * Resumen de respaldo si la conexión no responde
    */
   private loadFallbackSummary(): void {
     this.summary = {
       threat_index_percentage: 12.4,
-      threat_level_label: 'LOW-MODERATE',
+      threat_level_label: 'BAJO-MODERADO',
       perdidas_prevenidas_usd: 18600000.0,
       total_siniestros_auditados: 1200,
       total_alertas_activas: 2,
