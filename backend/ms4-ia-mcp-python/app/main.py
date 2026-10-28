@@ -100,192 +100,88 @@ def health_cloud_dbs():
     }
 
 # ---------------------------------------------------------------------------
-# CU12: Machine Learning Supervisado (Random Forest)
+# CU12: Machine Learning Supervisado (Random Forest) - Router Modular ICONIX
 # ---------------------------------------------------------------------------
-class PredictVentasRequest(BaseModel):
-    meses_a_proyectar: int = Field(default=3, ge=1, le=12)
-    edad_promedio_asegurado: Optional[int] = 34
-    tipo_vehiculo: Optional[str] = "SUV"
-
-@app.post("/api/ml/predict-sales-and-premium")
-def predict_sales_and_premium(payload: PredictVentasRequest):
-    """
-    Predice la demanda de pólizas del próximo mes y calcula la prima óptima
-    a partir del histórico entrenado con Scikit-Learn Random Forest.
-    """
-    proyecciones = []
-    base_mes = datetime.date.today()
-    for m in range(1, payload.meses_a_proyectar + 1):
-        target_date = base_mes + datetime.timedelta(days=30 * m)
-        proyecciones.append({
-            "mes": target_date.strftime("%Y-%m"),
-            "ventas_estimadas_polizas": 115 + (m * 8),
-            "prima_optima_sugerida_usd": 685.50 + (m * 12.0),
-            "intervalo_confianza": [640.00, 730.00],
-            "score_r2_modelo": 0.892,
-            "metodo": "RandomForestRegressor(n_estimators=150, max_depth=12)"
-        })
-    return {"proyecciones": proyecciones}
+from app.boundaries.ml_supervised_router import router as ml_supervised_router
+app.include_router(ml_supervised_router)
 
 # ---------------------------------------------------------------------------
-# CU13: Machine Learning No Supervisado (K-Means + Isolation Forest)
+# CU13: Machine Learning No Supervisado (K-Means + Isolation Forest) - Router Modular ICONIX
 # ---------------------------------------------------------------------------
-@app.get("/api/ml/clusters-and-anomalies")
-def get_clusters_and_anomalies():
-    return {
-        "kmeans_segmentacion": [
-            {
-                "cluster_id": 0,
-                "nombre": "Conductores Prudentes VIP (Bajo Riesgo)",
-                "total_asegurados": 540,
-                "frecuencia_siniestros_anual": 0.04,
-                "prima_recomendada_descuento": "-15%"
-            },
-            {
-                "cluster_id": 1,
-                "nombre": "Riesgo Moderado Estándar",
-                "total_asegurados": 380,
-                "frecuencia_siniestros_anual": 0.18,
-                "prima_recomendada_descuento": "0%"
-            },
-            {
-                "cluster_id": 2,
-                "nombre": "Alta Siniestralidad / Conductores Jóvenes",
-                "total_asegurados": 120,
-                "frecuencia_siniestros_anual": 0.62,
-                "prima_recomendada_descuento": "+25% (Recargo Actuarial)"
-            }
-        ],
-        "isolation_forest_fraude": {
-            "modelo": "IsolationForest(contamination=0.03, random_state=42)",
-            "alertas_activas": [
-                {
-                    "reclamo_id": "REC-2026-00388",
-                    "taller_mecanico": "Taller Los Alamos",
-                    "monto_solicitado_usd": 7800.00,
-                    "monto_promedio_mercado_usd": 2100.00,
-                    "score_anomalia": -0.84,
-                    "es_anomalo": True,
-                    "accion": "CONGELADO_PREVENTIVO_SAGA"
-                }
-            ]
-        }
-    }
+from app.boundaries.ml_unsupervised_router import router as ml_unsupervised_router
+from app.controls.unsupervised_fraud_control import unsupervised_control
+app.include_router(ml_unsupervised_router)
+
+@app.get("/api/ml/clusters-and-anomalies", tags=["CU13 - Machine Learning No Supervisado (K-Means & Isolation Forest)"])
+def get_clusters_and_anomalies_legacy():
+    """Endpoint de compatibilidad directa que redirige al Control ICONIX."""
+    return unsupervised_control.obtener_resumen_dashboard()
 
 # ---------------------------------------------------------------------------
-# CU11: Deep Learning TensorFlow / Keras (Imagen y Video de Choques)
+# CU11: Deep Learning TensorFlow / Keras (Imagen y Video de Choques) - Router Modular ICONIX
 # ---------------------------------------------------------------------------
-class ImageDamageAnalysisRequest(BaseModel):
-    imagen_url: str
-    numero_reclamo: str
-
-@app.post("/api/dl/detect-damage")
-def detect_damage_in_evidence(payload: ImageDamageAnalysisRequest):
-    """
-    Simulación e inferencia de la red convolucional TensorFlow (MobileNet / YOLO)
-    que detecta piezas averiadas y porcentaje de severidad estructural.
-    """
-    return {
-        "numero_reclamo": payload.numero_reclamo,
-        "imagen_analizada": payload.imagen_url,
-        "modelo_deep_learning": "TensorFlow-CrashNet-CNN-v2.1.keras",
-        "piezas_danadas": [
-            {"pieza": "PARACHOQUES_DELANTERO", "probabilidad": 0.95, "severidad": "80%", "sugerencia": "REEMPLAZO"},
-            {"pieza": "OPTICA_DERECHA", "probabilidad": 0.92, "severidad": "100%", "sugerencia": "REEMPLAZO"},
-            {"pieza": "CAPO", "probabilidad": 0.87, "severidad": "30%", "sugerencia": "ENDEREZADO_PINTURA"}
-        ],
-        "severidad_global": "MEDIA",
-        "costo_estimado_reparacion_usd": 2850.00
-    }
+from app.boundaries.dl_vision_router import router as dl_vision_router
+app.include_router(dl_vision_router)
 
 # ---------------------------------------------------------------------------
-# CU14: Agente Autónomo LangGraph (Metas y Skills)
+# CU14: Agente Autónomo LangGraph (Metas, Re-planning y Skills) - Router Modular ICONIX
 # ---------------------------------------------------------------------------
-@app.post("/api/agent/trigger-evaluation")
-def trigger_agent_evaluation():
+from app.boundaries.agent_monitor_router import router as agent_monitor_router
+from app.controls.langgraph_autonomous_agent import langgraph_agent_control
+app.include_router(agent_monitor_router)
+
+@app.post("/api/agent/trigger-evaluation", tags=["CU14 - Agente Autónomo LangGraph (Metas, Re-planning & Skills)"])
+def trigger_agent_evaluation_legacy():
+    """Endpoint legado de compatibilidad que dispara el ciclo del Grafo LangGraph."""
+    res = langgraph_agent_control.ejecutar_ciclo_autonomo()
     return {
         "agente": "AutonomousInsuranceAgent",
         "framework": "LangGraph",
-        "metas_evaluadas": [
-            {
-                "meta": "META_1_EVITAR_CUELLOS_BOTELLA_SINIESTROS",
-                "skill": "SKILL_REASIGNAR_PERITO_GPS",
-                "estado": "EJECUTADO",
-                "detalle": "Siniestro REC-2026-00492 evaluado por geocerca. Perito Ing. Roberto Paz asignado en 2.4 km."
-            },
-            {
-                "meta": "META_2_PROTEGER_RESERVAS_Y_FRENAR_FRAUDES",
-                "skill": "SKILL_CONGELAR_LIQUIDACION_SAGA",
-                "estado": "STANDBY",
-                "detalle": "Sin siniestros activos marcados con score de fraude > 0.80."
-            }
-        ]
+        "ciclo_id": res.ciclo_id,
+        "reflexion": res.reflexion_final,
+        "skills_disparadas": res.skills_disparadas,
+        "siniestros_resueltos": res.siniestros_resueltos
     }
 
 # ---------------------------------------------------------------------------
-# CU15: Servidor MCP, Whisper STT, Blindaje OWASP Anti-SQLi y Exportación
+# CU15: Servidor MCP, Whisper STT, Blindaje OWASP Anti-SQLi y Exportación (ICONIX)
 # ---------------------------------------------------------------------------
-class VoiceCommandRequest(BaseModel):
+from app.boundaries.voice_mcp_router import router as voice_mcp_router
+from app.controls.voice_mcp_control import VoiceMcpControl
+app.include_router(voice_mcp_router)
+
+legacy_voice_control = VoiceMcpControl()
+
+class LegacyVoiceReportRequest(BaseModel):
     comando_voz_transcrito: str
-    formato_exportacion: Optional[str] = "XLSX" # XLSX, PDF, DOCX, CSV
+    formato_exportacion: Optional[str] = "XLSX"
 
-SQL_INJECTION_PATTERNS = [
-    r"(\bDROP\b|\bDELETE\b|\bTRUNCATE\b|\bUPDATE\b|\bINSERT\b)",
-    r"(\bUNION\b.*\bSELECT\b)",
-    r"(--|;|\/\*|\*\/|xp_)",
-    r"(\bOR\b\s+1\s*=\s*1)",
-    r"(\bEXEC\b|\bEXECUTE\b)"
-]
-
-def validar_seguridad_owasp_anti_sqli(texto: str) -> bool:
-    """Verifica si el comando por voz intenta inyectar sentencias SQL."""
-    texto_upper = texto.upper()
-    for pattern in SQL_INJECTION_PATTERNS:
-        if re.search(pattern, texto_upper):
-            return False
-    return True
-
-@app.post("/api/mcp/voice-report")
-def process_voice_report_mcp(payload: VoiceCommandRequest):
-    """
-    Procesa un reporte dictado por voz mediante el Protocolo MCP (Model Context Protocol).
-    Aplica blindaje OWASP: el usuario no escribe SQL libre, sino que el MCP Router
-    invoca exclusivamente MCP Tools tipadas con ORM parametrizado.
-    """
-    # 1. Blindaje OWASP Anti-SQLi
-    if not validar_seguridad_owasp_anti_sqli(payload.comando_voz_transcrito):
+@app.post("/api/mcp/voice-report", tags=["CU15 - Voice MCP Reports & Anti-SQLi"])
+def process_voice_report_legacy(payload: LegacyVoiceReportRequest):
+    """Endpoint de compatibilidad directa que redirige al Control ICONIX de CU15."""
+    res = legacy_voice_control.procesarComandoVozCompleto(
+        audio_bytes=None,
+        texto_dictado=payload.comando_voz_transcrito,
+        formato_preferido=payload.formato_exportacion.lower()
+    )
+    if res.auditoria_seguridad.es_amenaza:
         raise HTTPException(
             status_code=400,
-            detail="[ALERTA OWASP DE SEGURIDAD] Intento de inyección SQL o comando malicioso detectado en el audio. Petición neutralizada."
+            detail=f"[ALERTA OWASP DE SEGURIDAD] Intento de inyección SQL neutralizado [{res.auditoria_seguridad.rule_triggered}]. Petición bloqueada."
         )
-
-    # 2. Invocación de Tool MCP Tipada
-    tool_invocada = "mcp_tool_reporte_siniestralidad_y_polizas"
-    
     return {
         "protocolo": "Model Context Protocol (MCP) Server v1.0",
-        "whisper_stt_transcripcion": payload.comando_voz_transcrito,
-        "filtro_owasp_status": "SEGURO - Inyeccion SQL Bloqueada al 100%",
-        "mcp_tool_ejecutada": tool_invocada,
-        "parametros_extraidos": {
-            "periodo": "ULTIMO_TRIMESTRE",
-            "agrupacion": "TIPO_VEHICULO",
-            "formato": payload.formato_exportacion
-        },
-        "datos_reporte": {
-            "total_polizas_emitidas": 420,
-            "total_siniestros_liquidados": 38,
-            "monto_total_indemnizado_usd": 94500.00,
-            "distribucion": [
-                {"tipo": "SUV", "polizas": 180, "siniestros": 14, "costo_usd": 38200.00},
-                {"tipo": "SEDAN", "polizas": 140, "siniestros": 12, "costo_usd": 27400.00},
-                {"tipo": "CAMIONETA", "polizas": 75, "siniestros": 9, "costo_usd": 24100.00},
-                {"tipo": "MOTOCICLETA", "polizas": 25, "siniestros": 3, "costo_usd": 4800.00}
-            ]
-        },
+        "whisper_stt_transcripcion": res.transcripcion,
+        "filtro_owasp_status": "SEGURO - Inyección SQL Bloqueada al 100%",
+        "mcp_tool_ejecutada": res.intencion_detectada,
+        "traza_mcp": res.traza_mcp.model_dump() if res.traza_mcp else {},
+        "kpis_resumen": res.kpis_resumen,
         "descarga_generada": {
-            "nombre_archivo": f"reporte_aegiscore_voz_{datetime.date.today()}.{payload.formato_exportacion.lower()}",
-            "url_descarga": f"/static/reports/reporte_aegiscore_{datetime.date.today()}.{payload.formato_exportacion.lower()}",
-            "disponible_en": ["XLSX", "PDF", "DOCX", "CSV"]
+            "nombre_archivo": res.documento.filename if res.documento else "",
+            "url_descarga": res.documento.download_url if res.documento else "",
+            "sha256": res.documento.sha256_hash if res.documento else "",
+            "tamano_kb": res.documento.file_size_kb if res.documento else 0.0,
+            "formato": res.formato_solicitado.upper()
         }
     }
+

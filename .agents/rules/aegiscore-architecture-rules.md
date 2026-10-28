@@ -81,3 +81,14 @@ Para no bloquear el desarrollo, cada integrante es dueño de su célula vertical
 - El usuario puede solicitar reportes mediante lenguaje natural dictado por micrófono (Whisper STT).
 - **Prohibido concatenar texto dictado a consultas SQL dinámicas.**
 - El audio transcrito pasa por un filtro de sanitización OWASP. El agente solo puede invocar **Tools MCP tipadas** predefinidas que ejecutan consultas mediante **ORMs parametrizados**.
+
+---
+
+## 7. Sistema de Diseño Stitch MCP ("Executive Precision")
+- El diseño visual del ERP y las aplicaciones móviles debe derivarse del proyecto de **Google Stitch MCP** `projects/9132956203380267795` (*Empresas de Seguros*).
+- **Consistencia de Tokens:** Todas las vistas (React PWA, Angular BI, Flutter) deben consumir los tokens centralizados en `frontend/design-system/`:
+  - Paleta: Executive Teal (`#005C55`, `#0F766E`), Navy (`#0F172A`), AI Indigo (`#4F46E5`), Alabaster (`#F8FAFC`).
+  - Tríada Tipográfica: `Plus Jakarta Sans` (Títulos/KPIs), `Inter` (Cuerpo/Formularios), `JetBrains Mono` (Telemetría/Hashes).
+  - Archivos de referencia: `variables.css`, `tokens.json`, `tailwind.preset.js`.
+  - Prototipos interactivos: `frontend/design-system/screens/index.html`.
+

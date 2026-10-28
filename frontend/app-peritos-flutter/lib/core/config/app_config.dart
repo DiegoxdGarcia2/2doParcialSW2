@@ -6,6 +6,7 @@ class AppConfig {
   
   static String get ms2BaseUrl => 'http://$hostIp:8002';
   static String get ms3BaseUrl => 'http://$hostIp:8003';
+  static String get ms4BaseUrl => 'http://$hostIp:8000';
 
   // Endpoints MS2 Siniestros
   static String get endpointSosEmergency => '$ms2BaseUrl/api/v1/siniestros/sos';
@@ -19,6 +20,12 @@ class AppConfig {
   static String get endpointSagaStatus => '$ms3BaseUrl/api/actuarial/saga-status';
   static String get endpointHealthMs3 => '$ms3BaseUrl/health';
 
+  // Endpoints MS4 IA & Servidor MCP (CU15)
+  static String get endpointVoiceMcpCommand => '$ms4BaseUrl/api/v1/mcp/voice-command';
+  static String get endpointMcpTools => '$ms4BaseUrl/api/v1/mcp/tools';
+  static String get endpointDownloadReport => '$ms4BaseUrl/api/v1/mcp/download-report';
+
   // Cliente ID para el protocolo de Idempotencia
   static const String clientId = 'FLUTTER_MOBILE';
 }
+

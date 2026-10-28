@@ -1,0 +1,145 @@
+<!-- Sidebar Shell (Executive Precision) -->
+<aside class="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between shadow-lg">
+  <div class="flex flex-col">
+    <!-- Brand Header -->
+    <div class="h-16 px-6 flex items-center justify-between border-b border-outline/20">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-on-primary">
+          <span class="material-symbols-outlined text-xl">security</span>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-1">
+            <span class="font-headline text-base text-inverse-on-surface font-bold tracking-tight">AegisCore</span>
+            <span class="material-symbols-outlined text-primary-fixed text-sm">auto_awesome</span>
+          </div>
+          <span class="text-[10px] font-mono text-primary-fixed-dim uppercase tracking-wider">Enterprise AI ERP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section Title -->
+    <div class="px-5 pt-5 pb-2">
+      <span class="text-[11px] font-mono uppercase tracking-wider text-outline-variant font-semibold">
+        Intelligence & Underwriting (Perfil C)
+      </span>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="px-3 space-y-1">
+      <a routerLink="/actuarial-dashboard" 
+         routerLinkActive="bg-primary-container text-on-primary font-semibold shadow-sm"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-white/10 transition-colors">
+        <span class="material-symbols-outlined text-lg">stacked_line_chart</span>
+        <span class="text-xs flex-1 truncate">CU12: Actuarial & Sales Prediction</span>
+      </a>
+
+      <a href="javascript:void(0)" 
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-white/10 transition-colors">
+        <span class="material-symbols-outlined text-lg">speed</span>
+        <span class="text-xs flex-1 truncate">Executive KPI Dashboard</span>
+      </a>
+
+      <a routerLink="/ai-damage-inspector" 
+         routerLinkActive="bg-primary-container text-on-primary font-semibold shadow-sm"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-white/10 transition-colors">
+        <span class="material-symbols-outlined text-lg">document_scanner</span>
+        <span class="text-xs flex-1 truncate">CU11: AI CrashNet (TensorFlow)</span>
+      </a>
+
+      <a routerLink="/risk-fraud-sentinel" 
+         routerLinkActive="bg-primary-container text-on-primary font-semibold shadow-sm"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-white/10 transition-colors">
+        <span class="material-symbols-outlined text-lg">shield_with_heart</span>
+        <span class="text-xs flex-1 truncate">CU13: Risk & Fraud Sentinel</span>
+      </a>
+
+      <a routerLink="/autonomous-agent-monitor" 
+         routerLinkActive="bg-primary-container text-on-primary font-semibold shadow-sm"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-white/10 transition-colors">
+        <span class="material-symbols-outlined text-lg">hub</span>
+        <span class="text-xs flex-1 truncate">CU14: Autonomous Agent Monitor</span>
+      </a>
+
+      <a routerLink="/voice-mcp-reports" 
+         routerLinkActive="bg-primary-container text-on-primary font-semibold shadow-sm"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-white/10 transition-colors">
+        <span class="material-symbols-outlined text-lg">mic</span>
+        <span class="text-xs flex-1 truncate">CU15: Voice MCP Reports (Anti-SQLi)</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Inference Engine Status Badge -->
+  <div class="p-4 border-t border-outline/20 space-y-3 bg-inverse-surface/95">
+    <div class="rounded-lg bg-white/5 p-3 border border-outline/20 space-y-1.5">
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] font-mono text-outline-variant uppercase">Motor de Inferencia</span>
+        <span class="flex items-center gap-1 text-primary-fixed text-[10px] font-mono">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary-fixed animate-pulse"></span>
+          Activo
+        </span>
+      </div>
+      <div class="text-xs font-mono text-inverse-on-surface font-bold truncate">
+        Random Forest Regressor v2.0
+      </div>
+      <div class="flex items-center justify-between text-outline-variant text-[10px] font-mono">
+        <span>Solvency II Compliant</span>
+        <span class="material-symbols-outlined text-primary-fixed text-xs">verified_user</span>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between px-1">
+      <div class="flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-primary-fixed text-sm">security</span>
+        <span class="text-[10px] font-mono text-outline-variant uppercase font-semibold">OWASP Guard Level 3</span>
+      </div>
+      <span class="px-1.5 py-0.5 rounded bg-primary-container/40 text-primary-fixed text-[10px] font-mono font-bold uppercase">
+        Safe
+      </span>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Wrapper with Left Padding for Fixed Sidebar -->
+<div class="pl-72 flex flex-col min-h-screen">
+  <!-- Top Global Header -->
+  <header class="h-16 bg-surface/95 backdrop-blur-md shadow-sm z-40 px-6 flex items-center justify-between border-b border-surface-container-high sticky top-0">
+    <div class="flex items-center gap-4 flex-1 max-w-xl">
+      <div class="relative w-full max-w-md">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+        <input class="w-full h-9 pl-9 pr-3 rounded-lg bg-surface-container-low border border-outline-variant/60 text-xs text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" 
+               placeholder="Buscar pólizas, modelos actuariales, clusters..." 
+               type="text"/>
+      </div>
+      <div class="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container border border-surface-container-high">
+        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+        <span class="text-[11px] font-mono text-on-surface-variant font-medium">SSO Keycloak • JWT RS256</span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container text-[11px] font-mono text-on-surface-variant">
+        <span class="material-symbols-outlined text-xs text-primary">cloud_done</span>
+        <span>Neon PG: Conectado (1,200 polizas)</span>
+      </div>
+
+      <div class="h-6 w-px bg-outline-variant/40"></div>
+
+      <!-- User Profile Badge -->
+      <div class="flex items-center gap-2.5">
+        <div class="flex flex-col items-end hidden sm:flex">
+          <span class="text-xs font-semibold text-on-surface">Lic. Mariana Vargas</span>
+          <span class="text-[10px] font-mono text-primary font-bold uppercase">Actuario Senior • Admin</span>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs">
+          MV
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Router Outlet Main Content -->
+  <main class="flex-1 bg-background">
+    <router-outlet></router-outlet>
+  </main>
+</div>

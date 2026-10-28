@@ -1,0 +1,432 @@
+<div class="sentinel-wrapper">
+  <!-- Top Notification Toast -->
+  <div *ngIf="notificationMessage" class="toast-alert" [ngClass]="notificationType">
+    <span class="material-symbols-outlined text-[18px]">
+      {{ notificationType === 'success' ? 'check_circle' : notificationType === 'error' ? 'error' : 'info' }}
+    </span>
+    <span>{{ notificationMessage }}</span>
+  </div>
+
+  <!-- Header & Telemetry Bar -->
+  <section class="sentinel-header-card">
+    <div class="header-top">
+      <div class="header-info">
+        <div class="header-title-row">
+          <span class="material-symbols-outlined text-primary text-[24px]">shield_with_heart</span>
+          <h1 class="header-title">Risk & Fraud Sentinel</h1>
+          <span class="badge-tag">CU13 • ML No Supervisado</span>
+        </div>
+        <p class="header-subtitle">
+          Detección Autónoma de Redes de Fraude, Segmentación K-Means y Escaneo de Anomalías con Isolation Forest
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-action-secondary" (click)="loadTelemetry()" [disabled]="loading" title="Actualizar Telemetría">
+          <span class="material-symbols-outlined text-[18px]" [class.spin]="loading">sync</span>
+          <span>Actualizar</span>
+        </button>
+        <button class="btn-action-secondary" (click)="retrainModels()" [disabled]="retraining" title="Reentrenar K-Means e Isolation Forest">
+          <span class="material-symbols-outlined text-[18px]" [class.spin]="retraining">model_training</span>
+          <span>Reentrenar</span>
+        </button>
+        <button class="btn-action-primary" (click)="showEvaluateModal = !showEvaluateModal">
+          <span class="material-symbols-outlined text-[18px]">add_moderator</span>
+          <span>Auditar Siniestro</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Guard Sub-bar -->
+    <div class="telemetry-bar">
+      <div class="telemetry-item">
+        <span class="pulsing-dot"></span>
+        <span class="telemetry-text">
+          K-Means Cluster (K=3) • Isolation Forest (Score Anomaly Continuous) • MongoDB Atlas Activo
+        </span>
+      </div>
+      <div class="guard-pill">
+        <span class="material-symbols-outlined text-[14px]">verified</span>
+        <span>Active Guard Live</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sentinel Threat Gauge & Executive KPI Matrix -->
+  <section class="bento-threat-grid">
+    <!-- Circular SVG Gauge Bento -->
+    <div class="gauge-card">
+      <div class="gauge-card-header">
+        <span class="gauge-label">Fleet Threat Index</span>
+        <span class="material-symbols-outlined text-secondary text-[18px]">radar</span>
+      </div>
+
+      <div class="gauge-svg-container">
+        <svg class="gauge-svg" viewBox="0 0 100 100">
+          <circle class="gauge-bg" cx="50" cy="50" r="42"></circle>
+          <circle
+            class="gauge-progress"
+            cx="50"
+            cy="50"
+            r="42"
+            stroke-dasharray="263.89"
+            [style.strokeDashoffset]="263.89 - (263.89 * (summary?.threat_index_percentage || 12.4) / 100)"
+          ></circle>
+        </svg>
+        <div class="gauge-center-content">
+          <span class="gauge-number">{{ summary?.threat_index_percentage || 12.4 }}%</span>
+          <span class="gauge-badge">{{ summary?.threat_level_label || 'LOW-MODERATE' }}</span>
+        </div>
+      </div>
+      <p class="gauge-caption">Monitoreo de Exposición de Flota (Sub-Umbral Actuarial)</p>
+    </div>
+
+    <!-- KPI Metric 1: Prevented Fraud Loss -->
+    <div class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon-box teal">
+          <span class="material-symbols-outlined text-[20px]">verified_user</span>
+        </div>
+        <span class="metric-trend-pill positive">+3.4% MoM</span>
+      </div>
+      <div class="metric-data">
+        <span class="metric-value teal">
+          ${{ (summary?.perdidas_prevenidas_usd || 18600000) | number:'1.0-0' }} USD
+        </span>
+        <span class="metric-label">Pérdidas Prevenidas por Detección Temprana (YTD)</span>
+      </div>
+    </div>
+
+    <!-- KPI Metric 2: Flagged Claims -->
+    <div class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon-box error">
+          <span class="material-symbols-outlined text-[20px]">warning</span>
+        </div>
+        <span class="metric-trend-pill alert">SIU Priority</span>
+      </div>
+      <div class="metric-data">
+        <span class="metric-value error">
+          {{ summary?.total_alertas_activas || 0 }} Reclamos
+        </span>
+        <span class="metric-label">Bajo Sospecha Activa en Isolation Forest</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- K-Means Fleet Clustering Section -->
+  <section class="clusters-section">
+    <div class="section-header">
+      <div class="section-title-box">
+        <span class="material-symbols-outlined text-primary text-[20px]">bubble_chart</span>
+        <h2 class="section-title">Segmentación de Asegurados (K-Means K=3)</h2>
+      </div>
+      <div class="silhouette-box">
+        <span class="silhouette-label">Silhouette Score:</span>
+        <span class="silhouette-value">{{ summary?.silhouette_score_kmeans || 0.42 }}</span>
+        <span class="silhouette-tag">Alta Cohesión</span>
+      </div>
+    </div>
+
+    <div class="clusters-grid">
+      <!-- Cluster Cards -->
+      <div class="cluster-cards-column">
+        <div
+          *ngFor="let cluster of summary?.clusters_kmeans"
+          class="cluster-card"
+          [ngClass]="{
+            'cluster-safe': cluster.cluster_id === 0,
+            'cluster-mid': cluster.cluster_id === 1,
+            'cluster-danger': cluster.cluster_id === 2
+          }"
+        >
+          <div class="cluster-card-top">
+            <span class="cluster-name">{{ cluster.nombre }}</span>
+            <span class="cluster-pct-badge">{{ cluster.porcentaje_flota }}% de Flota</span>
+          </div>
+          <div class="cluster-metrics-row">
+            <div class="cluster-metric">
+              <span class="cm-label">Asegurados</span>
+              <span class="cm-val">{{ cluster.total_asegurados }}</span>
+            </div>
+            <div class="cluster-metric">
+              <span class="cm-label">Edad Media</span>
+              <span class="cm-val">{{ cluster.edad_media }} años</span>
+            </div>
+            <div class="cluster-metric">
+              <span class="cm-label">Siniestros/Año</span>
+              <span class="cm-val">{{ cluster.frecuencia_siniestros_anual }}</span>
+            </div>
+          </div>
+          <div class="cluster-action-note">
+            <span class="material-symbols-outlined text-[16px]">price_change</span>
+            <span class="action-note-text">Estrategia: {{ cluster.prima_recomendada_descuento }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Radar Chart -->
+      <div class="cluster-chart-container">
+        <div class="chart-header">
+          <span class="chart-title">Espacio Multidimensional de Clusters</span>
+          <span class="chart-subtitle">Normalización Min-Max por Atributo</span>
+        </div>
+        <div class="canvas-box">
+          <canvas #clustersChart></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Modal / Slide-out: Real-Time Claim Audit -->
+  <section *ngIf="showEvaluateModal" class="audit-modal-card">
+    <div class="modal-header">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-[20px]">manage_search</span>
+        <h3 class="modal-title">Auditar Siniestro en Tiempo Real (Isolation Forest)</h3>
+      </div>
+      <button class="btn-close" (click)="showEvaluateModal = false">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+    </div>
+
+    <div class="modal-grid">
+      <div class="form-group">
+        <label>ID Reclamo</label>
+        <input type="text" [(ngModel)]="newClaim.reclamo_id" placeholder="REC-2026-00501" />
+      </div>
+      <div class="form-group">
+        <label>Póliza Vinculada</label>
+        <input type="text" [(ngModel)]="newClaim.poliza_id" placeholder="POL-2026-AUT-00100" />
+      </div>
+      <div class="form-group">
+        <label>Edad del Conductor</label>
+        <input type="number" [(ngModel)]="newClaim.edad_conductor" />
+      </div>
+      <div class="form-group">
+        <label>Tipo de Vehículo</label>
+        <select [(ngModel)]="newClaim.tipo_vehiculo">
+          <option value="SUV">SUV</option>
+          <option value="SEDAN">SEDAN</option>
+          <option value="CAMIONETA">CAMIONETA</option>
+          <option value="HATCHBACK">HATCHBACK</option>
+          <option value="MOTOCICLETA">MOTOCICLETA</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Valor Comercial (USD)</label>
+        <input type="number" [(ngModel)]="newClaim.valor_comercial_usd" />
+      </div>
+      <div class="form-group">
+        <label>Monto Solicitado (USD)</label>
+        <input type="number" [(ngModel)]="newClaim.monto_solicitado_usd" />
+      </div>
+      <div class="form-group">
+        <label>Días Transcurridos desde Emisión</label>
+        <input type="number" [(ngModel)]="newClaim.dias_desde_emision" />
+      </div>
+      <div class="form-group">
+        <label>Siniestros Previos</label>
+        <input type="number" [(ngModel)]="newClaim.historial_siniestros" />
+      </div>
+      <div class="form-group span-2">
+        <label>Taller Mecánico Emisor</label>
+        <input type="text" [(ngModel)]="newClaim.taller_mecanico" placeholder="Taller Mecánico Los Álamos" />
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-action-primary" (click)="evaluateClaim()" [disabled]="evaluating">
+        <span class="material-symbols-outlined text-[18px]" [class.spin]="evaluating">analytics</span>
+        <span>{{ evaluating ? 'Auditando...' : 'Ejecutar Diagnóstico Isolation Forest' }}</span>
+      </button>
+    </div>
+
+    <!-- Diagnostic Result Preview -->
+    <div *ngIf="lastEvaluationResult" class="audit-result-banner" [ngClass]="lastEvaluationResult.nivel_criticidad">
+      <div class="result-top">
+        <span class="result-badge">{{ lastEvaluationResult.nivel_criticidad }}</span>
+        <span class="result-score">Score: {{ lastEvaluationResult.score_anomalia }} | Divergencia: +{{ lastEvaluationResult.divergencia_porcentaje }}%</span>
+      </div>
+      <p class="result-motivo">{{ lastEvaluationResult.motivo_sospecha }}</p>
+      <div class="result-actions">
+        <span class="result-status">Estado: {{ lastEvaluationResult.estado_pago }}</span>
+        <button
+          *ngIf="lastEvaluationResult.es_anomalo && lastEvaluationResult.estado_pago !== 'CONGELADO_PREVENTIVO_SAGA'"
+          class="btn-freeze-sm"
+          (click)="freezePayout(lastEvaluationResult)"
+        >
+          <span class="material-symbols-outlined text-[16px]">pause_circle</span>
+          <span>Congelar Pago en Saga</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Filter Tabs -->
+  <section class="filters-row">
+    <button
+      class="filter-pill"
+      [class.active]="activeFilter === 'all'"
+      (click)="setFilter('all')"
+    >
+      Todos ({{ alerts.length }})
+    </button>
+    <button
+      class="filter-pill"
+      [class.active]="activeFilter === 'critical'"
+      (click)="setFilter('critical')"
+    >
+      Críticos / Anomalías
+    </button>
+    <button
+      class="filter-pill"
+      [class.active]="activeFilter === 'siu'"
+      (click)="setFilter('siu')"
+    >
+      Bajo Revisión SIU / Congelados
+    </button>
+    <button
+      class="filter-pill"
+      [class.active]="activeFilter === 'archived'"
+      (click)="setFilter('archived')"
+    >
+      Fast-Track / Normales
+    </button>
+  </section>
+
+  <!-- Real-Time Flagged Claims Feed -->
+  <section class="claims-feed-section">
+    <div class="feed-header">
+      <h3 class="feed-title">Neural Detection Pipeline & Alertas Vivas</h3>
+      <span class="feed-count">{{ filteredAlerts.length }} Expedientes Monitoreados</span>
+    </div>
+
+    <div class="claims-cards-list">
+      <article
+        *ngFor="let alert of filteredAlerts"
+        class="claim-card"
+        [ngClass]="{
+          'card-critical': alert.nivel_criticidad === 'CRÍTICO',
+          'card-high': alert.nivel_criticidad === 'ALTO',
+          'card-medium': alert.nivel_criticidad === 'MEDIO',
+          'card-normal': alert.nivel_criticidad === 'NORMAL'
+        }"
+      >
+        <div class="card-header">
+          <div class="card-title-group">
+            <span
+              class="status-indicator"
+              [ngClass]="{
+                'dot-error': alert.nivel_criticidad === 'CRÍTICO',
+                'dot-amber': alert.nivel_criticidad === 'ALTO',
+                'dot-mid': alert.nivel_criticidad === 'MEDIO',
+                'dot-success': alert.nivel_criticidad === 'NORMAL'
+              }"
+            ></span>
+            <span class="claim-id-code">{{ alert.reclamo_id }}</span>
+            <span *ngIf="alert.poliza_id" class="policy-id-code">{{ alert.poliza_id }}</span>
+          </div>
+
+          <div class="header-tags">
+            <span
+              class="anomaly-pill"
+              [ngClass]="{
+                'pill-error': alert.es_anomalo,
+                'pill-safe': !alert.es_anomalo
+              }"
+            >
+              {{ alert.es_anomalo ? 'Divergencia +' + alert.divergencia_porcentaje + '%' : 'Score ' + alert.score_anomalia + ' Seguro' }}
+            </span>
+            <span class="criticidad-badge" [ngClass]="alert.nivel_criticidad">
+              {{ alert.nivel_criticidad }}
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="details-row">
+            <div class="detail-item">
+              <span class="detail-label">Taller Emisor</span>
+              <span class="detail-val">{{ alert.taller_mecanico }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Monto Solicitado</span>
+              <span class="detail-val price">${{ alert.monto_solicitado_usd | number:'1.2-2' }} USD</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Media Mercado</span>
+              <span class="detail-val">${{ alert.monto_promedio_mercado_usd | number:'1.2-2' }} USD</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Estado Pago</span>
+              <span class="detail-val status-val" [class.frozen]="alert.estado_pago === 'CONGELADO_PREVENTIVO_SAGA'">
+                {{ alert.estado_pago }}
+              </span>
+            </div>
+          </div>
+
+          <p class="motivo-text">
+            {{ alert.motivo_sospecha }}
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card-actions">
+          <button
+            *ngIf="alert.es_anomalo"
+            class="btn-freeze"
+            [disabled]="alert.estado_pago === 'CONGELADO_PREVENTIVO_SAGA' || freezingClaimId === alert.reclamo_id"
+            (click)="freezePayout(alert)"
+          >
+            <span class="material-symbols-outlined text-[16px]">pause_circle</span>
+            <span>
+              {{ alert.estado_pago === 'CONGELADO_PREVENTIVO_SAGA' ? 'Pago Congelado en Saga' : 'Freeze Payout' }}
+            </span>
+          </button>
+
+          <button class="btn-escalate" (click)="escalateToSIU(alert)">
+            <span class="material-symbols-outlined text-[16px]">local_police</span>
+            <span>Escalar a SIU</span>
+          </button>
+
+          <button class="btn-audit" (click)="auditInvoice(alert)">
+            <span class="material-symbols-outlined text-[16px]">troubleshoot</span>
+            <span>Auditar Factura</span>
+          </button>
+        </div>
+      </article>
+
+      <div *ngIf="filteredAlerts.length === 0" class="empty-feed">
+        <span class="material-symbols-outlined text-[36px] text-secondary">check_circle</span>
+        <p>No se encontraron siniestros que coincidan con el filtro seleccionado.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security & OWASP Shield Live Telemetry -->
+  <section class="security-telemetry-card">
+    <div class="sec-top">
+      <div class="sec-title-box">
+        <span class="material-symbols-outlined text-tertiary text-[20px]">lock</span>
+        <span class="sec-title">OWASP API Shield & Keycloak Active</span>
+      </div>
+      <span class="pulsing-dot-green"></span>
+    </div>
+
+    <div class="sec-grid">
+      <div class="sec-metric">
+        <span class="sec-label">SQLi & Prompt Injections</span>
+        <span class="sec-val success">0 Bloqueados (WAF Parametrizado)</span>
+      </div>
+      <div class="sec-metric">
+        <span class="sec-label">Keycloak SSO JWT RS256</span>
+        <span class="sec-val success">Válido • Rol ACTUARIO / ADMIN</span>
+      </div>
+      <div class="sec-metric">
+        <span class="sec-label">MongoDB Atlas Telemetría</span>
+        <span class="sec-val">Colección alertas_fraude_anomalias</span>
+      </div>
+    </div>
+  </section>
+</div>

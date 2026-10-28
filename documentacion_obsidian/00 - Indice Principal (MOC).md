@@ -6,11 +6,12 @@ Bienvenido a la Bóveda de Conocimiento Arquitectónico y Memoria Técnica de **
 
 ## 📌 Navegación Rápida
 - [[02 - Arquitectura del Sistema/Arquitectura 4 Niveles y Patrones|🏛️ Arquitectura en 4 Niveles y Patrones de Código]]
-- [[01 - Requisitos y Casos de Uso/Matriz de Casos de Uso CU01-CU15|📋 Requisitos y Casos de Uso (CU01 al CU15)]]
-- [[03 - Modulos y Servicios Core/Microservicios y Modulos Backend|⚙️ Microservicios Backend y Frontends]]
+- [[01 - Requisitos y Casos de Uso/CU11 al CU15 - Inteligencia Artificial, Agentes y Servidor MCP|🧠 Perfil C: Casos de Uso CU11 al CU15 (IA, Agentes, MCP)]]
+- [[03 - Modulos y Servicios Core/MS4 Python IA y Servidor MCP|🐍 MS4 Python (IA, LangGraph & Servidor MCP)]]
+- [[03 - Modulos y Servicios Core/MF1 Angular Admin y Dashboard BI|🅰️ MF1 Angular Admin & BI Actuarial]]
 - [[04 - Base de Datos y Modelos/Persistencia Poliglota y Esquemas|💾 Persistencia Políglota (PostgreSQL, MongoDB, DynamoDB)]]
 - [[05 - Guias Operativas y Despliegue/Puesta en Marcha Docker Compose|🚀 Guía Operativa y Docker Compose]]
-- [[06 - Bitacora y Memoria de Cambios (Changelog)/2026-10-22 - Inicializacion Scaffolding Fundacional|📝 Bitácora de Cambios (Changelog)]]
+- [[06 - Bitacora y Memoria de Cambios (Changelog)/2026-10-27 - Implementacion Completa Casos de Uso Perfil C (CU11-CU15)|📝 Bitácora: Cierre Completo Perfil C (CU11-CU15)]]
 
 ---
 

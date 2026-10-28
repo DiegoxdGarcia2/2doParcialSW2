@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>AegisCore AI Enterprise</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'on-error-container': '#93000a', 'surface-container-highest': '#d3e4fe', 'on-secondary-fixed': '#131b2e', 'on-tertiary': '#ffffff', 'on-primary': '#ffffff', 'on-tertiary-fixed-variant': '#3323cc', 'on-secondary-fixed-variant': '#3f465c', 'surface-container-lowest': '#ffffff', 'tertiary-container': '#5951ef', 'error': '#ba1a1a', 'tertiary-fixed-dim': '#c3c0ff', 'inverse-surface': '#213145', 'surface-variant': '#d3e4fe', 'surface-bright': '#f8f9ff', 'inverse-primary': '#80d5cb', 'surface-container': '#e5eeff', 'primary-fixed': '#9cf2e8', 'outline': '#6e7977', 'surface': '#f8f9ff', 'primary-fixed-dim': '#80d5cb', 'on-primary-fixed': '#00201d', 'secondary-fixed-dim': '#bec6e0', 'inverse-on-surface': '#eaf1ff', 'surface-container-high': '#dce9ff', 'on-tertiary-container': '#ebe8ff', 'secondary-fixed': '#dae2fd', 'secondary-container': '#dae2fd', 'tertiary-fixed': '#e2dfff', 'tertiary': '#3f33d6', 'on-error': '#ffffff', 'on-primary-container': '#a3faef', 'on-surface-variant': '#3e4947', 'background': '#f8f9ff', 'error-container': '#ffdad6', 'on-background': '#0b1c30', 'on-surface': '#0b1c30', 'primary-container': '#0f766e', 'on-secondary-container': '#5c647a', 'surface-dim': '#cbdbf5', 'secondary': '#565e74', 'outline-variant': '#bdc9c6', 'on-tertiary-fixed': '#0f0069', 'on-primary-fixed-variant': '#00504a', 'primary': '#005c55', 'surface-container-low': '#eff4ff', 'on-secondary': '#ffffff', 'surface-tint': '#006a63' }, borderRadius: { 'DEFAULT': '0.25rem', 'lg': '0.5rem', 'xl': '0.75rem', 'full': '9999px' }, spacing: { 'space-2xl': '2rem', 'space-xxs': '0.125rem', 'margin-mobile': '1rem', 'space-md': '0.75rem', 'space-xs': '0.25rem', 'gutter': '1.5rem', 'space-xl': '1.5rem', 'space-sm': '0.5rem', 'space-3xl': '3rem', 'margin': '2rem', 'space-lg': '1rem', 'gutter-mobile': '0.75rem' }, fontFamily: { 'headline-sm': ['Plus Jakarta Sans'], 'body-sm': ['Inter'], 'headline-md': ['Plus Jakarta Sans'], 'headline-xl-mobile': ['Plus Jakarta Sans'], 'body-xs': ['Inter'], 'body-lg': ['Inter'], 'headline-lg': ['Plus Jakarta Sans'], 'label-telemetry': ['JetBrains Mono'], 'headline-xl': ['Plus Jakarta Sans'], 'display-lg-mobile': ['Plus Jakarta Sans'], 'display-lg': ['Plus Jakarta Sans'], 'body-md': ['Inter'], 'label-code': ['JetBrains Mono'] }, fontSize: { 'headline-sm': ['16px', { lineHeight: '22px', letterSpacing: '-0.005em', fontWeight: '600' }], 'body-sm': ['13px', { lineHeight: '18px', fontWeight: '400' }], 'headline-md': ['18px', { lineHeight: '24px', letterSpacing: '-0.01em', fontWeight: '600' }], 'headline-xl-mobile': ['24px', { lineHeight: '32px', letterSpacing: '-0.015em', fontWeight: '600' }], 'body-xs': ['12px', { lineHeight: '16px', fontWeight: '500' }], 'body-lg': ['16px', { lineHeight: '24px', fontWeight: '400' }], 'headline-lg': ['22px', { lineHeight: '28px', letterSpacing: '-0.015em', fontWeight: '600' }], 'label-telemetry': ['11px', { lineHeight: '14px', letterSpacing: '0.04em', fontWeight: '600' }], 'headline-xl': ['30px', { lineHeight: '38px', letterSpacing: '-0.02em', fontWeight: '600' }], 'display-lg-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.02em', fontWeight: '700' }], 'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.025em', fontWeight: '700' }], 'body-md': ['14px', { lineHeight: '20px', fontWeight: '400' }], 'label-code': ['13px', { lineHeight: '18px', letterSpacing: '-0.01em', fontWeight: '500' }] } } } };</script><style>@layer base { html, body { width: 100%; margin: 0; padding: 0; min-height: 100%; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; } * { -webkit-tap-highlight-color: transparent; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(15,23,42,0.04)] pt-safe"><div class="h-20 px-margin-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><button aria-label="Navigation Menu" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[22px]">menu</span></button><div class="flex items-center gap-space-xs"><img alt="AegisCore AI Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VBsg3YvkBZB9XOaJfNkytB1PJ6SZZ0TgRCPdqmEDVY1k6bf2lIHgmnimgsL7pVh6Awwy77ovxh23RlDzTQkf4bCZqQHtEYMV8C-nGRUdspL4lklgdgnWIjp2CLmA5MOvOVkaMgfsIVx9_EEp6I4a6knDa96snu52NXHwV1ZODCA9oWIINyIBn0tejeuqhYNcO5QhBOeaRHI-Dc_HtkTrSu4EaMkM_NpGcQUd6StGnK"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary tracking-tight leading-none">AegisCore<span class="text-tertiary ml-0.5">AI</span></span><div class="flex items-center gap-1 mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">SSO OIDC • JWT RS256</span></div></div></div></div><div class="flex items-center gap-space-xs"><div class="hidden sm:flex items-center bg-surface-container px-2 py-1 rounded-full"><span class="font-label-code text-label-code text-on-secondary-container">Field Inspector</span></div><button aria-label="Notifications" class="relative w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span></span></button><div class="flex items-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_0_0_1px_rgba(15,118,110,0.3)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY53CqIUpGoTa-sXX8Xo2IYuIgj5OlqZBb7SMvWnNEUnDtnxsCcBdeEtd6e9Hb645X-GlF9NnE_YB1KNgiwu5UBEnaI2p0xywA8PH-3wiGEIm7GFic9hMOxUpCIH1bGkFFDIOdA5ApS7YxfRGPjRmIjG2AioE80K3JgKX8yRHw0E2fdRyk-dcBSuxcRWUhuIVBJdLZkUZPndV8QGQSL8O59b4w9SFOLqSaboQF8BQ"/></div></div></div></header><main class="flex flex-col relative w-full pt-20 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full px-margin-mobile pb-space-2xl space-y-space-lg">
+<!-- Active Inspection Case Header -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-code text-label-code uppercase tracking-wider">
+          CLM-2025-V89412
+        </span>
+<span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed text-label-telemetry font-label-telemetry">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          REAL-TIME TELEMETRY
+        </span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">verified</span>
+</div>
+<div class="mt-space-sm">
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">
+        2024 Tesla Model Y Long Range
+      </h2>
+<p class="font-body-xs text-body-xs text-on-surface-variant mt-0.5">
+        Policy: <span class="font-label-code text-label-code text-on-surface">#POL-VX-88390</span> • VIN: 5YJYGDEE3RF89104
+      </p>
+</div>
+<!-- AI Core Engine Badge -->
+<div class="mt-space-sm pt-space-xs bg-tertiary-container/10 rounded-lg p-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-md bg-tertiary flex items-center justify-center text-on-tertiary shadow-sm">
+<span class="material-symbols-outlined text-[16px]">neurology</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-code text-[12px] font-semibold text-tertiary leading-none">TensorFlow Vision Core v3.8</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+</div>
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant truncate mt-0.5">
+            Multi-Angle Semantic Segmentation • 100-FPS LiDAR
+          </span>
+</div>
+</div>
+<span class="font-label-telemetry text-label-telemetry px-1.5 py-0.5 rounded bg-surface-container-lowest text-tertiary shadow-xs">
+        99.4% VALID
+      </span>
+</div>
+</section>
+<!-- Interactive Crash Visualizer & Sensor Telemetry -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="p-space-md pb-space-xs flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[20px]">document_scanner</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Crash Zone Diagnostic</h3>
+</div>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant text-label-telemetry font-label-telemetry">
+<span class="material-symbols-outlined text-[13px] text-primary">sensors</span>
+        LiDAR RECON
+      </div>
+</div>
+<!-- Mode Selector Pills -->
+<div class="px-space-md py-space-xs">
+<div class="flex bg-surface-container rounded-lg p-1 gap-1">
+<button class="flex-1 py-1.5 px-2 rounded-md font-label-telemetry text-label-telemetry transition-all bg-surface-container-lowest text-on-surface shadow-xs font-semibold text-center" id="btn-mode-boxes" onclick="switchVisualizerMode('boxes')">
+          AI Overlays
+        </button>
+<button class="flex-1 py-1.5 px-2 rounded-md font-label-telemetry text-label-telemetry transition-all text-on-surface-variant hover:text-on-surface text-center" id="btn-mode-lidar" onclick="switchVisualizerMode('lidar')">
+          Raw Telemetry
+        </button>
+<button class="flex-1 py-1.5 px-2 rounded-md font-label-telemetry text-label-telemetry transition-all text-on-surface-variant hover:text-on-surface text-center" id="btn-mode-thermal" onclick="switchVisualizerMode('thermal')">
+          Thermal Stress
+        </button>
+</div>
+</div>
+<!-- Visualizer Canvas Container -->
+<div class="relative w-full aspect-[4/3] bg-surface-container-high overflow-hidden select-none">
+<!-- Underlying Vehicle Damage Photo -->
+<img class="w-full h-full object-cover" data-alt="High angle direct frontal quarter view of a metallic grey 2024 Tesla Model Y with severe driver-side front bumper collision damage, shattered polycarbonate matrix LED headlamp assembly, buckled aluminum hood seam, and dislodged front radar sensor bracket. Studio grade automotive claims inspection lighting, institutional insurance technology presentation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCx3fyi2LFOE3hDw3Sb6G8eHgn_hLSk3e7xQXTIWEd9BHQw9lVi_s5wz_M5NWDh0T9QCeRoH2TL4EyTMLMv2iBYUrO80grJz545-U3kxPc3UD3WVzixxcpOswoD6j-xqb-xjZ1iRANvcxJZk0atX1tZn1GM6_ZHEV5B65eFNgBrEywi2Qf8QrNY46M3A6genM8PMO_WwLiJFuf2G-9-8Dq7dkRLf4fsOW0hTOC_k8s"/>
+<!-- View Overlays -->
+<div class="absolute inset-0 transition-opacity duration-300" id="layer-boxes">
+<!-- SVG Interactive Damage Polygons -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveaspectratio="none" viewbox="0 0 400 300">
+<!-- Structural Micro-Fracture (Hood) -->
+<polygon fill="rgba(89, 81, 239, 0.18)" points="120,40 280,48 250,110 100,95" stroke="#5951ef" stroke-dasharray="4 2" stroke-width="2"></polygon>
+<!-- Bumper Zone (Crimson) -->
+<polygon fill="rgba(186, 26, 26, 0.22)" points="40,160 190,140 195,260 30,240" stroke="#ba1a1a" stroke-width="2"></polygon>
+<!-- Left Quarter & Headlamp (Amber) -->
+<polygon fill="rgba(217, 119, 6, 0.22)" points="195,120 330,135 340,210 200,205" stroke="#d97706" stroke-width="2"></polygon>
+</svg>
+<!-- Floating Bounding Tag: Front Bumper -->
+<div class="absolute top-[56%] left-[8%] bg-surface-container-lowest/95 backdrop-blur-md rounded-lg p-2 shadow-md cursor-pointer active:scale-95 transition-transform flex flex-col gap-0.5" onclick="selectZone('bumper')">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+<span class="font-headline-sm text-[12px] text-error font-bold leading-tight">Front Bumper Core</span>
+</div>
+<span class="font-body-xs text-[11px] text-on-surface-variant font-medium">Impact 94.2% • Est. $3,450</span>
+</div>
+<!-- Floating Bounding Tag: Left Headlamp -->
+<div class="absolute top-[42%] right-[6%] bg-surface-container-lowest/95 backdrop-blur-md rounded-lg p-2 shadow-md cursor-pointer active:scale-95 transition-transform flex flex-col gap-0.5" onclick="selectZone('headlamp')">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span>
+<span class="font-headline-sm text-[12px] text-on-surface font-bold leading-tight">LED Matrix &amp; Fender</span>
+</div>
+<span class="font-body-xs text-[11px] text-on-surface-variant font-medium">Deform 88.7% • Est. $1,820</span>
+</div>
+<!-- Floating Bounding Tag: Hood Structure -->
+<div class="absolute top-[12%] left-[28%] bg-surface-container-lowest/95 backdrop-blur-md rounded-lg p-2 shadow-md cursor-pointer active:scale-95 transition-transform flex flex-col gap-0.5" onclick="selectZone('hood')">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-headline-sm text-[12px] text-tertiary font-bold leading-tight">Hood Fracture</span>
+</div>
+<span class="font-body-xs text-[11px] text-on-surface-variant font-medium">Stress 96.1% • Est. $2,100</span>
+</div>
+</div>
+<!-- Raw LiDAR Point-Cloud Grid Mode (Hidden initially) -->
+<div class="absolute inset-0 bg-inverse-surface/85 backdrop-blur-xs flex flex-col items-center justify-center p-space-md opacity-0 pointer-events-none transition-opacity duration-300" id="layer-lidar">
+<svg class="w-full h-full opacity-60" viewbox="0 0 200 150">
+<pattern height="10" id="lidargrid" patternunits="userSpaceOnUse" width="10">
+<circle cx="2" cy="2" fill="#80d5cb" r="0.75"></circle>
+<circle cx="7" cy="7" fill="#3f33d6" r="1.1"></circle>
+</pattern>
+<rect fill="url(#lidargrid)" height="150" width="200"></rect>
+<path d="M 30,120 Q 80,40 170,90" fill="none" stroke="#80d5cb" stroke-dasharray="2 2" stroke-width="1.5"></path>
+</svg>
+<div class="absolute bottom-3 bg-surface-container-lowest/90 px-3 py-1.5 rounded-full text-center shadow-md">
+<span class="font-label-telemetry text-label-telemetry text-primary font-bold">1.28M Voxel Return • Depth Delta +42mm</span>
+</div>
+</div>
+<!-- Thermal Heatmap Mode (Hidden initially) -->
+<div class="absolute inset-0 bg-gradient-to-tr from-rose-900/40 via-amber-500/30 to-indigo-900/40 mix-blend-multiply opacity-0 pointer-events-none transition-opacity duration-300 flex items-end p-space-md" id="layer-thermal">
+<div class="bg-surface-container-lowest/95 backdrop-blur-md rounded-lg p-2 flex items-center gap-2 shadow-md">
+<span class="material-symbols-outlined text-error text-[18px]">local_fire_department</span>
+<span class="font-label-telemetry text-label-telemetry text-on-surface font-semibold">Torsional Chassis Strain: 780 MPa</span>
+</div>
+</div>
+<!-- Live Scan Beam HUD Indicator -->
+<div class="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+<div class="flex items-center gap-1.5 px-2 py-1 rounded bg-inverse-surface/85 text-inverse-on-surface">
+<span class="material-symbols-outlined text-inverse-primary text-[14px] animate-spin">sync</span>
+<span class="font-label-telemetry text-[10px] tracking-wide">3D SEGMENTATION SYNCED</span>
+</div>
+<span class="font-label-telemetry text-[10px] bg-inverse-surface/85 text-inverse-on-surface px-2 py-1 rounded font-semibold">
+          CAMERA ID: FL-04
+        </span>
+</div>
+</div>
+<!-- Active Damage Breakdown Pill Scroll -->
+<div class="p-space-md bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-code text-label-code text-on-surface-variant font-semibold uppercase">Validated Damage Hotspots</span>
+<span class="font-label-telemetry text-label-telemetry text-primary font-bold">3 Detected</span>
+</div>
+<div class="grid grid-cols-1 gap-2 pt-1">
+<!-- Item 1 -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-lowest shadow-xs">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-error shrink-0"></span>
+<div class="min-w-0">
+<p class="font-headline-sm text-body-sm text-on-surface font-semibold truncate">Front Fascia &amp; Radar Assembly</p>
+<p class="font-body-xs text-[11px] text-on-surface-variant">Severe impact • Sub-frame intact</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-label-code text-body-sm text-on-surface font-bold">$3,450.00</span>
+<p class="font-label-telemetry text-[10px] text-error font-medium">94.2% AI Conf</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-lowest shadow-xs">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+<div class="min-w-0">
+<p class="font-headline-sm text-body-sm text-on-surface font-semibold truncate">Matrix LED Headlamp (Left)</p>
+<p class="font-body-xs text-[11px] text-on-surface-variant">Lens sheared, internal mount failure</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-label-code text-body-sm text-on-surface font-bold">$1,820.00</span>
+<p class="font-label-telemetry text-[10px] text-on-surface-variant font-medium">88.7% AI Conf</p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-lowest shadow-xs">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary shrink-0"></span>
+<div class="min-w-0">
+<p class="font-headline-sm text-body-sm text-on-surface font-semibold truncate">Hood Alignment &amp; Structural Arm</p>
+<p class="font-body-xs text-[11px] text-on-surface-variant">Hinge deflection +3.4 degrees</p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-label-code text-body-sm text-on-surface font-bold">$2,100.00</span>
+<p class="font-label-telemetry text-[10px] text-tertiary font-medium">96.1% AI Conf</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Part Replacement vs Repair Recommendation Engine -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[20px]">build_circle</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">OEM Dispatch Matrix</h3>
+</div>
+<span class="font-label-telemetry text-label-telemetry px-2 py-0.5 rounded bg-surface-container text-on-secondary-fixed">
+        EPC INTEGRATED
+      </span>
+</div>
+<!-- Recommendations Flow -->
+<div class="space-y-2.5">
+<!-- Matrix Item 1 -->
+<div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-start justify-between gap-2">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-body-sm text-on-surface font-bold">Front Fascia Assembly</span>
+<span class="px-1.5 py-0.2 rounded bg-error-container text-on-error-container font-label-telemetry text-[10px] font-bold">REPLACE</span>
+</div>
+<p class="font-label-code text-body-xs text-on-surface-variant mt-0.5">OEM #1493720-00-A</p>
+</div>
+<span class="font-label-code text-body-md text-on-surface font-bold">$1,450.00</span>
+</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-1 border-t-0">
+<span class="flex items-center gap-1 font-body-xs">
+<span class="material-symbols-outlined text-primary text-[14px]">local_shipping</span>
+            Tesla Distribution Hub (In Stock)
+          </span>
+<span class="font-label-telemetry text-label-telemetry text-primary font-semibold">ETA: 24h</span>
+</div>
+</div>
+<!-- Matrix Item 2 -->
+<div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-start justify-between gap-2">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-body-sm text-on-surface font-bold">Matrix LED Headlamp Left</span>
+<span class="px-1.5 py-0.2 rounded bg-error-container text-on-error-container font-label-telemetry text-[10px] font-bold">REPLACE</span>
+</div>
+<p class="font-label-code text-body-xs text-on-surface-variant mt-0.5">OEM #1514856-00-C</p>
+</div>
+<span class="font-label-code text-body-md text-on-surface font-bold">$1,220.00</span>
+</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-1">
+<span class="flex items-center gap-1 font-body-xs">
+<span class="material-symbols-outlined text-primary text-[14px]">local_shipping</span>
+            Certified OEM Supplier Fremont
+          </span>
+<span class="font-label-telemetry text-label-telemetry text-primary font-semibold">ETA: 48h</span>
+</div>
+</div>
+<!-- Matrix Item 3 -->
+<div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-start justify-between gap-2">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-body-sm text-on-surface font-bold">Radar Sensor &amp; Bracket Unit</span>
+<span class="px-1.5 py-0.2 rounded bg-secondary-container text-on-secondary-fixed font-label-telemetry text-[10px] font-bold">CALIBRATE</span>
+</div>
+<p class="font-label-code text-body-xs text-on-surface-variant mt-0.5">OEM #1607512-00-B • ADAS Optical Alignment</p>
+</div>
+<span class="font-label-code text-body-md text-on-surface font-bold">$380.00</span>
+</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-1">
+<span class="flex items-center gap-1 font-body-xs">
+<span class="material-symbols-outlined text-tertiary text-[14px]">tune</span>
+            Level-2 ADAS Digital Re-benchmarking
+          </span>
+<span class="font-label-telemetry text-label-telemetry text-tertiary font-semibold">Lab Verified</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Automated Settlement Computation Card (ERP Saga Ready) -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Straight-Through Settlement</h3>
+<p class="font-label-telemetry text-[10px] text-on-surface-variant">ORCHESTRATION ENGINE: SAGA-V4</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-label-telemetry font-label-telemetry font-bold">
+        PRE-AUTHORIZED
+      </span>
+</div>
+<!-- Settlement Balance Breakdown -->
+<div class="mt-space-sm space-y-2 p-3 bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Gross AI Assessed Damage</span>
+<span class="font-label-code text-body-sm text-on-surface font-semibold">$7,370.00 USD</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Applied Comprehensive Deductible</span>
+<span class="font-label-code text-body-sm text-error font-semibold">-$500.00 USD</span>
+</div>
+<div class="flex items-center justify-between pt-2 border-t-0 bg-surface-container-lowest p-2 rounded">
+<div>
+<span class="font-headline-sm text-body-md text-on-surface font-bold block">Net Instant Disbursement</span>
+<span class="font-label-telemetry text-[10px] text-primary">Automated FedNow / ACH Transfer</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-primary font-bold tracking-tight">
+          $6,870.00
+        </span>
+</div>
+</div>
+<div class="mt-3 flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[16px]">task_alt</span>
+<span class="font-body-xs text-body-xs">Meets ISO-20022 straight-through validation rules</span>
+</div>
+</section>
+<!-- Inspector Action Controls Bar -->
+<section class="space-y-space-sm pt-space-xs">
+<!-- Primary Settlement Action Button -->
+<button class="w-full h-12 bg-primary-container hover:bg-primary text-on-primary rounded-xl font-headline-sm text-headline-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98]" onclick="triggerSettlementConfirmation(this)">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+<span>Approve Instant Settlement ($6,870.00)</span>
+</button>
+<!-- Secondary Review Escalation Button -->
+<button class="w-full h-11 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-xl font-headline-sm text-body-md flex items-center justify-center gap-2 transition-all" onclick="requestSecondaryAudit(this)">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">assignment_ind</span>
+<span>Request Human Adjuster Secondary Review</span>
+</button>
+<!-- Voice Note MCP Trigger Console Bar -->
+<div class="pt-space-xs flex items-center gap-space-sm">
+<button class="flex-1 h-11 bg-surface-container-lowest rounded-xl px-space-md flex items-center justify-between shadow-xs active:bg-surface-container transition-colors" id="btn-voice-note" onmousedown="startVoiceDictation()" onmouseup="endVoiceDictation()">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]" id="voice-icon">mic</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate" id="voice-text">Hold to dictate inspector notes</span>
+</div>
+<div class="flex items-center gap-0.5">
+<span class="w-1 h-3 rounded-full bg-tertiary"></span>
+<span class="w-1 h-5 rounded-full bg-tertiary"></span>
+<span class="w-1 h-2 rounded-full bg-tertiary"></span>
+</div>
+</button>
+<button aria-label="Share Inspection" class="w-11 h-11 shrink-0 rounded-xl bg-surface-container-lowest text-on-surface flex items-center justify-center shadow-xs">
+<span class="material-symbols-outlined text-[20px]">share</span>
+</button>
+</div>
+</section>
+</div>
+<script>
+  function switchVisualizerMode(mode) {
+    const layerBoxes = document.getElementById('layer-boxes');
+    const layerLidar = document.getElementById('layer-lidar');
+    const layerThermal = document.getElementById('layer-thermal');
+
+    const btnBoxes = document.getElementById('btn-mode-boxes');
+    const btnLidar = document.getElementById('btn-mode-lidar');
+    const btnThermal = document.getElementById('btn-mode-thermal');
+
+    // Reset buttons
+    [btnBoxes, btnLidar, btnThermal].forEach(btn => {
+      btn.className = "flex-1 py-1.5 px-2 rounded-md font-label-telemetry text-label-telemetry transition-all text-on-surface-variant hover:text-on-surface text-center";
+    });
+
+    // Reset layers
+    layerBoxes.classList.add('opacity-0', 'pointer-events-none');
+    layerLidar.classList.add('opacity-0', 'pointer-events-none');
+    layerThermal.classList.add('opacity-0', 'pointer-events-none');
+
+    if (mode === 'boxes') {
+      layerBoxes.classList.remove('opacity-0', 'pointer-events-none');
+      btnBoxes.className = "flex-1 py-1.5 px-2 rounded-md font-label-telemetry text-label-telemetry transition-all bg-surface-container-lowest text-on-surface shadow-xs font-semibold text-center";
+    } else if (mode === 'lidar') {
+      layerLidar.classList.remove('opacity-0', 'pointer-events-none');
+      btnLidar.className = "flex-1 py-1.5 px-2 rounded-md font-label-telemetry text-label-telemetry transition-all bg-surface-container-lowest text-on-surface shadow-xs font-semibold text-center";
+    } else if (mode === 'thermal') {
+      layerThermal.classList.remove('opacity-0', 'pointer-events-none');
+      btnThermal.className = "flex-1 py-1.5 px-2 rounded-md font-label-telemetry text-label-telemetry transition-all bg-surface-container-lowest text-on-surface shadow-xs font-semibold text-center";
+    }
+  }
+
+  function selectZone(zone) {
+    console.log("Inspector focused damage zone: " + zone);
+  }
+
+  function triggerSettlementConfirmation(button) {
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">refresh</span><span>Transmitting Settlement ERP Saga...</span>';
+    
+    setTimeout(() => {
+      button.innerHTML = '<span class="material-symbols-outlined text-[20px]">check_circle</span><span>Disbursement Executed ($6,870.00)</span>';
+      button.classList.remove('bg-primary-container');
+      button.classList.add('bg-primary');
+    }, 1200);
+  }
+
+  function requestSecondaryAudit(button) {
+    button.disabled = true;
+    button.innerHTML = '<span class="material-symbols-outlined text-[18px] text-tertiary animate-pulse">lock_clock</span><span class="text-tertiary">Senior Actuary Dispatched to Review</span>';
+  }
+
+  let dictationInterval;
+  function startVoiceDictation() {
+    const text = document.getElementById('voice-text');
+    const icon = document.getElementById('voice-icon');
+    icon.classList.add('text-error', 'animate-pulse');
+    icon.innerText = 'graphic_eq';
+    text.innerText = 'Recording MCP audio telemetry...';
+  }
+
+  function endVoiceDictation() {
+    const text = document.getElementById('voice-text');
+    const icon = document.getElementById('voice-icon');
+    icon.classList.remove('text-error', 'animate-pulse');
+    icon.innerText = 'mic';
+    text.innerText = 'Note appended to CLM-2025-V89412';
+    setTimeout(() => {
+      text.innerText = 'Hold to dictate inspector notes';
+    }, 2500);
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(15,23,42,0.06)]" data-active-classes="text-primary font-bold"><div class="flex items-center justify-around h-16 px-space-xs"><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="executive-kpi-dashboard" href="#"><span class="material-symbols-outlined text-[22px]">analytics</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">KPIs</span></a><a aria-current="page" class="flex flex-col items-center justify-center w-12 h-12 transition-colors text-primary font-bold" data-path="ai-damage-inspector" href="#"><span class="material-symbols-outlined text-[22px]">document_scanner</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Vision</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="risk-fraud-sentinel" href="#"><span class="material-symbols-outlined text-[22px]">shield</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Fraud</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="autonomous-agent-monitor" href="#"><span class="material-symbols-outlined text-[22px]">neurology</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Agents</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="policy-catalog-settlement" href="#"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Policies</span></a></div></nav></body></html>

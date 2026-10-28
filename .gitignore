@@ -8,10 +8,15 @@ setup-workspace.sh
 
 # Variables de entorno y secretos activos (usar .env.example como plantilla)
 .env
+/env
 .env.local
 .env.*.local
 *.pem
 *.key
+
+# Reportes compilados efímeros generados en caliente (CU15)
+backend/ms4-ia-mcp-python/artifacts/reports/*
+!backend/ms4-ia-mcp-python/artifacts/reports/.gitkeep
 
 # Archivos del Sistema Operativo
 .DS_Store

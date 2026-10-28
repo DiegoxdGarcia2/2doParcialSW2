@@ -1,0 +1,379 @@
+<div class="agent-monitor-container">
+  <!-- Feedback and Alerts -->
+  <div *ngIf="feedbackMessage" class="alert alert-success animate-fade-in">
+    <span class="material-symbols-outlined">check_circle</span>
+    <span>{{ feedbackMessage }}</span>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error animate-fade-in">
+    <span class="material-symbols-outlined">error</span>
+    <span>{{ errorMessage }}</span>
+  </div>
+
+  <div *ngIf="healthCheckResult" class="alert alert-info animate-fade-in">
+    <span class="material-symbols-outlined">health_and_safety</span>
+    <span>{{ healthCheckResult }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Sincronizando estado del Cluster LangGraph y Event Mesh Kafka...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading && clusterState" class="monitor-content">
+
+    <!-- 1. Header: Cluster Telemetry & Ecosystem State -->
+    <section class="card header-card">
+      <div class="header-top">
+        <div class="header-title-group">
+          <div class="badge-cluster">
+            <span class="badge-icon">
+              <span class="material-symbols-outlined">hub</span>
+            </span>
+            <span class="badge-text">Cluster State: {{ clusterState.cluster_estado }}</span>
+          </div>
+          <h1 class="main-title">Autonomous Claims Orchestrator</h1>
+          <p class="subtitle">LangGraph Multi-Agent Cluster • 5 Active Micro-Agents • Event Mesh: {{ clusterState.kafka_broker }}</p>
+        </div>
+        <button class="btn-refresh" (click)="cargarDatosCluster()" title="Resincronizar Estado">
+          <span class="material-symbols-outlined" [class.animate-spin]="isLoading">sync</span>
+        </button>
+      </div>
+
+      <!-- KPI Strip -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-teal">
+          <div class="kpi-icon-wrap">
+            <span class="material-symbols-outlined">verified</span>
+          </div>
+          <div class="kpi-meta">
+            <span class="kpi-label">Cluster Health</span>
+            <span class="kpi-value text-teal">{{ clusterState.salud_cluster_pct }}%</span>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-navy">
+          <div class="kpi-icon-wrap icon-navy">
+            <span class="material-symbols-outlined">speed</span>
+          </div>
+          <div class="kpi-meta">
+            <span class="kpi-label">Avg Mesh Latency</span>
+            <span class="kpi-value text-navy">{{ clusterState.latencia_promedio_ms }}ms</span>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-indigo">
+          <div class="kpi-icon-wrap icon-indigo">
+            <span class="material-symbols-outlined">account_balance</span>
+          </div>
+          <div class="kpi-meta">
+            <span class="kpi-label">Solvencia II Ratio</span>
+            <span class="kpi-value text-indigo">{{ clusterState.metricas_liquidez.ratio_cobertura_pct }}%</span>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-amber">
+          <div class="kpi-icon-wrap icon-amber">
+            <span class="material-symbols-outlined">hourglass_top</span>
+          </div>
+          <div class="kpi-meta">
+            <span class="kpi-label">Siniestros Estancados</span>
+            <span class="kpi-value text-amber">{{ clusterState.siniestros_estancados.length }} Casos</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. LangGraph StateGraph DAG Visualizer -->
+    <section class="card">
+      <div class="section-header">
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined text-indigo">account_tree</span>
+          <h2 class="section-title">LangGraph Mesh State</h2>
+        </div>
+        <div class="dag-status-pill">
+          <span class="pulse-dot"></span>
+          <span>{{ clusterState.dag_estado }}</span>
+        </div>
+      </div>
+
+      <p class="dag-description">
+        Grafo cíclico de orquestación con retroalimentación continua: Ingestión FNOL &rarr; Visión Artificial &rarr; Validación de Póliza &rarr; Guardián Anti-Fraude &rarr; Liquidación Saga &rarr; Reflexión Actuarial.
+      </p>
+
+      <!-- Interactive DAG Node Track -->
+      <div class="dag-track-container">
+        <div class="dag-track">
+          <!-- Track line -->
+          <div class="track-line-bg"></div>
+          <div class="track-line-progress" style="width: 85%"></div>
+
+          <!-- Nodes -->
+          <div *ngFor="let node of clusterState.nodos_grafo" class="dag-node-item">
+            <div class="node-circle" [ngClass]="getNodeColorClass(node.nodo_id)">
+              <span class="material-symbols-outlined">{{ getNodeIcon(node.nodo_id) }}</span>
+            </div>
+            <span class="node-label">{{ node.nombre }}</span>
+            <span class="node-status-tag" [ngClass]="node.estado.toLowerCase()">{{ node.estado }}</span>
+            <span class="node-latency">{{ node.latencia_ms }}ms</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Actuarial Liquidity & Solvency Stress Analysis -->
+    <section class="card liquidity-card">
+      <div class="section-header">
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined text-teal">shield_with_heart</span>
+          <h2 class="section-title">Supervisión Actuarial de Liquidez (Solvencia II)</h2>
+        </div>
+        <span class="badge" [ngClass]="clusterState.metricas_liquidez.estado_solvencia === 'SOLVENTE' ? 'badge-optimo' : 'badge-alerta'">
+          ESTADO: {{ clusterState.metricas_liquidez.estado_solvencia }}
+        </span>
+      </div>
+
+      <div class="liquidity-metrics-grid">
+        <div class="liq-box">
+          <span class="liq-label">Reserva Total de Capital</span>
+          <span class="liq-amount text-teal">${{ clusterState.metricas_liquidez.reserva_capital_total_usd | number:'1.2-2' }} USD</span>
+          <span class="liq-sub">Fondo actuarial disponible</span>
+        </div>
+        <div class="liq-box">
+          <span class="liq-label">Compromisos Activos (Saga)</span>
+          <span class="liq-amount text-amber">${{ clusterState.metricas_liquidez.compromisos_activos_usd | number:'1.2-2' }} USD</span>
+          <span class="liq-sub">Indemnizaciones en trámite</span>
+        </div>
+        <div class="liq-box">
+          <span class="liq-label">Reserva Remanente Líquida</span>
+          <span class="liq-amount text-indigo">${{ clusterState.metricas_liquidez.reserva_remanente_usd | number:'1.2-2' }} USD</span>
+          <span class="liq-sub">Ratio de Cobertura: {{ clusterState.metricas_liquidez.ratio_cobertura_pct }}% (Mínimo: {{ clusterState.metricas_liquidez.umbral_minimo_pct }}%)</span>
+        </div>
+      </div>
+
+      <div class="actuarial-recommendation">
+        <div class="recom-icon">
+          <span class="material-symbols-outlined">psychology</span>
+        </div>
+        <div class="recom-text">
+          <strong>Diagnóstico Actuarial Autónomo:</strong>
+          <p>La cobertura de reservas técnicas se ubica en {{ clusterState.metricas_liquidez.ratio_cobertura_pct }}%, superando holgadamente el umbral regulatorio del {{ clusterState.metricas_liquidez.umbral_minimo_pct }}%. No existe riesgo de insolvencia para los pagos en tránsito.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Micro-Agents In Session (5) -->
+    <section class="card">
+      <div class="section-header">
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined text-teal">groups</span>
+          <h2 class="section-title">Micro-Agentes en Sesión ({{ clusterState.micro_agentes.length }})</h2>
+        </div>
+        <span class="telemetry-badge">Kafka Topic: claims-core-v1</span>
+      </div>
+
+      <div class="agents-grid">
+        <div *ngFor="let agent of clusterState.micro_agentes" class="agent-card">
+          <div class="agent-header">
+            <div class="agent-identity">
+              <div class="agent-icon icon-teal">
+                <span class="material-symbols-outlined">smart_toy</span>
+              </div>
+              <div>
+                <h3 class="agent-name">{{ agent.nombre }}</h3>
+                <p class="agent-id">{{ agent.agente_id }}</p>
+              </div>
+            </div>
+            <span class="agent-status" [ngClass]="agent.estado.toLowerCase()">
+              <span class="status-dot"></span>
+              {{ agent.estado }}
+            </span>
+          </div>
+
+          <!-- Micro metrics -->
+          <div class="agent-metrics">
+            <div class="agent-metric-item">
+              <span class="met-label">Rol Operativo</span>
+              <span class="met-value">{{ agent.rol }}</span>
+            </div>
+            <div class="agent-metric-item">
+              <span class="met-label">Skill Primaria</span>
+              <span class="met-value">{{ agent.skill_primaria }}</span>
+            </div>
+          </div>
+
+          <div class="gpu-bar-wrap">
+            <div class="gpu-label-row">
+              <span>Latencia de Event Mesh</span>
+              <span>{{ agent.latencia_actual_ms }}ms</span>
+            </div>
+            <div class="gpu-track">
+              <div class="gpu-fill" style="width: 42%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Stalled Claims & Autonomous Skills Resolution (Atlas Data) -->
+    <section class="card">
+      <div class="section-header">
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined text-error">warning</span>
+          <h2 class="section-title">Expedientes Estancados Detectados &amp; Skills de Desbloqueo</h2>
+        </div>
+        <span class="telemetry-badge">Persistencia: MongoDB Atlas</span>
+      </div>
+
+      <p class="section-desc">
+        Siniestros con tiempos de inactividad superiores a la media o discrepancias periciales. El agente autónomo formula habilidades especializadas para desbloquear el flujo o activar peritaje geolocalizado.
+      </p>
+
+      <div class="stalled-claims-list">
+        <div *ngFor="let claim of clusterState.siniestros_estancados" class="stalled-claim-card">
+          <div class="stalled-claim-meta">
+            <div class="claim-title-row">
+              <span class="claim-number">{{ claim.numero_reclamo }} • {{ claim.modelo_vehiculo }}</span>
+              <span class="badge-severidad" [ngClass]="getSeveridadBadgeClass(claim.dias_estancado)">
+                {{ claim.dias_estancado }} DÍAS ESTANCADO
+              </span>
+            </div>
+            <div class="claim-details-grid">
+              <div>
+                <span class="c-label">Póliza:</span>
+                <span class="c-val font-mono">{{ claim.numero_poliza }}</span>
+              </div>
+              <div>
+                <span class="c-label">Estado Actual:</span>
+                <span class="c-val">{{ claim.estado_actual }}</span>
+              </div>
+              <div>
+                <span class="c-label">Causa de Bloqueo:</span>
+                <span class="c-val text-error">{{ claim.cuello_botella }}</span>
+              </div>
+              <div>
+                <span class="c-label">Monto Comprometido:</span>
+                <span class="c-val font-mono">${{ claim.monto_estimado_usd | number:'1.2-2' }} USD</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Skill Resolution CTA -->
+          <div class="stalled-skill-cta">
+            <div class="skill-info">
+              <span class="skill-rec-label">Skill Recomendada por LangGraph:</span>
+              <span class="skill-title">{{ getSkillFriendlyName(claim.accion_sugerida) }}</span>
+              <span class="skill-eta">Identificador: {{ claim.accion_sugerida }}</span>
+            </div>
+            <button
+              class="btn-execute-skill"
+              [disabled]="executingSkills[claim.numero_reclamo]"
+              (click)="ejecutarSkill(claim)">
+              <span class="material-symbols-outlined" *ngIf="!executingSkills[claim.numero_reclamo]">play_arrow</span>
+              <span class="material-symbols-outlined animate-spin" *ngIf="executingSkills[claim.numero_reclamo]">refresh</span>
+              <span>{{ executingSkills[claim.numero_reclamo] ? 'Ejecutando...' : 'Aplicar Skill' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="clusterState.siniestros_estancados.length === 0" class="alert alert-info">
+          <span class="material-symbols-outlined">task_alt</span>
+          <span>No hay siniestros estancados pendientes en este momento. Todos los expedientes fluyen con normalidad.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Human-in-the-Loop Safeguard Banner -->
+    <section class="hitl-banner">
+      <div class="hitl-icon">
+        <span class="material-symbols-outlined">supervised_user_circle</span>
+      </div>
+      <div class="hitl-content">
+        <div class="hitl-tag">
+          <span class="tag-label">Safeguard Active</span>
+          <span class="pulse-dot-green"></span>
+        </div>
+        <h3 class="hitl-title">HITL Fallback Threshold: Active</h3>
+        <p class="hitl-desc">
+          Transferencia automática al auditor de siniestros si el score de confianza es menor al 85% o si la divergencia en el peritaje supera los $2,000 USD.
+        </p>
+      </div>
+    </section>
+
+    <!-- 7. Kafka Event Stream Log & LangGraph Reflection -->
+    <section class="card terminal-card">
+      <div class="section-header">
+        <div class="title-with-icon">
+          <span class="material-symbols-outlined text-teal">terminal</span>
+          <h2 class="section-title">Kafka Stream Log &amp; Reflexión LangGraph</h2>
+        </div>
+        <div class="live-indicator">
+          <span class="pulse-dot"></span>
+          <span>LIVE</span>
+        </div>
+      </div>
+
+      <!-- Reflection Box -->
+      <div class="reflection-box">
+        <div class="reflection-header">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          <strong>Última Reflexión del Agente Autónomo:</strong>
+        </div>
+        <p class="reflection-text">{{ clusterState.ultima_reflexion }}</p>
+      </div>
+
+      <!-- Monospace Terminal Log Container -->
+      <div class="terminal-container">
+        <div *ngFor="let log of logs" class="terminal-line">
+          <span class="log-time">[{{ log.timestamp | slice:11:19 }}]</span>
+          <span class="log-agent">[{{ log.nodo }}]</span>
+          <span class="log-msg">{{ log.detalle }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Swarm Control Operations -->
+    <section class="card ops-card">
+      <span class="ops-title">Cluster Operations &amp; Swarm Control</span>
+      <div class="ops-buttons-grid">
+        <button
+          class="btn-ops btn-run-cycle"
+          [disabled]="isCycleRunning"
+          (click)="ejecutarCicloAutonomo()">
+          <span class="material-symbols-outlined" [class.animate-spin]="isCycleRunning">
+            {{ isCycleRunning ? 'refresh' : 'restart_alt' }}
+          </span>
+          <span>{{ isCycleRunning ? 'Ejecutando Ciclo LangGraph...' : 'Disparar Ciclo Autónomo LangGraph' }}</span>
+        </button>
+
+        <button
+          class="btn-ops"
+          [ngClass]="isSwarmPaused ? 'btn-resume' : 'btn-pause'"
+          (click)="toggleSwarm()">
+          <span class="material-symbols-outlined">
+            {{ isSwarmPaused ? 'play_circle' : 'pause_circle' }}
+          </span>
+          <span>{{ isSwarmPaused ? 'Reanudar Enjambre' : 'Pausar Enjambre Preventivo' }}</span>
+        </button>
+
+        <button
+          class="btn-ops btn-health"
+          [disabled]="healthCheckRunning"
+          (click)="triggerHealthCheck()">
+          <span class="material-symbols-outlined" [class.animate-spin]="healthCheckRunning">health_and_safety</span>
+          <span>{{ healthCheckRunning ? 'Verificando Broker...' : 'Verificar Salud de Kafka Mesh' }}</span>
+        </button>
+
+        <button
+          class="btn-ops btn-export"
+          (click)="exportTelemetry()">
+          <span class="material-symbols-outlined">download</span>
+          <span>Exportar Telemetría JSON</span>
+        </button>
+      </div>
+    </section>
+
+  </div>
+</div>

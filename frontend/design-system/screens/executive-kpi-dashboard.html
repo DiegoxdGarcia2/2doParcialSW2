@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>AegisCore AI Enterprise</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'on-error-container': '#93000a', 'surface-container-highest': '#d3e4fe', 'on-secondary-fixed': '#131b2e', 'on-tertiary': '#ffffff', 'on-primary': '#ffffff', 'on-tertiary-fixed-variant': '#3323cc', 'on-secondary-fixed-variant': '#3f465c', 'surface-container-lowest': '#ffffff', 'tertiary-container': '#5951ef', 'error': '#ba1a1a', 'tertiary-fixed-dim': '#c3c0ff', 'inverse-surface': '#213145', 'surface-variant': '#d3e4fe', 'surface-bright': '#f8f9ff', 'inverse-primary': '#80d5cb', 'surface-container': '#e5eeff', 'primary-fixed': '#9cf2e8', 'outline': '#6e7977', 'surface': '#f8f9ff', 'primary-fixed-dim': '#80d5cb', 'on-primary-fixed': '#00201d', 'secondary-fixed-dim': '#bec6e0', 'inverse-on-surface': '#eaf1ff', 'surface-container-high': '#dce9ff', 'on-tertiary-container': '#ebe8ff', 'secondary-fixed': '#dae2fd', 'secondary-container': '#dae2fd', 'tertiary-fixed': '#e2dfff', 'tertiary': '#3f33d6', 'on-error': '#ffffff', 'on-primary-container': '#a3faef', 'on-surface-variant': '#3e4947', 'background': '#f8f9ff', 'error-container': '#ffdad6', 'on-background': '#0b1c30', 'on-surface': '#0b1c30', 'primary-container': '#0f766e', 'on-secondary-container': '#5c647a', 'surface-dim': '#cbdbf5', 'secondary': '#565e74', 'outline-variant': '#bdc9c6', 'on-tertiary-fixed': '#0f0069', 'on-primary-fixed-variant': '#00504a', 'primary': '#005c55', 'surface-container-low': '#eff4ff', 'on-secondary': '#ffffff', 'surface-tint': '#006a63' }, borderRadius: { 'DEFAULT': '0.25rem', 'lg': '0.5rem', 'xl': '0.75rem', 'full': '9999px' }, spacing: { 'space-2xl': '2rem', 'space-xxs': '0.125rem', 'margin-mobile': '1rem', 'space-md': '0.75rem', 'space-xs': '0.25rem', 'gutter': '1.5rem', 'space-xl': '1.5rem', 'space-sm': '0.5rem', 'space-3xl': '3rem', 'margin': '2rem', 'space-lg': '1rem', 'gutter-mobile': '0.75rem' }, fontFamily: { 'headline-sm': ['Plus Jakarta Sans'], 'body-sm': ['Inter'], 'headline-md': ['Plus Jakarta Sans'], 'headline-xl-mobile': ['Plus Jakarta Sans'], 'body-xs': ['Inter'], 'body-lg': ['Inter'], 'headline-lg': ['Plus Jakarta Sans'], 'label-telemetry': ['JetBrains Mono'], 'headline-xl': ['Plus Jakarta Sans'], 'display-lg-mobile': ['Plus Jakarta Sans'], 'display-lg': ['Plus Jakarta Sans'], 'body-md': ['Inter'], 'label-code': ['JetBrains Mono'] }, fontSize: { 'headline-sm': ['16px', { lineHeight: '22px', letterSpacing: '-0.005em', fontWeight: '600' }], 'body-sm': ['13px', { lineHeight: '18px', fontWeight: '400' }], 'headline-md': ['18px', { lineHeight: '24px', letterSpacing: '-0.01em', fontWeight: '600' }], 'headline-xl-mobile': ['24px', { lineHeight: '32px', letterSpacing: '-0.015em', fontWeight: '600' }], 'body-xs': ['12px', { lineHeight: '16px', fontWeight: '500' }], 'body-lg': ['16px', { lineHeight: '24px', fontWeight: '400' }], 'headline-lg': ['22px', { lineHeight: '28px', letterSpacing: '-0.015em', fontWeight: '600' }], 'label-telemetry': ['11px', { lineHeight: '14px', letterSpacing: '0.04em', fontWeight: '600' }], 'headline-xl': ['30px', { lineHeight: '38px', letterSpacing: '-0.02em', fontWeight: '600' }], 'display-lg-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.02em', fontWeight: '700' }], 'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.025em', fontWeight: '700' }], 'body-md': ['14px', { lineHeight: '20px', fontWeight: '400' }], 'label-code': ['13px', { lineHeight: '18px', letterSpacing: '-0.01em', fontWeight: '500' }] } } } };</script><style>@layer base { html, body { width: 100%; margin: 0; padding: 0; min-height: 100%; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; } * { -webkit-tap-highlight-color: transparent; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(15,23,42,0.04)] pt-safe"><div class="h-20 px-margin-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><button aria-label="Navigation Menu" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[22px]">menu</span></button><div class="flex items-center gap-space-xs"><img alt="AegisCore AI Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VBsg3YvkBZB9XOaJfNkytB1PJ6SZZ0TgRCPdqmEDVY1k6bf2lIHgmnimgsL7pVh6Awwy77ovxh23RlDzTQkf4bCZqQHtEYMV8C-nGRUdspL4lklgdgnWIjp2CLmA5MOvOVkaMgfsIVx9_EEp6I4a6knDa96snu52NXHwV1ZODCA9oWIINyIBn0tejeuqhYNcO5QhBOeaRHI-Dc_HtkTrSu4EaMkM_NpGcQUd6StGnK"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary tracking-tight leading-none">AegisCore<span class="text-tertiary ml-0.5">AI</span></span><div class="flex items-center gap-1 mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">SSO OIDC • JWT RS256</span></div></div></div></div><div class="flex items-center gap-space-xs"><div class="hidden sm:flex items-center bg-surface-container px-2 py-1 rounded-full"><span class="font-label-code text-label-code text-on-secondary-container">Field Inspector</span></div><button aria-label="Notifications" class="relative w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span></span></button><div class="flex items-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_0_0_1px_rgba(15,118,110,0.3)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY53CqIUpGoTa-sXX8Xo2IYuIgj5OlqZBb7SMvWnNEUnDtnxsCcBdeEtd6e9Hb645X-GlF9NnE_YB1KNgiwu5UBEnaI2p0xywA8PH-3wiGEIm7GFic9hMOxUpCIH1bGkFFDIOdA5ApS7YxfRGPjRmIjG2AioE80K3JgKX8yRHw0E2fdRyk-dcBSuxcRWUhuIVBJdLZkUZPndV8QGQSL8O59b4w9SFOLqSaboQF8BQ"/></div></div></div></header><main class="flex flex-col relative w-full pt-20 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full px-margin-mobile pb-8 space-y-space-lg">
+<!-- Executive Header Summary -->
+<section class="flex flex-col space-y-space-xs pt-space-xs">
+<div class="flex items-center justify-between">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-on-secondary-container shadow-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="font-label-telemetry text-label-telemetry uppercase tracking-wider text-primary font-bold">Live Solvency Telemetry</span>
+</div>
+<div class="flex items-center bg-surface-container-high rounded-full p-0.5 shadow-sm">
+<button class="px-2.5 py-1 rounded-full bg-surface text-primary font-label-telemetry text-label-telemetry shadow-xs transition-all font-semibold" id="pill-q3">Q3 2025</button>
+<button class="px-2.5 py-1 rounded-full text-secondary font-label-telemetry text-label-telemetry hover:text-on-surface transition-all" id="pill-ytd">YTD</button>
+</div>
+</div>
+<div>
+<h1 class="font-headline-xl-mobile text-headline-xl-mobile text-on-surface tracking-tight">Executive Solvency &amp; Risk Pulse</h1>
+<p class="font-body-xs text-body-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span>Solvency II Pillar I/II</span>
+<span>•</span>
+<span class="font-label-code text-[11px] text-tertiary">ML-Forest-v4.2r</span>
+<span>•</span>
+<span class="text-secondary font-medium">99.8% Conf.</span>
+</p>
+</div>
+</section>
+<!-- High-Density Executive KPI Metric Cards (2x2 Grid) -->
+<section class="grid grid-cols-2 gap-space-sm">
+<!-- Card 1: Solvency II Ratio -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-telemetry text-label-telemetry text-secondary uppercase tracking-tight">Solvency II</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-surface-container-high text-primary font-label-telemetry text-[10px]">
+<span class="material-symbols-outlined text-[12px] mr-0.5" style="font-variation-settings: 'FILL' 1;">verified</span>
+          Optimal
+        </span>
+</div>
+<div class="mt-1">
+<div class="font-display-lg-mobile text-display-lg-mobile text-on-surface tracking-tight leading-none">248.6%</div>
+<div class="flex items-center gap-1 mt-1 text-primary">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span class="font-label-telemetry text-label-telemetry font-bold">+4.2% YoY</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-1 mt-3 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 82%"></div>
+</div>
+<span class="font-body-xs text-[10px] text-secondary mt-1">Min threshold: 160%</span>
+</div>
+<!-- Card 2: Combined Loss Ratio -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-telemetry text-label-telemetry text-secondary uppercase tracking-tight">Net Loss Ratio</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-surface-container text-on-secondary-container font-label-telemetry text-[10px]">
+          Target &lt;85%
+        </span>
+</div>
+<div class="mt-1">
+<div class="font-display-lg-mobile text-display-lg-mobile text-on-surface tracking-tight leading-none">81.4%</div>
+<div class="flex items-center gap-1 mt-1 text-primary">
+<span class="material-symbols-outlined text-[14px]">trending_down</span>
+<span class="font-label-telemetry text-label-telemetry font-bold">-2.6% vs Bench</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-1 mt-3 overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 71%"></div>
+</div>
+<span class="font-body-xs text-[10px] text-secondary mt-1">Vehicle: 78% | Health: 84%</span>
+</div>
+<!-- Card 3: GWP -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-telemetry text-label-telemetry text-secondary uppercase tracking-tight">Gross Written</span>
+<span class="font-label-code text-[11px] text-tertiary font-bold">+14.1%</span>
+</div>
+<div class="mt-1">
+<div class="font-display-lg-mobile text-display-lg-mobile text-on-surface tracking-tight leading-none">$842.5M</div>
+<div class="flex items-center gap-1 mt-1 text-secondary">
+<span class="material-symbols-outlined text-[13px] text-tertiary">pie_chart</span>
+<span class="font-label-telemetry text-[10px]">Auto 62% • Med 38%</span>
+</div>
+</div>
+<div class="flex gap-1 w-full mt-3">
+<div class="bg-primary h-1 rounded-l-full" style="width: 62%" title="Vehicle"></div>
+<div class="bg-tertiary-container h-1 rounded-r-full" style="width: 38%" title="Health"></div>
+</div>
+<span class="font-body-xs text-[10px] text-secondary mt-1">Run-rate: $1.12B</span>
+</div>
+<!-- Card 4: STP Automation -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-telemetry text-label-telemetry text-secondary uppercase tracking-tight">AI STP Auto</span>
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+</div>
+<div class="mt-1">
+<div class="font-display-lg-mobile text-display-lg-mobile text-on-surface tracking-tight leading-none">76.8%</div>
+<div class="flex items-center gap-1 mt-1 text-primary font-bold">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+<span class="font-label-telemetry text-label-telemetry">&lt;45s Auto-Settled</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-1 mt-3 overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 76.8%"></div>
+</div>
+<span class="font-body-xs text-[10px] text-secondary mt-1">21,480 Claims/mo</span>
+</div>
+</section>
+<!-- Underwriting & Loss Ratio Visual Tracker -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">Loss Incurrence &amp; Reserves</span>
+<span class="font-body-xs text-body-xs text-secondary">6-Month Rolling Trajectory (Vehicle vs Health)</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-tertiary font-label-code text-[11px] font-semibold">Risk: Low</span>
+</div>
+<!-- Interactive SVG Sparkline/Bar Multi-Graph -->
+<div class="relative w-full pt-1">
+<div class="flex justify-between items-center text-[10px] font-label-telemetry text-secondary mb-1">
+<span>Apr ($122M)</span>
+<span>May ($130M)</span>
+<span>Jun ($145M)</span>
+<span>Jul ($138M)</span>
+<span>Aug ($129M)</span>
+<span class="text-primary font-bold">Sep ($118M)</span>
+</div>
+<svg class="w-full h-36 overflow-visible" fill="none" viewbox="0 0 340 140" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient id="primaryArea" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#0F766E" stop-opacity="0.28"></stop>
+<stop offset="100%" stop-color="#0F766E" stop-opacity="0.0"></stop>
+</lineargradient>
+<lineargradient id="healthArea" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#5951EF" stop-opacity="0.22"></stop>
+<stop offset="100%" stop-color="#5951EF" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<!-- Grid lines -->
+<line stroke="#E2E8F0" stroke-dasharray="3 3" x1="0" x2="340" y1="25" y2="25"></line>
+<line stroke="#E2E8F0" stroke-dasharray="3 3" x1="0" x2="340" y1="65" y2="65"></line>
+<line stroke="#E2E8F0" stroke-dasharray="3 3" x1="0" x2="340" y1="105" y2="105"></line>
+<!-- Peak Risk Zone Pill Annotation -->
+<rect fill="#FFDAD6" fill-opacity="0.8" height="20" rx="4" width="80" x="110" y="8"></rect>
+<text fill="#BA1A1A" font-family="JetBrains Mono" font-size="9" font-weight="600" x="116" y="22">PEAK RISK (JUN)</text>
+<!-- Shaded Area: Health Inpatient -->
+<path d="M 15 88 Q 75 75 135 60 T 215 72 T 280 65 T 325 55 L 325 125 L 15 125 Z" fill="url(#healthArea)"></path>
+<path d="M 15 88 Q 75 75 135 60 T 215 72 T 280 65 T 325 55" stroke="#5951EF" stroke-linecap="round" stroke-width="2"></path>
+<!-- Shaded Area: Vehicle Claims -->
+<path d="M 15 65 Q 75 80 135 40 T 215 50 T 280 75 T 325 90 L 325 125 L 15 125 Z" fill="url(#primaryArea)"></path>
+<path d="M 15 65 Q 75 80 135 40 T 215 50 T 280 75 T 325 90" stroke="#0F766E" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Highlight Point on Current Month -->
+<circle cx="325" cy="90" fill="#005C55" r="4.5"></circle>
+<circle cx="325" cy="90" r="8" stroke="#005C55" stroke-opacity="0.3" stroke-width="2"></circle>
+<circle cx="325" cy="55" fill="#3F33D6" r="4"></circle>
+<!-- Bottom Axis markers -->
+<circle cx="15" cy="125" fill="#94A3B8" r="2"></circle>
+<circle cx="78" cy="125" fill="#94A3B8" r="2"></circle>
+<circle cx="140" cy="125" fill="#94A3B8" r="2"></circle>
+<circle cx="202" cy="125" fill="#94A3B8" r="2"></circle>
+<circle cx="264" cy="125" fill="#94A3B8" r="2"></circle>
+<circle cx="325" cy="125" fill="#0F766E" r="3"></circle>
+</svg>
+</div>
+<!-- Chart Legend & Real-Time Pulse Metric -->
+<div class="flex items-center justify-between pt-1 text-on-surface">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="font-body-xs text-body-xs text-on-surface-variant font-medium">Motor Fleet</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary-container"></span>
+<span class="font-body-xs text-body-xs text-on-surface-variant font-medium">Health Catastrophic</span>
+</div>
+</div>
+<span class="font-label-telemetry text-[11px] text-primary font-bold">Actuarial Reserve: $214M</span>
+</div>
+</section>
+<!-- AI Vehicle & Health Underwriting Split Breakdown -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Underwriting Cohort Exposure</h2>
+<span class="material-symbols-outlined text-secondary text-[20px]">tune</span>
+</div>
+<div class="space-y-space-sm">
+<!-- Cohort Item 1: Motor Fleet -->
+<div class="bg-surface-container-low rounded-lg p-3 flex flex-col space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">directions_car</span>
+</div>
+<div>
+<div class="font-headline-sm text-body-md text-on-surface">Tier-1 Commercial Fleet</div>
+<div class="font-label-code text-[11px] text-secondary">Telematics IoT • 42,100 Units</div>
+</div>
+</div>
+<div class="text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-telemetry text-label-telemetry font-bold">Risk 0.24 Low</span>
+<div class="font-label-code text-[11px] text-secondary mt-0.5">$522.4M Exposure</div>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 24%"></div>
+</div>
+<div class="flex justify-between items-center font-body-xs text-[11px] text-on-surface-variant">
+<span>Target Risk ceiling: &lt;0.45</span>
+<span class="text-primary font-semibold">99.1% Compliance</span>
+</div>
+</div>
+<!-- Cohort Item 2: Health Inpatient -->
+<div class="bg-surface-container-low rounded-lg p-3 flex flex-col space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">medical_services</span>
+</div>
+<div>
+<div class="font-headline-sm text-body-md text-on-surface">Catastrophic Health Group</div>
+<div class="font-label-code text-[11px] text-secondary">ICD-11 ML Stratified • 18 Enterprise Plans</div>
+</div>
+</div>
+<div class="text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-telemetry text-label-telemetry font-bold">Res. $14.2M</span>
+<div class="font-label-code text-[11px] text-secondary mt-0.5">$320.1M Exposure</div>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-tertiary-container h-full rounded-full" style="width: 68%"></div>
+</div>
+<div class="flex justify-between items-center font-body-xs text-[11px] text-on-surface-variant">
+<span>Adjudication velocity: 3.4 min</span>
+<span class="text-tertiary font-semibold">92.4% Loss Ratio</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Incident & Fraud Sentinel Ticker -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-error-container text-on-error-container flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-headline-sm text-body-md text-error font-bold">14 High-Risk Fraud Rings Intercepted</span>
+<span class="px-1.5 py-0.5 rounded bg-error text-on-error font-label-telemetry text-[10px] font-bold">CRITICAL</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface mt-1">
+          Isolation Forest neural cluster neutralized syndicated collision claims across Tri-State sector.
+        </p>
+<div class="flex items-center justify-between mt-2 pt-2 bg-surface-container-low rounded-lg px-2.5 py-1.5">
+<span class="font-label-telemetry text-label-telemetry text-primary font-bold">Saved: $1,842,500</span>
+<span class="font-label-code text-[11px] text-secondary">Latency: 142ms</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Executive Snapshot Drawer / Visual Delighters -->
+<section class="bg-surface-container rounded-xl p-space-md shadow-xs flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-[22px]">verified_user</span>
+</div>
+<div>
+<div class="font-headline-sm text-body-md text-on-surface">Actuarial Board Audit Pack</div>
+<div class="font-body-xs text-body-xs text-on-surface-variant">Cryptographic SHA-256 seal ready</div>
+</div>
+</div>
+<button class="px-3 py-1.5 bg-primary text-on-primary font-headline-sm text-body-xs rounded-lg shadow-sm hover:opacity-95 active:scale-95 transition-all flex items-center gap-1" id="btn-seal">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span>Verify</span>
+</button>
+</section>
+<!-- Floating Docked Voice-to-Report MCP Bar -->
+<div class="sticky bottom-2 z-30 w-full px-1">
+<div class="bg-surface/95 backdrop-blur-md rounded-2xl p-2.5 shadow-xl flex items-center justify-between gap-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+<!-- Mic Trigger with Whisper Waveform -->
+<button aria-label="Trigger AI Voice Synthesis" class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-tertiary-container text-on-tertiary hover:opacity-90 active:scale-95 transition-transform shrink-0" id="btn-mic">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+<span class="hidden absolute inset-0 rounded-xl bg-tertiary animate-ping opacity-30" id="mic-ring"></span>
+</button>
+<!-- Center Dynamic Voice State / MCP Prompter -->
+<div class="flex-1 min-w-0 px-1">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-label-telemetry text-[11px] text-tertiary font-bold tracking-tight uppercase">MCP Auto-Briefing</span>
+</div>
+<p class="font-body-xs text-[12px] text-on-surface truncate font-medium" id="voice-label">
+          "Generate executive PDF briefing..."
+        </p>
+</div>
+<!-- Quick Export Pill Action Buttons -->
+<div class="flex items-center gap-1 shrink-0">
+<button class="px-2 py-1 bg-surface-container hover:bg-surface-container-high rounded-lg font-label-telemetry text-label-telemetry text-on-surface font-semibold transition-colors flex items-center gap-0.5" id="btn-export-pdf" title="Export Solvency PDF">
+<span class="material-symbols-outlined text-[13px] text-error">picture_as_pdf</span>
+<span>PDF</span>
+</button>
+<button class="px-2 py-1 bg-surface-container hover:bg-surface-container-high rounded-lg font-label-telemetry text-label-telemetry text-on-surface font-semibold transition-colors flex items-center gap-0.5" id="btn-export-xls" title="Export Actuarial XLS">
+<span class="material-symbols-outlined text-[13px] text-primary">table_view</span>
+<span>XLS</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Client-side Interactive Micro-Behaviors -->
+<script>
+  (function() {
+    // 1. Quarter/Time Toggle Pill Delight
+    const pillQ3 = document.getElementById('pill-q3');
+    const pillYtd = document.getElementById('pill-ytd');
+    if (pillQ3 && pillYtd) {
+      pillQ3.addEventListener('click', () => {
+        pillQ3.className = 'px-2.5 py-1 rounded-full bg-surface text-primary font-label-telemetry text-label-telemetry shadow-xs transition-all font-semibold';
+        pillYtd.className = 'px-2.5 py-1 rounded-full text-secondary font-label-telemetry text-label-telemetry hover:text-on-surface transition-all';
+      });
+      pillYtd.addEventListener('click', () => {
+        pillYtd.className = 'px-2.5 py-1 rounded-full bg-surface text-primary font-label-telemetry text-label-telemetry shadow-xs transition-all font-semibold';
+        pillQ3.className = 'px-2.5 py-1 rounded-full text-secondary font-label-telemetry text-label-telemetry hover:text-on-surface transition-all';
+      });
+    }
+
+    // 2. Whisper AI MCP Mic Voice Simulation
+    const btnMic = document.getElementById('btn-mic');
+    const micRing = document.getElementById('mic-ring');
+    const voiceLabel = document.getElementById('voice-label');
+    let isListening = false;
+
+    if (btnMic && voiceLabel && micRing) {
+      btnMic.addEventListener('click', () => {
+        isListening = !isListening;
+        if (isListening) {
+          micRing.classList.remove('hidden');
+          voiceLabel.innerText = "Transcribing: 'Summarize Q3 Solvency II reserves...'";
+          voiceLabel.classList.add('text-tertiary', 'font-semibold');
+          setTimeout(() => {
+            if (isListening) {
+              voiceLabel.innerText = "Generating Board Briefing (3.2s)...";
+            }
+          }, 1800);
+          setTimeout(() => {
+            if (isListening) {
+              voiceLabel.innerText = "Briefing dispatched to Executive Boardroom.";
+              micRing.classList.add('hidden');
+              isListening = false;
+              setTimeout(() => {
+                voiceLabel.innerText = "'Generate executive PDF briefing...'";
+                voiceLabel.classList.remove('text-tertiary', 'font-semibold');
+              }, 2500);
+            }
+          }, 4000);
+        } else {
+          micRing.classList.add('hidden');
+          voiceLabel.innerText = "'Generate executive PDF briefing...'";
+          voiceLabel.classList.remove('text-tertiary', 'font-semibold');
+        }
+      });
+    }
+
+    // 3. Export Micro Feedback
+    const btnPdf = document.getElementById('btn-export-pdf');
+    const btnXls = document.getElementById('btn-export-xls');
+    const btnSeal = document.getElementById('btn-seal');
+
+    function flashButton(btn, text) {
+      if (!btn) return;
+      const original = btn.innerHTML;
+      btn.innerHTML = `<span class="material-symbols-outlined text-[13px] text-primary">check_circle</span> <span>Done</span>`;
+      setTimeout(() => {
+        btn.innerHTML = original;
+      }, 1600);
+    }
+
+    if (btnPdf) btnPdf.addEventListener('click', () => flashButton(btnPdf));
+    if (btnXls) btnXls.addEventListener('click', () => flashButton(btnXls));
+    if (btnSeal) {
+      btnSeal.addEventListener('click', () => {
+        btnSeal.innerHTML = `<span class="material-symbols-outlined text-[14px]">check</span> Sealed`;
+        setTimeout(() => {
+          btnSeal.innerHTML = `<span class="material-symbols-outlined text-[16px]">download</span><span>Verify</span>`;
+        }, 2000);
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(15,23,42,0.06)]" data-active-classes="text-primary font-bold"><div class="flex items-center justify-around h-16 px-space-xs"><a aria-current="page" class="flex flex-col items-center justify-center w-12 h-12 transition-colors text-primary font-bold" data-path="executive-kpi-dashboard" href="#"><span class="material-symbols-outlined text-[22px]">analytics</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">KPIs</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="ai-damage-inspector" href="#"><span class="material-symbols-outlined text-[22px]">document_scanner</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Vision</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="risk-fraud-sentinel" href="#"><span class="material-symbols-outlined text-[22px]">shield</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Fraud</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="autonomous-agent-monitor" href="#"><span class="material-symbols-outlined text-[22px]">neurology</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Agents</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="policy-catalog-settlement" href="#"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Policies</span></a></div></nav></body></html>

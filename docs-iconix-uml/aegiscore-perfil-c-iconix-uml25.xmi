@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.1" xmlns:uml="http://schema.omg.org/spec/UML/2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1">
+  <xmi:Documentation exporter="AegisCore_AI_UML_Engine" exporterVersion="17.0" />
+  <uml:Model xmi:type="uml:Model" xmi:id="EA_Model_AegisCore_PerfilC" name="AegisCore_AI_Perfil_C">
+    
+    <!-- PAQUETE 1: METODOLOGÍA ICONIX - OBJETOS ROBUSTEZ BCE (CU11 AL CU15) -->
+    <packagedElement xmi:type="uml:Package" xmi:id="PKG_ICONIX_Robustez_Perfil_C" name="01_ICONIX_Robustness_Perfil_C">
+      
+      <!-- CU11: Visión Artificial Choques con TensorFlow CNN (CrashNet) -->
+      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU11" name="CU11_VisionArtificial_CrashNet_CNN">
+        <packagedElement xmi:type="uml:Class" xmi:id="B_VisionInspectorAngularView" name="VisionInspectorAngularView">
+          <ownedOperation xmi:id="op_b_vis_1" name="seleccionarArchivoImagenOVideo" />
+          <ownedOperation xmi:id="op_b_vis_2" name="renderizarBoundingBoxesYHeatmap" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="B_FastApiVisionRouter" name="FastApiVisionRouter">
+          <ownedOperation xmi:id="op_b_vis_api_1" name="postAnalyzeCrash" />
+          <ownedOperation xmi:id="op_b_vis_api_2" name="postAnalyzeCrashVideo" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="C_CrashVisionControl" name="CrashVisionControl">
+          <ownedOperation xmi:id="op_c_vis_1" name="predecirSeveridadCrashNet" />
+          <ownedOperation xmi:id="op_c_vis_2" name="procesarVideoChoque" />
+          <ownedOperation xmi:id="op_c_vis_3" name="normalizarTensoresImagen" />
+          <ownedOperation xmi:id="op_c_vis_4" name="generarMapaCalorGradCam" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="E_CrashNetKerasModel" name="CrashNetKerasModel">
+          <ownedAttribute xmi:id="att_vis_1" name="weightsArtifactPath" type="String" />
+          <ownedAttribute xmi:id="att_vis_2" name="inputTensorShape" type="TensorShape" />
+          <ownedAttribute xmi:id="att_vis_3" name="classes" type="StringArray" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="E_ExpedienteSiniestroDocument" name="ExpedienteSiniestroDocument">
+          <ownedAttribute xmi:id="att_exp_c11_1" name="idExpediente" type="String" />
+          <ownedAttribute xmi:id="att_exp_c11_2" name="severidadEvaluada" type="String" />
+          <ownedAttribute xmi:id="att_exp_c11_3" name="scoreConfianza" type="Float" />
+        </packagedElement>
+      </packagedElement>
+
+      <!-- CU12: Predicción Ventas y Primas (Random Forest Regressor) -->
+      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU12" name="CU12_PrediccionVentasPrimas_RandomForest">
+        <packagedElement xmi:type="uml:Class" xmi:id="B_ActuarialSalesPredictionView" name="ActuarialSalesPredictionView">
+          <ownedOperation xmi:id="op_b_rf_1" name="ingresarParametrosVehiculoYPerfil" />
+          <ownedOperation xmi:id="op_b_rf_2" name="graficarDesglosePrimaYSensibilidad" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="B_FastApiMlSupervisedRouter" name="FastApiMlSupervisedRouter">
+          <ownedOperation xmi:id="op_b_rf_api_1" name="postPredictSalesPremium" />
+          <ownedOperation xmi:id="op_b_rf_api_2" name="getFeatureImportance" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="C_SupervisedMlControl" name="SupervisedMlControl">
+          <ownedOperation xmi:id="op_c_rf_1" name="entrenarYPredecirPrimaRandomForest" />
+          <ownedOperation xmi:id="op_c_rf_2" name="calcularImportanciaVariablesGini" />
+          <ownedOperation xmi:id="op_c_rf_3" name="aplicarMargenSolvenciaActuarial" />
+          <ownedOperation xmi:id="op_c_rf_4" name="validarLimitesActuariales" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="E_RandomForestJoblibModel" name="RandomForestJoblibModel">
+          <ownedAttribute xmi:id="att_rf_1" name="nEstimators" type="Integer" />
+          <ownedAttribute xmi:id="att_rf_2" name="r2Score" type="Float" />
+          <ownedAttribute xmi:id="att_rf_3" name="featuresGiniVector" type="FloatArray" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="E_DatasetHistoricoMlPolizas" name="DatasetHistoricoMlPolizas">
+          <ownedAttribute xmi:id="att_pg_1" name="idPoliza" type="Integer" />
+          <ownedAttribute xmi:id="att_pg_2" name="edadAsegurado" type="Integer" />
+          <ownedAttribute xmi:id="att_pg_3" name="valorVehiculo" type="Float" />
+          <ownedAttribute xmi:id="att_pg_4" name="costoSiniestroHistorico" type="Float" />
+        </packagedElement>
+      </packagedElement>
+
+      <!-- CU13: Segmentación K-Means y Detección Fraude Isolation Forest -->
+      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU13" name="CU13_SegmentacionKMeans_FraudeIsolationForest">
+        <packagedElement xmi:type="uml:Class" xmi:id="B_RiskFraudSentinelView" name="RiskFraudSentinelView">
+          <ownedOperation xmi:id="op_b_fr_1" name="solicitarAuditoriaFraudeSiniestro" />
+          <ownedOperation xmi:id="op_b_fr_2" name="visualizarScatterPlotYRadarRiesgo" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="B_FastApiMlUnsupervisedRouter" name="FastApiMlUnsupervisedRouter">
+          <ownedOperation xmi:id="op_b_fr_api_1" name="postEvaluateClaimFraud" />
+          <ownedOperation xmi:id="op_b_fr_api_2" name="getClustersAndAnomalies" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="C_UnsupervisedFraudControl" name="UnsupervisedFraudControl">
+          <ownedOperation xmi:id="op_c_fr_1" name="evaluarSiniestroSospechoso" />
+          <ownedOperation xmi:id="op_c_fr_2" name="segmentarClientesKMeans" />
+          <ownedOperation xmi:id="op_c_fr_3" name="detectarAnomaliaIsolationForest" />
+          <ownedOperation xmi:id="op_c_fr_4" name="calcularProbabilidadFraudeSIU" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="E_KMeansClusterArtifact" name="KMeansClusterArtifact">
+          <ownedAttribute xmi:id="att_km_1" name="kClusters" type="Integer" />
+          <ownedAttribute xmi:id="att_km_2" name="clusterCentroids" type="Matrix" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="E_IsolationForestArtifact" name="IsolationForestArtifact">
+          <ownedAttribute xmi:id="att_if_1" name="contaminationRate" type="Float" />
+          <ownedAttribute xmi:id="att_if_2" name="decisionThreshold" type="Float" />
+        </packagedElement>
+      </packagedElement>
+
+      <!-- CU14: Agente Autónomo LangGraph (Metas, Re-planning y Skills) -->
+      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU14" name="CU14_AgenteAutonomo_LangGraph_Replanning">
+        <packagedElement xmi:type="uml:Class" xmi:id="B_AutonomousAgentMonitorView" name="AutonomousAgentMonitorView">
+          <ownedOperation xmi:id="op_b_ag_1" name="presionarBotonDispararCicloAutonomo" />
+          <ownedOperation xmi:id="op_b_ag_2" name="animarTransicionDeNodosGrafo" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="B_FastApiAgentMonitorRouter" name="FastApiAgentMonitorRouter">
+          <ownedOperation xmi:id="op_b_ag_api_1" name="postTriggerEvaluation" />
+          <ownedOperation xmi:id="op_b_ag_api_2" name="getClusterState" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="C_LangGraphAutonomousAgentControl" name="LangGraphAutonomousAgentControl">
+          <ownedOperation xmi:id="op_c_ag_1" name="ejecutarCicloAutonomo" />
+          <ownedOperation xmi:id="op_c_ag_2" name="nodoEvaluarSaludCluster" />
+          <ownedOperation xmi:id="op_c_ag_3" name="nodoReplanificarMetasPrioritarias" />
+          <ownedOperation xmi:id="op_c_ag_4" name="dispararSkillCompensatoria" />
+          <ownedOperation xmi:id="op_c_ag_5" name="nodoReflexionAutonomaFinal" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="E_AgentStateGraphArtifact" name="AgentStateGraphArtifact">
+          <ownedAttribute xmi:id="att_st_1" name="checkpointPath" type="String" />
+          <ownedAttribute xmi:id="att_st_2" name="activeGoals" type="Array" />
+          <ownedAttribute xmi:id="att_st_3" name="skillsHistory" type="Array" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="E_AegisCoreMicroservicesCluster" name="AegisCoreMicroservicesCluster">
+          <ownedAttribute xmi:id="att_cl_1" name="ms1Status" type="String" />
+          <ownedAttribute xmi:id="att_cl_2" name="ms2Status" type="String" />
+          <ownedAttribute xmi:id="att_cl_3" name="ms3Status" type="String" />
+          <ownedAttribute xmi:id="att_cl_4" name="ms4Status" type="String" />
+        </packagedElement>
+      </packagedElement>
+
+      <!-- CU15: Reportes Dinámicos por Voz con Servidor MCP y Anti-SQLi -->
+      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU15" name="CU15_ReportesVoz_ServidorMCP_AntiSQLi">
+        <packagedElement xmi:type="uml:Class" xmi:id="B_VoiceMcpReportsView" name="VoiceMcpReportsView">
+          <ownedOperation xmi:id="op_b_mcp_1" name="capturarAudioMicrofonoWeb" />
+          <ownedOperation xmi:id="op_b_mcp_2" name="presentarTarjetaDescargaYHashSha256" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="B_VoiceMcpMobileView" name="VoiceMcpMobileView">
+          <ownedOperation xmi:id="op_b_mcp_mob_1" name="presionarFabMicrofonoPeritaje" />
+          <ownedOperation xmi:id="op_b_mcp_mob_2" name="descargarReporteLocal" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="B_FastApiMcpRouter" name="FastApiMcpRouter">
+          <ownedOperation xmi:id="op_b_mcp_api_1" name="postVoiceCommand" />
+          <ownedOperation xmi:id="op_b_mcp_api_2" name="getToolsCatalog" />
+          <ownedOperation xmi:id="op_b_mcp_api_3" name="getDownloadReport" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="C_VoiceMcpControl" name="VoiceMcpControl">
+          <ownedOperation xmi:id="op_c_mcp_1" name="procesarComandoVozCompleto" />
+          <ownedOperation xmi:id="op_c_mcp_2" name="transcribirAudioWhisper" />
+          <ownedOperation xmi:id="op_c_mcp_3" name="auditarSeguridadAntiSQLi" />
+          <ownedOperation xmi:id="op_c_mcp_4" name="ejecutarHerramientaMCP" />
+          <ownedOperation xmi:id="op_c_mcp_5" name="exportarReporteDocumento" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="C_OwaspAntiSqliGuard" name="OwaspAntiSqliGuard">
+          <ownedOperation xmi:id="op_c_owasp_1" name="analizar_consulta" />
+          <ownedOperation xmi:id="op_c_owasp_2" name="verificarTautologiasLogicas" />
+          <ownedOperation xmi:id="op_c_owasp_3" name="verificarInyeccionesUnionYStacked" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="C_McpProtocolServer" name="McpProtocolServer">
+          <ownedOperation xmi:id="op_c_srv_1" name="tool_reporte_siniestralidad" />
+          <ownedOperation xmi:id="op_c_srv_2" name="tool_reporte_ventas_primas" />
+          <ownedOperation xmi:id="op_c_srv_3" name="tool_auditoria_fraude_siu" />
+          <ownedOperation xmi:id="op_c_srv_4" name="tool_solvencia_reservas" />
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="E_GeneratedDocumentDTO" name="GeneratedDocumentDTO">
+          <ownedAttribute xmi:id="att_doc_1" name="filename" type="String" />
+          <ownedAttribute xmi:id="att_doc_2" name="downloadUrl" type="String" />
+          <ownedAttribute xmi:id="att_doc_3" name="sha256Hash" type="String" />
+          <ownedAttribute xmi:id="att_doc_4" name="fileSizeBytes" type="Integer" />
+        </packagedElement>
+      </packagedElement>
+
+    </packagedElement>
+  </uml:Model>
+</xmi:XMI>

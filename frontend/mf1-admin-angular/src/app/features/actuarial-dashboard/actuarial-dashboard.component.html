@@ -1,0 +1,469 @@
+<!-- Top Executive Bar / Breadcrumbs & Global Actuarial Controls -->
+<div class="px-6 py-4 bg-surface-container-lowest shadow-sm flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 border-b border-surface-container-high">
+  <div class="flex flex-col gap-1 min-w-0">
+    <div class="flex items-center gap-2 text-xs font-mono text-secondary uppercase tracking-wider">
+      <span>AegisCore AI</span>
+      <span class="text-outline-variant">/</span>
+      <span>Predictive Underwriting (Perfil C)</span>
+      <span class="text-outline-variant">/</span>
+      <span class="text-primary font-bold">CU12: Motor Actuarial & Random Forest</span>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-baseline gap-x-4 gap-y-1 mt-1">
+      <h1 class="text-2xl text-on-surface font-extrabold tracking-tight font-headline">
+        Actuarial & Sales Prediction Engine
+      </h1>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-xs font-mono text-on-surface-variant font-medium">
+        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+        Random Forest Regressor • Solvency II Compliant • R² {{ result?.metricas_modelo?.r2_score || '0.9949' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Executive Quick Controls & Actions -->
+  <div class="flex flex-wrap items-center gap-3">
+    <!-- Escenarios Preconfigurados -->
+    <div class="flex items-center bg-surface-container-low rounded-lg p-1 shadow-sm">
+      <button 
+        type="button"
+        (click)="seleccionarEscenario('baseline')"
+        [class.bg-surface-container-lowest]="activeScenario === 'baseline'"
+        [class.text-primary]="activeScenario === 'baseline'"
+        [class.shadow-sm]="activeScenario === 'baseline'"
+        class="px-3 py-1.5 rounded text-xs font-semibold text-secondary hover:text-on-surface transition-all">
+        Línea Base
+      </button>
+      <button 
+        type="button"
+        (click)="seleccionarEscenario('joven_riesgo')"
+        [class.bg-surface-container-lowest]="activeScenario === 'joven_riesgo'"
+        [class.text-primary]="activeScenario === 'joven_riesgo'"
+        [class.shadow-sm]="activeScenario === 'joven_riesgo'"
+        class="px-3 py-1.5 rounded text-xs font-semibold text-secondary hover:text-on-surface transition-all">
+        Joven Alto Riesgo
+      </button>
+      <button 
+        type="button"
+        (click)="seleccionarEscenario('flota_comercial')"
+        [class.bg-surface-container-lowest]="activeScenario === 'flota_comercial'"
+        [class.text-primary]="activeScenario === 'flota_comercial'"
+        [class.shadow-sm]="activeScenario === 'flota_comercial'"
+        class="px-3 py-1.5 rounded text-xs font-semibold text-secondary hover:text-on-surface transition-all">
+        Comercial / Flota
+      </button>
+    </div>
+
+    <!-- Reentrenar Modelo CTA -->
+    <button 
+      type="button"
+      (click)="reentrenarModelo()"
+      [disabled]="retraining"
+      class="h-9 px-4 rounded-lg bg-surface-container-low border border-outline-variant text-on-surface text-xs font-semibold flex items-center gap-2 hover:bg-surface-container transition-all">
+      <span class="material-symbols-outlined text-sm" [class.animate-spin]="retraining">autorenew</span>
+      <span>{{ retraining ? 'Reentrenando...' : 'Reentrenar (PostgreSQL)' }}</span>
+    </button>
+  </div>
+</div>
+
+<!-- Notification Toast -->
+<div *ngIf="notificationMessage" 
+     class="mx-6 mt-4 p-3 rounded-lg border flex items-center gap-2 text-xs font-medium transition-all"
+     [ngClass]="{
+       'bg-primary-fixed/20 border-primary text-primary-container': notificationType === 'success',
+       'bg-error-container/30 border-error text-error': notificationType === 'error',
+       'bg-surface-container border-outline-variant text-on-surface': notificationType === 'info'
+     }">
+  <span class="material-symbols-outlined text-sm">info</span>
+  <span>{{ notificationMessage }}</span>
+</div>
+
+<!-- Main Analytics Canvas -->
+<div class="p-6 space-y-6">
+
+  <!-- Row 1: Top 4 Executive KPI Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+    <!-- Card 1: Siniestralidad Estimada -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-secondary font-medium tracking-wide uppercase">Probabilidad de Siniestro</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold font-mono"
+                [ngClass]="{
+                  'bg-emerald-100 text-emerald-800': result?.nivel_riesgo_clasificado === 'BAJO',
+                  'bg-amber-100 text-amber-800': result?.nivel_riesgo_clasificado === 'MEDIO',
+                  'bg-orange-100 text-orange-800': result?.nivel_riesgo_clasificado === 'ALTO',
+                  'bg-rose-100 text-rose-800': result?.nivel_riesgo_clasificado === 'CRÍTICO'
+                }">
+            {{ result?.nivel_riesgo_clasificado || 'EVALUANDO' }}
+          </span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span class="text-3xl text-on-surface font-extrabold tracking-tight font-headline">
+            {{ result?.probabilidad_siniestro_pct || '0.00' }}%
+          </span>
+          <span class="text-xs text-secondary font-semibold">Tasa Anual</span>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-2 bg-surface-container-low/60 rounded-lg p-2.5">
+        <div class="flex items-center justify-between text-xs font-mono text-secondary">
+          <span>Severidad Estimada:</span>
+          <strong class="text-on-surface font-semibold">${{ result?.costo_siniestro_estimado_usd | number:'1.2-2' }} USD</strong>
+        </div>
+        <div class="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
+          <div class="h-full bg-primary transition-all duration-500" 
+               [style.width.%]="result?.probabilidad_siniestro_pct || 30"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Prima Anual Óptima Sugerida -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-secondary font-medium tracking-wide uppercase">Prima Anual Óptima</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary-fixed/40 text-primary-container text-xs font-bold font-mono">
+            <span class="material-symbols-outlined text-xs">verified</span>
+            Tarifa Justa
+          </span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1">
+          <span class="text-3xl text-primary font-extrabold tracking-tight font-headline">
+            ${{ result?.prima_anual_optima_usd | number:'1.2-2' }}
+          </span>
+          <span class="text-xs text-secondary font-semibold">USD / año</span>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-2 bg-surface-container-low/60 rounded-lg p-2.5">
+        <div class="flex items-center justify-between text-xs font-mono text-secondary">
+          <span>Intervalo Confianza (95%):</span>
+          <span class="text-on-surface font-bold">
+            [${{ result?.rango_confianza_95?.[0] | number:'1.0-0' }} - ${{ result?.rango_confianza_95?.[1] | number:'1.0-0' }}]
+          </span>
+        </div>
+        <div class="text-[11px] text-outline-variant mt-1">
+          Desviación entre 150 árboles: ±${{ result?.desviacion_estandar_usd | number:'1.2-2' }} USD
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Ventas Proyectadas de Pólizas -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-secondary font-medium tracking-wide uppercase">Demanda Próximo Mes</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-tertiary/10 text-tertiary text-xs font-bold font-mono">
+            <span class="material-symbols-outlined text-xs">trending_up</span>
+            Crecimiento
+          </span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span class="text-3xl text-on-surface font-extrabold tracking-tight font-headline">
+            {{ result?.proyecciones_mensuales?.[0]?.ventas_estimadas_polizas || 120 }}
+          </span>
+          <span class="text-xs text-secondary font-semibold">Pólizas / Mes</span>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-2 bg-surface-container-low/60 rounded-lg p-2.5">
+        <div class="flex items-center justify-between text-xs font-mono text-secondary">
+          <span>Horizonte Simulado:</span>
+          <strong class="text-on-surface font-semibold">{{ input.meses_a_proyectar }} meses vista</strong>
+        </div>
+        <div class="flex items-center gap-1 mt-1 text-primary text-xs font-mono">
+          <span class="material-symbols-outlined text-xs">check_circle</span>
+          <span>Modelo Calibrado con 1,200 pólizas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Calidad y Fiabilidad del Modelo -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-secondary font-medium tracking-wide uppercase">Precisión R² Modelo</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold font-mono">
+            R² > 0.99
+          </span>
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span class="text-3xl text-emerald-700 font-extrabold tracking-tight font-headline">
+            {{ (result?.metricas_modelo?.r2_score || 0.9949) * 100 | number:'1.2-2' }}%
+          </span>
+          <span class="text-xs text-secondary font-semibold">Varianza Explicada</span>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-2 bg-surface-container-low/60 rounded-lg p-2.5">
+        <div class="flex items-center justify-between text-xs font-mono text-secondary">
+          <span>Error Medio (MAE):</span>
+          <strong class="text-on-surface font-semibold">±${{ result?.metricas_modelo?.mae_usd || 17.65 }} USD</strong>
+        </div>
+        <div class="text-[11px] text-outline-variant mt-1">
+          Accuracy Siniestros: {{ (result?.metricas_modelo?.accuracy_siniestros || 0.829) * 100 | number:'1.1-1' }}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Analytics Canvas & Interactive Simulation Panel -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left: Timeline Chart & Scenario Comparison (7 Columns) -->
+    <div class="lg:col-span-7 space-y-6">
+
+      <!-- Timeline Chart Card -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-surface-container-high gap-2">
+          <div>
+            <h2 class="text-base font-bold text-on-surface font-headline">
+              Proyección Temporal de Ventas y Curva Actuarial de Primas
+            </h2>
+            <p class="text-xs text-secondary">
+              Simulación de demanda mensual a {{ input.meses_a_proyectar }} meses vista con banda de certeza del 95%
+            </p>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-surface-container text-xs font-mono font-medium text-primary">
+            RandomForestRegressor (150 trees)
+          </span>
+        </div>
+
+        <!-- Canvas Chart Container -->
+        <div class="h-72 mt-4 relative">
+          <canvas #salesChart></canvas>
+        </div>
+      </div>
+
+      <!-- Scenarios Comparison Table -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-container-high">
+          <h3 class="text-sm font-bold text-on-surface font-headline">
+            Tabla Comparativa de Escenarios Actuariales
+          </h3>
+          <span class="text-xs text-secondary font-mono">Solvency II Pillar I</span>
+        </div>
+
+        <div class="overflow-x-auto mt-3">
+          <table class="w-full text-left text-xs font-body">
+            <thead>
+              <tr class="border-b border-surface-container-high text-secondary font-mono uppercase">
+                <th class="py-2">Escenario</th>
+                <th class="py-2">Vehículo</th>
+                <th class="py-2">Valor</th>
+                <th class="py-2">Prima Est.</th>
+                <th class="py-2">Prob. Siniestro</th>
+                <th class="py-2">Nivel Riesgo</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-container-high/60">
+              <tr class="hover:bg-surface-container-low/40 transition-colors">
+                <td class="py-2.5 font-semibold text-on-surface">Conductor Experto VIP</td>
+                <td class="py-2.5 font-mono">SUV</td>
+                <td class="py-2.5 font-mono">$32,000</td>
+                <td class="py-2.5 font-mono text-primary font-bold">$780.40</td>
+                <td class="py-2.5 font-mono">14.2%</td>
+                <td class="py-2.5"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">BAJO</span></td>
+              </tr>
+              <tr class="hover:bg-surface-container-low/40 transition-colors">
+                <td class="py-2.5 font-semibold text-on-surface">Perfil Simulado Actual</td>
+                <td class="py-2.5 font-mono">{{ input.tipo_vehiculo }}</td>
+                <td class="py-2.5 font-mono">${{ input.valor_comercial_usd | number:'1.0-0' }}</td>
+                <td class="py-2.5 font-mono text-primary font-bold">${{ result?.prima_anual_optima_usd | number:'1.2-2' }}</td>
+                <td class="py-2.5 font-mono">{{ result?.probabilidad_siniestro_pct }}%</td>
+                <td class="py-2.5"><span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">{{ result?.nivel_riesgo_clasificado }}</span></td>
+              </tr>
+              <tr class="hover:bg-surface-container-low/40 transition-colors">
+                <td class="py-2.5 font-semibold text-on-surface">Joven Primerizo</td>
+                <td class="py-2.5 font-mono">HATCHBACK</td>
+                <td class="py-2.5 font-mono">$15,000</td>
+                <td class="py-2.5 font-mono text-primary font-bold">$1,280.90</td>
+                <td class="py-2.5 font-mono">58.4%</td>
+                <td class="py-2.5"><span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">ALTO</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Interactive Actuarial Simulation Panel (5 Columns) -->
+    <div class="lg:col-span-5 space-y-6">
+
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-container-high">
+          <div>
+            <h2 class="text-base font-bold text-on-surface font-headline">
+              Simulador Actuarial en Vivo
+            </h2>
+            <p class="text-xs text-secondary">
+              Ajusta las covariables para inferencia en tiempo real
+            </p>
+          </div>
+          <span class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary">
+            <span class="material-symbols-outlined text-lg">tune</span>
+          </span>
+        </div>
+
+        <!-- Categoría Vehicular -->
+        <div>
+          <label class="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
+            Tipo de Vehículo
+          </label>
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <button 
+              *ngFor="let vt of vehicleTypes"
+              type="button"
+              (click)="seleccionarVehiculo(vt.id)"
+              [class.bg-primary]="input.tipo_vehiculo === vt.id"
+              [class.text-on-primary]="input.tipo_vehiculo === vt.id"
+              [class.bg-surface-container-low]="input.tipo_vehiculo !== vt.id"
+              [class.text-secondary]="input.tipo_vehiculo !== vt.id"
+              class="p-2 rounded-lg flex flex-col items-center gap-1 text-xs font-semibold hover:border-primary border border-transparent transition-all">
+              <span class="material-symbols-outlined text-lg">{{ vt.icon }}</span>
+              <span class="text-[11px] truncate">{{ vt.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Edad del Asegurado Slider -->
+        <div>
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-semibold text-secondary">Edad del Asegurado:</span>
+            <span class="font-mono font-bold text-on-surface">{{ input.edad_asegurado }} años</span>
+          </div>
+          <input 
+            type="range" 
+            min="18" 
+            max="80" 
+            [(ngModel)]="input.edad_asegurado" 
+            (input)="ejecutarInferencia()"
+            class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
+          <div class="flex justify-between text-[10px] text-secondary font-mono mt-1">
+            <span>18 años</span>
+            <span>45 años</span>
+            <span>80 años</span>
+          </div>
+        </div>
+
+        <!-- Antigüedad de Licencia Slider -->
+        <div>
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-semibold text-secondary">Años de Licencia de Conducir:</span>
+            <span class="font-mono font-bold text-on-surface">{{ input.antiguedad_licencia_anios }} años</span>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="60" 
+            [(ngModel)]="input.antiguedad_licencia_anios" 
+            (input)="ejecutarInferencia()"
+            class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
+        </div>
+
+        <!-- Valor Comercial del Vehículo Slider -->
+        <div>
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-semibold text-secondary">Valor Comercial del Vehículo:</span>
+            <span class="font-mono font-bold text-primary">${{ input.valor_comercial_usd | number:'1.0-0' }} USD</span>
+          </div>
+          <input 
+            type="range" 
+            min="5000" 
+            max="120000" 
+            step="1000"
+            [(ngModel)]="input.valor_comercial_usd" 
+            (input)="ejecutarInferencia()"
+            class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
+          <div class="flex justify-between text-[10px] text-secondary font-mono mt-1">
+            <span>$5,000</span>
+            <span>$50,000</span>
+            <span>$120,000+</span>
+          </div>
+        </div>
+
+        <!-- Historial de Siniestros Previos -->
+        <div>
+          <label class="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
+            Siniestros en los Últimos 3 Años
+          </label>
+          <div class="flex items-center gap-2">
+            <button 
+              *ngFor="let n of [0, 1, 2, 3, 4]"
+              type="button"
+              (click)="input.historial_siniestros_previos = n; ejecutarInferencia()"
+              [class.bg-primary]="input.historial_siniestros_previos === n"
+              [class.text-on-primary]="input.historial_siniestros_previos === n"
+              [class.bg-surface-container-low]="input.historial_siniestros_previos !== n"
+              class="flex-1 py-1.5 rounded-lg text-xs font-mono font-bold transition-all">
+              {{ n }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Puntuación Actuarial de Riesgo (0-100) -->
+        <div>
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-semibold text-secondary">Score Previo de Riesgo:</span>
+            <span class="font-mono font-bold text-on-surface">{{ input.perfil_riesgo_score }} pts</span>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="100" 
+            [(ngModel)]="input.perfil_riesgo_score" 
+            (input)="ejecutarInferencia()"
+            class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
+        </div>
+
+        <!-- Meses a Proyectar Horizon -->
+        <div>
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-semibold text-secondary">Horizonte de Demanda:</span>
+            <span class="font-mono font-bold text-primary">{{ input.meses_a_proyectar }} meses</span>
+          </div>
+          <input 
+            type="range" 
+            min="1" 
+            max="12" 
+            [(ngModel)]="input.meses_a_proyectar" 
+            (input)="ejecutarInferencia()"
+            class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
+        </div>
+
+        <!-- Recalcular CTA -->
+        <button 
+          type="button"
+          (click)="ejecutarInferencia()"
+          [disabled]="loading"
+          class="w-full py-2.5 rounded-lg bg-primary text-on-primary font-headline text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm hover:opacity-95 transition-all">
+          <span class="material-symbols-outlined text-sm" [class.animate-spin]="loading">
+            {{ loading ? 'sync' : 'calculate' }}
+          </span>
+          <span>{{ loading ? 'Calculando Inferencia...' : 'Recalcular Tarifa Actuarial' }}</span>
+        </button>
+      </div>
+
+      <!-- Feature Importances (XAI) Card -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-container-high">
+          <div>
+            <h3 class="text-sm font-bold text-on-surface font-headline">
+              Explicabilidad del Modelo (XAI)
+            </h3>
+            <p class="text-xs text-secondary">
+              Ponderación de variables en la decisión de los 150 árboles
+            </p>
+          </div>
+          <span class="material-symbols-outlined text-primary text-lg">psychology</span>
+        </div>
+
+        <div class="h-48 mt-3 relative">
+          <canvas #featureChart></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

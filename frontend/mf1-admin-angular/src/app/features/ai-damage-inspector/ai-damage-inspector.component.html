@@ -1,0 +1,342 @@
+<div class="damage-inspector-wrapper">
+  <!-- Toast Notification -->
+  <div *ngIf="notificationMessage" class="toast-alert" [ngClass]="notificationType">
+    <span class="material-symbols-outlined text-[18px]">
+      {{ notificationType === 'success' ? 'check_circle' : notificationType === 'error' ? 'error' : 'info' }}
+    </span>
+    <span>{{ notificationMessage }}</span>
+  </div>
+
+  <!-- Active Inspection Case Header -->
+  <section class="case-header-card">
+    <div class="case-header-top">
+      <div class="case-tags-row">
+        <span class="case-code">{{ assessment?.numero_reclamo || inputClaim.numero_reclamo }}</span>
+        <span class="telemetry-pill">
+          <span class="pulsing-dot-teal"></span>
+          REAL-TIME TELEMETRY
+        </span>
+        <span class="verified-icon material-symbols-outlined">verified</span>
+      </div>
+
+      <div class="case-actions">
+        <!-- Selector de Reclamos en MongoDB Atlas -->
+        <div class="flex items-center gap-1.5 bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-300">
+          <span class="material-symbols-outlined text-slate-500 text-[18px]">folder_open</span>
+          <select
+            [(ngModel)]="inputClaim.numero_reclamo"
+            (change)="onClaimChange(inputClaim.numero_reclamo)"
+            class="bg-transparent text-xs font-mono font-bold text-slate-800 outline-none cursor-pointer"
+          >
+            <option *ngFor="let c of availableClaims" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+
+        <!-- Botón para Subir Fotografía Propia de Colisión -->
+        <label class="btn-action-upload" title="Subir fotografía de colisión propia para inferencia inmediata">
+          <span class="material-symbols-outlined text-[18px]">add_photo_alternate</span>
+          <span>Subir Foto</span>
+          <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden" />
+        </label>
+
+        <button class="btn-action-secondary" (click)="loadAssessment()" [disabled]="loading" title="Recargar Expediente">
+          <span class="material-symbols-outlined text-[18px]" [class.spin]="loading">sync</span>
+          <span>Actualizar</span>
+        </button>
+        <button class="btn-action-primary" (click)="analyzeNewEvidence()" [disabled]="loading" title="Re-analizar Imagen con CrashNet">
+          <span class="material-symbols-outlined text-[18px]" [class.spin]="loading">document_scanner</span>
+          <span>Re-analizar</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="vehicle-title-box">
+      <h1 class="vehicle-title">{{ inputClaim.modelo_vehiculo }}</h1>
+      <p class="vehicle-subtitle">
+        Póliza: <span class="font-code">{{ assessment?.numero_poliza || inputClaim.numero_poliza }}</span>
+        • VIN: <span class="font-code">5YJYGDEE3RF89104</span>
+        • Gravedad: <span class="gravedad-chip" [ngClass]="assessment?.gravedad_global">{{ assessment?.gravedad_global }}</span>
+      </p>
+    </div>
+
+    <!-- AI Core Engine Badge -->
+    <div class="ai-engine-banner">
+      <div class="engine-left">
+        <div class="engine-icon-box">
+          <span class="material-symbols-outlined text-[18px]">neurology</span>
+        </div>
+        <div class="engine-text">
+          <div class="engine-title-row">
+            <span class="engine-name">{{ assessment?.modelo_deep_learning || 'TensorFlow CrashNet-CNN-v2.1' }}</span>
+            <span class="pulsing-dot-indigo"></span>
+          </div>
+          <span class="engine-subtext">Multi-Angle Semantic Segmentation • 100-FPS LiDAR Recon • Sensor ID: FL-04</span>
+        </div>
+      </div>
+      <span class="engine-valid-pill">99.4% VALID</span>
+    </div>
+  </section>
+
+  <!-- Interactive Crash Visualizer & Sensor Telemetry -->
+  <section class="visualizer-card">
+    <div class="visualizer-header">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-[20px]">document_scanner</span>
+        <h2 class="visualizer-title">Crash Zone Diagnostic & 3D Sensor Recon</h2>
+      </div>
+      <div class="lidar-recon-pill">
+        <span class="material-symbols-outlined text-[14px] text-primary">sensors</span>
+        <span>LiDAR RECON V3.8</span>
+      </div>
+    </div>
+
+    <!-- Mode Selector Pills -->
+    <div class="mode-selector-row">
+      <button
+        class="mode-btn"
+        [class.active]="activeMode === 'boxes'"
+        (click)="switchMode('boxes')"
+      >
+        AI Overlays
+      </button>
+      <button
+        class="mode-btn"
+        [class.active]="activeMode === 'lidar'"
+        (click)="switchMode('lidar')"
+      >
+        Raw Telemetry (LiDAR)
+      </button>
+      <button
+        class="mode-btn"
+        [class.active]="activeMode === 'thermal'"
+        (click)="switchMode('thermal')"
+      >
+        Thermal Stress Strain
+      </button>
+    </div>
+
+    <!-- Visualizer Canvas Container -->
+    <div class="canvas-viewport">
+      <!-- Underlying Collision Photo -->
+      <img
+        class="damage-photo"
+        [src]="assessment?.imagen_analizada || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx3fyi2LFOE3hDw3Sb6G8eHgn_hLSk3e7xQXTIWEd9BHQw9lVi_s5wz_M5NWDh0T9QCeRoH2TL4EyTMLMv2iBYUrO80grJz545-U3kxPc3UD3WVzixxcpOswoD6j-xqb-xjZ1iRANvcxJZk0atX1tZn1GM6_ZHEV5B65eFNgBrEywi2Qf8QrNY46M3A6genM8PMO_WwLiJFuf2G-9-8Dq7dkRLf4fsOW0hTOC_k8s'"
+        alt="Evidencia fotográfica del siniestro automotriz"
+      />
+
+      <!-- Mode 1: AI Overlays & Bounding Polygons -->
+      <div class="layer-overlay" *ngIf="activeMode === 'boxes'">
+        <!-- SVG Interactive Damage Polygons (Generados Dinámicamente por la Red Convolucional CrashNet) -->
+        <svg class="svg-polygons" viewBox="0 0 400 300" preserveAspectRatio="none">
+          <polygon
+            *ngFor="let part of assessment?.piezas_averiadas"
+            [attr.points]="part.bounding_box?.polygon_points"
+            [attr.fill]="getPolygonFill(part.porcentaje_severidad)"
+            [attr.stroke]="getPolygonColor(part.porcentaje_severidad)"
+            [attr.stroke-width]="selectedPartId === part.parte_id ? '3' : '2'"
+            [attr.stroke-dasharray]="part.accion_recomendada === 'REPARACION' ? '4 2' : 'none'"
+            (click)="selectZone(part.parte_id)"
+            class="cursor-pointer transition-all hover:opacity-90"
+          ></polygon>
+        </svg>
+
+        <!-- Floating Bounding Tag: Front Bumper -->
+        <div
+          class="bounding-tag tag-bumper"
+          [class.selected]="selectedPartId === 'bumper'"
+          (click)="selectZone('bumper')"
+        >
+          <div class="tag-header">
+            <span class="pulsing-dot-red"></span>
+            <span class="tag-title error">Front Bumper Core</span>
+          </div>
+          <span class="tag-meta">Impact 94.2% • Est. $3,450</span>
+        </div>
+
+        <!-- Floating Bounding Tag: Left Headlamp -->
+        <div
+          class="bounding-tag tag-headlamp"
+          [class.selected]="selectedPartId === 'headlamp'"
+          (click)="selectZone('headlamp')"
+        >
+          <div class="tag-header">
+            <span class="dot-amber"></span>
+            <span class="tag-title amber">LED Matrix & Fender</span>
+          </div>
+          <span class="tag-meta">Deform 88.7% • Est. $1,820</span>
+        </div>
+
+        <!-- Floating Bounding Tag: Hood Structure -->
+        <div
+          class="bounding-tag tag-hood"
+          [class.selected]="selectedPartId === 'hood'"
+          (click)="selectZone('hood')"
+        >
+          <div class="tag-header">
+            <span class="dot-indigo"></span>
+            <span class="tag-title indigo">Hood Fracture</span>
+          </div>
+          <span class="tag-meta">Stress 96.1% • Est. $2,100</span>
+        </div>
+      </div>
+
+      <!-- Mode 2: Raw LiDAR Point-Cloud Grid Mode -->
+      <div class="layer-lidar-view" *ngIf="activeMode === 'lidar'">
+        <svg class="lidar-grid-svg" viewBox="0 0 200 150">
+          <pattern id="lidargrid-mf1" width="10" height="10" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="0.75" fill="#80d5cb"></circle>
+            <circle cx="7" cy="7" r="1.1" fill="#3f33d6"></circle>
+          </pattern>
+          <rect width="200" height="150" fill="url(#lidargrid-mf1)"></rect>
+          <path d="M 30,120 Q 80,40 170,90" fill="none" stroke="#80d5cb" stroke-width="1.5" stroke-dasharray="2 2"></path>
+        </svg>
+        <div class="lidar-hud-pill">
+          <span>{{ assessment?.lidar_telemetria?.['puntos_voxel_retorno'] || '1.28M Voxel Return' }} • Depth Delta +42mm</span>
+        </div>
+      </div>
+
+      <!-- Mode 3: Thermal Stress Heatmap Mode -->
+      <div class="layer-thermal-view" *ngIf="activeMode === 'thermal'">
+        <div class="thermal-hud-card">
+          <span class="material-symbols-outlined text-error text-[18px]">local_fire_department</span>
+          <span>Torsional Chassis Strain: {{ assessment?.estres_termico?.['estres_chasis_torsional_mpa'] || 780 }} MPa</span>
+        </div>
+      </div>
+
+      <!-- Live Scan Beam HUD Indicator -->
+      <div class="viewport-bottom-hud">
+        <div class="hud-sync-badge">
+          <span class="material-symbols-outlined text-[14px] spin">sync</span>
+          <span>3D SEMANTIC SEGMENTATION SYNCED</span>
+        </div>
+        <span class="hud-camera-id">CAMERA SENSOR: FL-04</span>
+      </div>
+    </div>
+
+    <!-- Active Damage Breakdown Pill Scroll -->
+    <div class="damage-hotspots-container">
+      <div class="hotspots-header">
+        <span class="hotspots-title">Validated Damage Hotspots</span>
+        <span class="hotspots-count">{{ assessment?.piezas_averiadas?.length || 3 }} Detectadas</span>
+      </div>
+
+      <div class="hotspots-grid">
+        <div
+          *ngFor="let part of assessment?.piezas_averiadas"
+          class="hotspot-item"
+          [class.active]="selectedPartId === part.parte_id"
+          (click)="selectZone(part.parte_id)"
+        >
+          <div class="hotspot-left">
+            <span
+              class="part-dot"
+              [ngClass]="{
+                'dot-red': part.parte_id === 'bumper',
+                'dot-amber': part.parte_id === 'headlamp',
+                'dot-indigo': part.parte_id === 'hood'
+              }"
+            ></span>
+            <div class="part-text">
+              <span class="part-name">{{ part.nombre_pieza }}</span>
+              <span class="part-desc">{{ part.descripcion_dano }}</span>
+            </div>
+          </div>
+          <div class="hotspot-right">
+            <span class="part-cost">${{ part.costo_total_usd | number:'1.2-2' }}</span>
+            <span class="part-conf">{{ (part.confianza_deteccion * 100) | number:'1.1-1' }}% AI Conf</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OEM Dispatch Matrix & Financial Settlement -->
+  <div class="bottom-grid">
+    <!-- OEM Dispatch Matrix -->
+    <section class="oem-matrix-card">
+      <div class="section-title-row">
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-primary text-[20px]">build_circle</span>
+          <h3 class="section-title">OEM Parts Dispatch Matrix</h3>
+        </div>
+        <span class="epc-badge">EPC INTEGRATED</span>
+      </div>
+
+      <div class="oem-items-list">
+        <div *ngFor="let part of assessment?.piezas_averiadas" class="oem-item">
+          <div class="oem-top">
+            <div>
+              <div class="oem-name-row">
+                <span class="oem-name">{{ part.nombre_pieza }}</span>
+                <span
+                  class="action-pill"
+                  [ngClass]="part.accion_recomendada === 'REEMPLAZO' ? 'pill-replace' : 'pill-repair'"
+                >
+                  {{ part.accion_recomendada }}
+                </span>
+              </div>
+              <span class="oem-code">{{ part.codigo_oem }}</span>
+            </div>
+            <span class="oem-price">${{ part.costo_pieza_usd | number:'1.2-2' }}</span>
+          </div>
+          <div class="oem-bottom">
+            <div class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-primary text-[14px]">local_shipping</span>
+              <span>Tesla Official Distribution Hub (In Stock)</span>
+            </div>
+            <span class="oem-eta">{{ part.tiempo_estimado_despacho }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Financial Settlement Payout Card -->
+    <section class="settlement-card">
+      <div class="section-title-row">
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-primary text-[20px]">payments</span>
+          <h3 class="section-title">Liquidación Técnica Preliminar</h3>
+        </div>
+        <span class="status-badge" [class.en-proceso]="assessment?.estado_peritaje === 'EN_PROCESO_LIQUIDACION'">
+          {{ assessment?.estado_peritaje }}
+        </span>
+      </div>
+
+      <div class="settlement-rows">
+        <div class="settlement-row">
+          <span class="s-label">Total Repuestos OEM</span>
+          <span class="s-val">${{ assessment?.liquidacion_financiera?.costo_repuestos_usd | number:'1.2-2' }} USD</span>
+        </div>
+        <div class="settlement-row">
+          <span class="s-label">Mano de Obra & Enderezado</span>
+          <span class="s-val">${{ assessment?.liquidacion_financiera?.costo_mano_obra_usd | number:'1.2-2' }} USD</span>
+        </div>
+        <div class="settlement-row highlight">
+          <span class="s-label">Costo Bruto de Reparación</span>
+          <span class="s-val price-total">${{ assessment?.liquidacion_financiera?.costo_total_reparacion_usd | number:'1.2-2' }} USD</span>
+        </div>
+        <div class="settlement-row deduct">
+          <span class="s-label">Deducible Contratado</span>
+          <span class="s-val">-${{ assessment?.liquidacion_financiera?.deducible_calculado_usd | number:'1.2-2' }} USD</span>
+        </div>
+        <div class="settlement-total-banner">
+          <span class="total-label">Monto Neto Indemnizable:</span>
+          <span class="total-value">${{ assessment?.liquidacion_financiera?.monto_indemnizable_neto_usd | number:'1.2-2' }} USD</span>
+        </div>
+      </div>
+
+      <div class="settlement-actions">
+        <button
+          class="btn-confirm-saga"
+          [disabled]="confirming || assessment?.estado_peritaje === 'EN_PROCESO_LIQUIDACION'"
+          (click)="confirmAndSendToSaga()"
+        >
+          <span class="material-symbols-outlined text-[18px]">gavel</span>
+          <span>
+            {{ assessment?.estado_peritaje === 'EN_PROCESO_LIQUIDACION' ? 'Expediente Transferido a Saga (CU09)' : 'Confirmar Peritaje y Enviar a Liquidación Saga' }}
+          </span>
+        </button>
+      </div>
+    </section>
+  </div>
+</div>

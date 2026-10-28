@@ -433,7 +433,7 @@ class _SyncQueueScreenState extends State<SyncQueueScreen> {
 
                       return ListView.separated(
                         itemCount: listaActual.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final item = listaActual[index];
                           final isSynced = item['estado_sync'] == 'SINCRONIZADO';

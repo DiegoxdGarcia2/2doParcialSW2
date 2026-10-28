@@ -1,0 +1,25 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--color-background, #F8FAFC);
+}
+
+/* Transiciones sutiles */
+button, a {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar discreto */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.2);
+  border-radius: 9999px;
+}

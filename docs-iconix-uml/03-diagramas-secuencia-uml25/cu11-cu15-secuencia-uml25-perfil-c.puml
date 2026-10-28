@@ -1,0 +1,209 @@
+@startuml Secuencia_UML25_Perfil_C_AegisCore
+!theme plain
+autonumber
+skinparam roundcorner 8
+
+title Metodología ICONIX — Diagramas de Secuencia UML 2.5+\nMétodos Operacionales Explícitos en Clases de Control (CU11 a CU15 — Perfil C)
+
+' ==============================================================================
+' DIAGRAMA 1: CU11 - Visión Artificial y Detección de Choques con TensorFlow CNN
+' ==============================================================================
+== CU11: Visión Artificial Choques con TensorFlow CNN (CrashNet) ==
+
+actor "Ajustador / Perito" as user_cu11
+participant "view : VisionInspectorAngularView" as b_cu11_view <<boundary>>
+participant "router : FastApiVisionRouter" as b_cu11_api <<boundary>>
+participant "ctrl : CrashVisionControl" as c_cu11_ctrl <<control>>
+participant "model : CrashNetKerasModel" as e_cu11_model <<entity>>
+database "mongo : ExpedienteSiniestroDocument" as e_cu11_mongo <<entity>>
+
+user_cu11 -> b_cu11_view : seleccionarArchivoImagenOVideo(archivo)
+b_cu11_view -> b_cu11_api : POST /api/v1/vision/analyze-crash(multipartFormData)
+activate b_cu11_api
+b_cu11_api -> c_cu11_ctrl : predecirSeveridadCrashNet(imagen_bytes, umbral_confianza=0.75)
+activate c_cu11_ctrl
+c_cu11_ctrl -> c_cu11_ctrl : normalizarTensoresImagen(224, 224, 3)
+c_cu11_ctrl -> e_cu11_model : predict(tensor_normalizado)
+activate e_cu11_model
+e_cu11_model --> c_cu11_ctrl : arrayProbabilidadesSoftmax [0.03, 0.12, 0.81, 0.04]
+deactivate e_cu11_model
+c_cu11_ctrl -> c_cu11_ctrl : generarMapaCalorGradCam(capa_convolucional="conv2d_block4")
+c_cu11_ctrl -> e_cu11_mongo : actualizarPeritajeVisual(id_siniestro, severidad="GRAVE", score=0.81)
+activate e_cu11_mongo
+e_cu11_mongo --> c_cu11_ctrl : updateResultOK(id_siniestro)
+deactivate e_cu11_mongo
+c_cu11_ctrl --> b_cu11_api : InspeccionDanoVisionDTO(severidad="GRAVE", confianza=0.81, piezas=["Capó", "Radiador"])
+deactivate c_cu11_ctrl
+b_cu11_api --> b_cu11_view : HTTP 200 OK (InspeccionDanoVisionDTO)
+deactivate b_cu11_api
+b_cu11_view --> user_cu11 : Visualizar Bounding Boxes, Heatmap y Dictamen Pericial
+
+
+' ==============================================================================
+' DIAGRAMA 2: CU12 - Predicción de Ventas y Primas Óptimas con Random Forest
+' ==============================================================================
+== CU12: Predicción de Ventas y Primas Óptimas con Random Forest ==
+
+actor "Actuario Comercial" as user_cu12
+participant "view : ActuarialSalesPredictionView" as b_cu12_view <<boundary>>
+participant "router : FastApiMlSupervisedRouter" as b_cu12_api <<boundary>>
+participant "ctrl : SupervisedMlControl" as c_cu12_ctrl <<control>>
+database "pg : DatasetHistoricoMlPolizas" as e_cu12_pg <<entity>>
+participant "rfModel : RandomForestJoblibModel" as e_cu12_rf <<entity>>
+
+user_cu12 -> b_cu12_view : ingresarParametrosVehiculoYPerfil(edad, historial, valor_vehiculo, region)
+b_cu12_view -> b_cu12_api : POST /api/v1/ml/predict-sales-premium(PrediccionPrimaRequestDTO)
+activate b_cu12_api
+b_cu12_api -> c_cu12_ctrl : entrenarYPredecirPrimaRandomForest(requestDTO)
+activate c_cu12_ctrl
+c_cu12_ctrl -> e_cu12_pg : SELECT AVG(costo_siniestro), COUNT(*) FROM dataset_historico_ml_polizas WHERE perfil_riesgo = ?
+activate e_cu12_pg
+e_cu12_pg --> c_cu12_ctrl : estadisticasSiniestralidad(frecuencia, severidad_media)
+deactivate e_cu12_pg
+c_cu12_ctrl -> c_cu12_ctrl : transformarVariablesCategoricasOneHot(requestDTO)
+c_cu12_ctrl -> e_cu12_rf : predict(vector_caracteristicas_12d)
+activate e_cu12_rf
+e_cu12_rf --> c_cu12_ctrl : primaPuraEstimada = 845.50 USD
+deactivate e_cu12_rf
+c_cu12_ctrl -> c_cu12_ctrl : calcularImportanciaVariablesGini()
+c_cu12_ctrl -> c_cu12_ctrl : aplicarRecargoSeguridadYMargenActuarial(primaPura=845.50, factor=1.25)
+c_cu12_ctrl --> b_cu12_api : PrediccionPrimaResponseDTO(prima_comercial=1056.88, r2_score=0.912, features_importance)
+deactivate c_cu12_ctrl
+b_cu12_api --> b_cu12_view : HTTP 200 OK (PrediccionPrimaResponseDTO)
+deactivate b_cu12_api
+b_cu12_view --> user_cu12 : Graficar Desglose de Prima, Sensibilidad y Recomendación Comercial
+
+
+' ==============================================================================
+' DIAGRAMA 3: CU13 - Segmentación K-Means y Detección de Fraude con Isolation Forest
+' ==============================================================================
+== CU13: Segmentación K-Means y Detección de Fraude Isolation Forest ==
+
+actor "Auditor SIU" as user_cu13
+participant "view : RiskFraudSentinelView" as b_cu13_view <<boundary>>
+participant "router : FastApiMlUnsupervisedRouter" as b_cu13_api <<boundary>>
+participant "ctrl : UnsupervisedFraudControl" as c_cu13_ctrl <<control>>
+participant "kmeans : KMeansClusterArtifact" as e_cu13_kmeans <<entity>>
+participant "iforest : IsolationForestArtifact" as e_cu13_iforest <<entity>>
+database "mongo : ExpedienteSiniestroDocument" as e_cu13_mongo <<entity>>
+
+user_cu13 -> b_cu13_view : solicitarAuditoriaFraudeSiniestro(id_siniestro="SIN-2026-9901")
+b_cu13_view -> b_cu13_api : POST /api/v1/ml/evaluate-claim-fraud { id_siniestro }
+activate b_cu13_api
+b_cu13_api -> c_cu13_ctrl : evaluarSiniestroSospechoso(id_siniestro)
+activate c_cu13_ctrl
+c_cu13_ctrl -> e_cu13_mongo : findById(id_siniestro)
+activate e_cu13_mongo
+e_cu13_mongo --> c_cu13_ctrl : datosExpediente(monto_reclamado, dias_desde_emision, historial_reclamos)
+deactivate e_cu13_mongo
+c_cu13_ctrl -> c_cu13_ctrl : extraerVectorComportamental(datosExpediente)
+c_cu13_ctrl -> e_cu13_kmeans : predict(vector_normalizado_minmax)
+activate e_cu13_kmeans
+e_cu13_kmeans --> c_cu13_ctrl : clusterId = 3 ("Perfil Alto Riesgo / Reclamaciones Frecuentes")
+deactivate e_cu13_kmeans
+c_cu13_ctrl -> e_cu13_iforest : decision_function(vector_normalizado)
+activate e_cu13_iforest
+e_cu13_iforest --> c_cu13_ctrl : anomalyScore = -0.38 (Valor < 0 indica Anomalia Severa)
+deactivate e_cu13_iforest
+c_cu13_ctrl -> c_cu13_ctrl : calcularProbabilidadFraudeSIU(anomalyScore, clusterId)
+alt Probabilidad de Fraude >= 70%
+    c_cu13_ctrl -> e_cu13_mongo : marcarBanderaFraudeSIU(id_siniestro, score=0.88, estado="BLOQUEADO_AUDITORIA")
+    activate e_cu13_mongo
+    e_cu13_mongo --> c_cu13_ctrl : expedientesActualizadoOK
+    deactivate e_cu13_mongo
+end
+c_cu13_ctrl --> b_cu13_api : EvaluacionFraudeDTO(es_anomalia=true, riesgo_fraude_pct=88.5, cluster_nombre="Alto Riesgo")
+deactivate c_cu13_ctrl
+b_cu13_api --> b_cu13_view : HTTP 200 OK (EvaluacionFraudeDTO)
+deactivate b_cu13_api
+b_cu13_view --> user_cu13 : Mostrar Alerta Roja de Fraude, Factores Clave y Bloqueo Preventivo
+
+
+' ==============================================================================
+' DIAGRAMA 4: CU14 - Monitoreo y Re-planning Continuo con Agente LangGraph
+' ==============================================================================
+== CU14: Monitoreo y Re-planning Continuo con Agente Autónomo LangGraph ==
+
+actor "Director ERP" as user_cu14
+participant "view : AutonomousAgentMonitorView" as b_cu14_view <<boundary>>
+participant "router : FastApiAgentMonitorRouter" as b_cu14_api <<boundary>>
+participant "ctrl : LangGraphAutonomousAgentControl" as c_cu14_ctrl <<control>>
+participant "cluster : AegisCoreMicroservicesCluster" as e_cu14_cluster <<entity>>
+database "stateStorage : AgentStateGraphArtifact" as e_cu14_state <<entity>>
+
+user_cu14 -> b_cu14_view : presionarBotonDispararCicloAutonomo()
+b_cu14_view -> b_cu14_api : POST /api/v1/agent/trigger-evaluation
+activate b_cu14_api
+b_cu14_api -> c_cu14_ctrl : ejecutarCicloAutonomo()
+activate c_cu14_ctrl
+c_cu14_ctrl -> e_cu14_state : cargarEstadoActualGrafo()
+activate e_cu14_state
+e_cu14_state --> c_cu14_ctrl : AgentState(metas_activas, siniestros_pendientes, reflexiones_previas)
+deactivate e_cu14_state
+c_cu14_ctrl -> e_cu14_cluster : sensorSaludSLAyLatencias()
+activate e_cu14_cluster
+e_cu14_cluster --> c_cu14_ctrl : metricasCluster(ms1="OK", ms2="DEGRADED", ms3="OK", ms4="OK")
+deactivate e_cu14_cluster
+c_cu14_ctrl -> c_cu14_ctrl : nodoEvaluarSaludCluster()
+c_cu14_ctrl -> c_cu14_ctrl : nodoReplanificarMetasPrioritarias()
+c_cu14_ctrl -> c_cu14_ctrl : dispararSkillCompensatoria("skill_reencolar_siniestros_criticos")
+c_cu14_ctrl -> c_cu14_ctrl : nodoReflexionAutonomaFinal()
+c_cu14_ctrl -> e_cu14_state : persistirEstadoReflexivo(nuevoEstadoGrafo)
+activate e_cu14_state
+e_cu14_state --> c_cu14_ctrl : estadoPersistidoOK
+deactivate e_cu14_state
+c_cu14_ctrl --> b_cu14_api : AutonomousAgentExecutionResponse(ciclo_id, reflexion, skills_disparadas, siniestros_resueltos)
+deactivate c_cu14_ctrl
+b_cu14_api --> b_cu14_view : HTTP 200 OK (AutonomousAgentExecutionResponse)
+deactivate b_cu14_api
+b_cu14_view --> user_cu14 : Animar Transición de Nodos del Grafo y Registrar Acciones en Bitácora
+
+
+' ==============================================================================
+' DIAGRAMA 5: CU15 - Reportes por Voz con Servidor MCP y Blindaje OWASP Anti-SQLi
+' ==============================================================================
+== CU15: Reportes por Voz con Servidor MCP y Blindaje OWASP Anti-SQLi ==
+
+actor "Ejecutivo / Ajustador" as user_cu15
+participant "view : VoiceMcpReportsView" as b_cu15_view <<boundary>>
+participant "router : FastApiMcpRouter" as b_cu15_api <<boundary>>
+participant "ctrl : VoiceMcpControl" as c_cu15_ctrl <<control>>
+participant "guard : OwaspAntiSqliGuard" as c_cu15_guard <<control>>
+participant "mcp : McpProtocolServer" as c_cu15_mcp <<control>>
+database "db : PostgreSqlErpAndMongoDb" as e_cu15_db <<entity>>
+participant "exp : DocumentExportersControl" as c_cu15_exp <<control>>
+
+user_cu15 -> b_cu15_view : dictarComandoPorVoz("Generar reporte ejecutivo de siniestros graves en formato PDF")
+b_cu15_view -> b_cu15_api : POST /api/v1/mcp/voice-command (Multipart Audio / JSON)
+activate b_cu15_api
+b_cu15_api -> c_cu15_ctrl : procesarComandoVozCompleto(audio_bytes, prompt_dictado, formato="pdf")
+activate c_cu15_ctrl
+c_cu15_ctrl -> c_cu15_ctrl : transcribirAudioWhisper(audio_bytes)
+c_cu15_ctrl -> c_cu15_guard : auditarSeguridadAntiSQLi(texto_transcrito)
+activate c_cu15_guard
+c_cu15_guard -> c_cu15_guard : verificarTautologiasLógicas()
+c_cu15_guard -> c_cu15_guard : verificarInyeccionesUnionYStackedQueries()
+c_cu15_guard --> c_cu15_ctrl : OwaspSecurityAuditDTO(es_amenaza=false, score=0.01, rule="CLEAN")
+deactivate c_cu15_guard
+c_cu15_ctrl -> c_cu15_ctrl : extraerIntencionYParametros("tool_reporte_siniestralidad", {severidad="GRAVE"})
+c_cu15_ctrl -> c_cu15_mcp : ejecutarHerramientaMCP("tool_reporte_siniestralidad", {severidad="GRAVE"})
+activate c_cu15_mcp
+c_cu15_mcp -> e_cu15_db : ejecutarConsultaParametrizada(sqlParams = {"severidad": "GRAVE"})
+activate e_cu15_db
+e_cu15_db --> c_cu15_mcp : filasRegistrosSiniestrosGraves
+deactivate e_cu15_db
+c_cu15_mcp --> c_cu15_ctrl : TrazaEjecucionMCP(registros=8, kpis={"total_liquidado": 25620.0})
+deactivate c_cu15_mcp
+c_cu15_ctrl -> c_cu15_exp : exportarReporteDocumento(datos, formato="pdf")
+activate c_cu15_exp
+c_cu15_exp -> c_cu15_exp : compilarPdfExecutivePrecision(plantilla_estilos)
+c_cu15_exp -> c_cu15_exp : calcularHashSha256(archivo_compilado)
+c_cu15_exp --> c_cu15_ctrl : GeneratedDocumentDTO(filename="reporte_siniestralidad_*.pdf", sha256="4f8a...", url="/download-report/...")
+deactivate c_cu15_exp
+c_cu15_ctrl --> b_cu15_api : VoiceMcpExecutionResponse(auditoria_seguridad, documento, kpis, traza_mcp)
+deactivate c_cu15_ctrl
+b_cu15_api --> b_cu15_view : HTTP 200 OK (VoiceMcpExecutionResponse)
+deactivate b_cu15_api
+b_cu15_view --> user_cu15 : Presentar Tarjeta de Descarga con Hash SHA-256 y Resumen de Métricas
+
+@enduml

@@ -1,0 +1,133 @@
+@startuml Robustez_Perfil_C_AegisCore
+!theme plain
+skinparam roundcorner 10
+skinparam stereotypeCBackgroundColor #F4D03F
+skinparam stereotypeBBackgroundColor #5DADE2
+skinparam stereotypeEBackgroundColor #58D68D
+
+title Metodología ICONIX — Diagramas de Robustez (Boundary, Control, Entity)\nPerfil C: Casos de Uso CU11 a CU15 (Inteligencia Artificial, Agentes y Servidor MCP)
+
+' ==============================================================================
+' CU11: Visión Artificial y Detección de Choques (TensorFlow CNN CrashNet)
+' ==============================================================================
+package "CU11: Visión Artificial Choques con TensorFlow CNN (CrashNet)" {
+    actor "Ajustador de Siniestros / Perito" as actor_cu11
+    boundary "VisionInspectorAngularView\n(/ai-damage-inspector)" as b_cu11_view <<boundary>>
+    boundary "FastApiVisionRouterBoundary\n(POST /api/v1/vision/analyze-crash)" as b_cu11_api <<boundary>>
+    control "CrashVisionControl\n(MS4 Python TensorFlow 2 / Keras)" as c_cu11_ctrl <<control>>
+    entity "CrashNetKerasModel\n(weights.h5 / CNN 4 Bloques Conv2D)" as e_cu11_model <<entity>>
+    entity "ExpedienteSiniestroDocument\n(MongoDB 7: aegiscore_siniestros)" as e_cu11_mongo <<entity>>
+
+    actor_cu11 --> b_cu11_view : 1. Carga foto/video del siniestro
+    b_cu11_view --> b_cu11_api : 2. Multipart Upload (JPEG/PNG/MP4)
+    b_cu11_api --> c_cu11_ctrl : 3. predecirSeveridadCrashNet(imagen_bytes)
+    c_cu11_ctrl --> e_cu11_model : 4. Inferencia tensorial (224x224x3, Softmax)
+    e_cu11_model --> c_cu11_ctrl : 5. Probabilidades [Leve, Moderado, Grave, DestruccionTotal]
+    c_cu11_ctrl --> e_cu11_mongo : 6. Actualizar peritaje con Heatmap Grad-CAM
+    c_cu11_ctrl --> b_cu11_api : 7. InspeccionDanoVisionDTO (severidad, confianza)
+    b_cu11_api --> b_cu11_view : 8. Renderizar bounding boxes y dictamen pericial
+}
+
+' ==============================================================================
+' CU12: Predicción de Ventas y Primas (Scikit-Learn Random Forest)
+' ==============================================================================
+package "CU12: Predicción Ventas y Primas (Random Forest Regressor)" {
+    actor "Actuario Comercial" as actor_cu12
+    boundary "ActuarialSalesPredictionView\n(/actuarial-sales-prediction)" as b_cu12_view <<boundary>>
+    boundary "FastApiMlSupervisedRouter\n(POST /api/v1/ml/predict-sales-premium)" as b_cu12_api <<boundary>>
+    control "SupervisedMlControl\n(MS4 Python Scikit-Learn Ensemble)" as c_cu12_ctrl <<control>>
+    entity "RandomForestJoblibModel\n(100 Árboles de Decisión)" as e_cu12_rf <<entity>>
+    entity "DatasetHistoricoMlPolizas\n(PostgreSQL 16: 1,200 registros)" as e_cu12_pg <<entity>>
+
+    actor_cu12 --> b_cu12_view : 1. Ingresa perfil de riesgo y vehículo
+    b_cu12_view --> b_cu12_api : 2. POST PrediccionPrimaRequestDTO
+    b_cu12_api --> c_cu12_ctrl : 3. entrenarYPredecirPrimaRandomForest(dto)
+    c_cu12_ctrl --> e_cu12_pg : 4. Consultar métricas históricas de siniestralidad
+    c_cu12_ctrl --> e_cu12_rf : 5. Inferencia estocástica ensemble
+    e_cu12_rf --> c_cu12_ctrl : 6. Prima estimada ($USD) + Desglose de Features
+    c_cu12_ctrl --> b_cu12_api : 7. PrediccionPrimaResponseDTO (Gini Importance)
+    b_cu12_api --> b_cu12_view : 8. Gráfico de sensibilidad y prima calculada
+}
+
+' ==============================================================================
+' CU13: Segmentación K-Means y Detección de Fraude (Isolation Forest)
+' ==============================================================================
+package "CU13: Segmentación K-Means y Detección Fraude Isolation Forest" {
+    actor "Auditor SIU / Fraude" as actor_cu13
+    boundary "RiskFraudSentinelView\n(/risk-fraud-sentinel)" as b_cu13_view <<boundary>>
+    boundary "FastApiMlUnsupervisedRouter\n(POST /api/v1/ml/evaluate-claim-fraud)" as b_cu13_api <<boundary>>
+    control "UnsupervisedFraudControl\n(MS4 Scikit-Learn IsolationForest & KMeans)" as c_cu13_ctrl <<control>>
+    entity "KMeansClusterArtifact\n(k=4 Clusters de Perfil de Riesgo)" as e_cu13_kmeans <<entity>>
+    entity "IsolationForestArtifact\n(Contamination=0.08 / Score Anomalía)" as e_cu13_iforest <<entity>>
+    entity "ExpedienteSiniestroAuditoria\n(MongoDB 7: flag_fraude_siu)" as e_cu13_mongo <<entity>>
+
+    actor_cu13 --> b_cu13_view : 1. Selecciona expediente o dispara barrido
+    b_cu13_view --> b_cu13_api : 2. POST /evaluate-claim-fraud {id_siniestro}
+    b_cu13_api --> c_cu13_ctrl : 3. evaluarSiniestroSospechoso(id_siniestro)
+    c_cu13_ctrl --> e_cu13_kmeans : 4. Clasificar cluster (Segmento 0..3)
+    c_cu13_ctrl --> e_cu13_iforest : 5. Calcular Anomaly Score y Decision Function
+    e_cu13_iforest --> c_cu13_ctrl : 6. Score (-1 Anomalía / +1 Normal)
+    c_cu13_ctrl --> e_cu13_mongo : 7. Marcar auditoría SIU y bandera de fraude
+    c_cu13_ctrl --> b_cu13_api : 8. EvaluacionFraudeDTO (Cluster, Riesgo %, Razones)
+    b_cu13_api --> b_cu13_view : 9. Radar Chart de riesgo y dispersión 2D/3D
+}
+
+' ==============================================================================
+' CU14: Monitoreo y Re-planning Continuo con Agente Autónomo LangGraph
+' ==============================================================================
+package "CU14: Agente Autónomo LangGraph (Metas, Re-planning y Skills)" {
+    actor "Director de Operaciones ERP" as actor_cu14
+    boundary "AutonomousAgentMonitorView\n(/autonomous-agent-monitor)" as b_cu14_view <<boundary>>
+    boundary "FastApiAgentMonitorRouter\n(POST /api/v1/agent/trigger-evaluation)" as b_cu14_api <<boundary>>
+    control "LangGraphAutonomousAgentControl\n(MS4 LangGraph StateGraph Execution)" as c_cu14_ctrl <<control>>
+    entity "AgentStateGraphArtifact\n(agent_cluster_state.json / Checkpointer)" as e_cu14_state <<entity>>
+    entity "AegisCoreMicroservicesCluster\n(Health Check MS1, MS2, MS3, MS4)" as e_cu14_cluster <<entity>>
+
+    actor_cu14 --> b_cu14_view : 1. Solicita estado o evaluación autónoma
+    b_cu14_view --> b_cu14_api : 2. POST /trigger-evaluation
+    b_cu14_api --> c_cu14_ctrl : 3. ejecutarCicloAutonomo()
+    c_cu14_ctrl --> e_cu14_cluster : 4. Sensor de salud y SLAs de microservicios
+    c_cu14_ctrl --> e_cu14_state : 5. Cargar estado de metas (LangGraph State)
+    c_cu14_ctrl --> c_cu14_ctrl : 6. Nodo Re-planning & Disparo de Skills
+    c_cu14_ctrl --> e_cu14_state : 7. Persistir nuevo estado reflexivo
+    c_cu14_ctrl --> b_cu14_api : 8. ExecutionCycleResponseDTO (Reflexión, Skills)
+    b_cu14_api --> b_cu14_view : 9. Timeline de skills disparadas y grafo interactivo
+}
+
+' ==============================================================================
+' CU15: Reportes Dinámicos por Voz con Servidor MCP y Anti-SQLi
+' ==============================================================================
+package "CU15: Reportes Dinámicos por Voz con Servidor MCP y Blindaje OWASP Anti-SQLi" {
+    actor "Ejecutivo / Ajustador" as actor_cu15
+    boundary "VoiceMcpReportsView\n(Angular /voice-mcp-reports)" as b_cu15_angular <<boundary>>
+    boundary "VoiceMcpMobileView\n(Flutter Home Card & FAB Peritaje)" as b_cu15_flutter <<boundary>>
+    boundary "FastApiMcpRouterBoundary\n(POST /api/v1/mcp/voice-command)" as b_cu15_api <<boundary>>
+    control "VoiceMcpControl\n(ICONIX Control Centralizado)" as c_cu15_ctrl <<control>>
+    control "OwaspAntiSqliGuard\n(Filtro de AST y Expresiones Regulares)" as c_cu15_owasp <<control>>
+    control "McpProtocolServer\n(Servidor MCP con Tools Tipadas)" as c_cu15_mcp <<control>>
+    control "DocumentExportersControl\n(Excel, PDF, Word Exporters)" as c_cu15_exp <<control>>
+    entity "PostgreSqlErpAndMongoDb\n(Parametrized SQL Queries & Mongo Filters)" as e_cu15_db <<entity>>
+    entity "CompiledReportArtifact\n(artifacts/reports/*.xlsx|pdf|docx)" as e_cu15_file <<entity>>
+
+    actor_cu15 --> b_cu15_angular : 1a. Dicta orden por micrófono web
+    actor_cu15 --> b_cu15_flutter : 1b. Dicta orden por micrófono móvil
+    b_cu15_angular --> b_cu15_api : 2. POST /voice-command (Multipart / JSON)
+    b_cu15_flutter --> b_cu15_api : 2. POST /voice-command (Multipart / JSON)
+    b_cu15_api --> c_cu15_ctrl : 3. procesarComandoVozCompleto()
+    c_cu15_ctrl --> c_cu15_owasp : 4. auditarSeguridadAntiSQLi(texto)
+    note right of c_cu15_owasp
+      Si detecta ' OR '1'='1 o UNION SELECT
+      bloquea ejecución con HTTP 400 y alerta roja
+    end note
+    c_cu15_owasp --> c_cu15_ctrl : 5. Auditoria OK (No es amenaza)
+    c_cu15_ctrl --> c_cu15_mcp : 6. ejecutarHerramientaMCP(tool_name, params)
+    c_cu15_mcp --> e_cu15_db : 7. Consulta parametrizada segura
+    e_cu15_db --> c_cu15_mcp : 8. Dataset de registros
+    c_cu15_ctrl --> c_cu15_exp : 9. exportarReporteDocumento(datos, formato)
+    c_cu15_exp --> e_cu15_file : 10. Compilar archivo y calcular SHA-256
+    c_cu15_ctrl --> b_cu15_api : 11. VoiceMcpExecutionResponse (Download URL, KPIs)
+    b_cu15_api --> b_cu15_angular : 12. Renderizar resultado y enlace de descarga
+    b_cu15_api --> b_cu15_flutter : 12. Tarjeta con URL y Hash SHA-256
+}
+
+@enduml

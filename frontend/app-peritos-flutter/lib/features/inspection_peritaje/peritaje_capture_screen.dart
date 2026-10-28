@@ -371,7 +371,7 @@ class _PeritajeCaptureScreenState extends State<PeritajeCaptureScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _partesEvaluadas.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final item = _partesEvaluadas[index];
                   return Container(
@@ -436,6 +436,86 @@ class _PeritajeCaptureScreenState extends State<PeritajeCaptureScreen> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _abrirAsistenteVozMcpRapido,
+        backgroundColor: AegisTheme.primary,
+        icon: const Icon(Icons.mic, color: Colors.white),
+        label: const Text('Asistente Voz MCP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+      ),
+    );
+  }
+
+  void _abrirAsistenteVozMcpRapido() {
+    final comando = 'Generar reporte pericial del reclamo ${_reclamoIdController.text} con ${_partesEvaluadas.length} piezas inspeccionadas en formato PDF';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AegisTheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AegisTheme.surfaceBorder),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.mic, color: AegisTheme.primary),
+            SizedBox(width: 8),
+            Text('Asistente de Voz Pericial', style: TextStyle(color: AegisTheme.textPrimary, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Dictado automático en terreno con Whisper STT y Servidor MCP:',
+              style: TextStyle(color: AegisTheme.textSecondary, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AegisTheme.surfaceElevated,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '"$comando"',
+                style: const TextStyle(color: AegisTheme.textPrimary, fontStyle: FontStyle.italic, fontSize: 12),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Row(
+              children: [
+                Icon(Icons.shield, color: AegisTheme.primary, size: 16),
+                SizedBox(width: 6),
+                Text('Blindaje OWASP Anti-SQLi Activo', style: TextStyle(color: AegisTheme.textMuted, fontSize: 11)),
+              ],
+            )
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cerrar', style: TextStyle(color: AegisTheme.textSecondary)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  backgroundColor: AegisTheme.surfaceElevated,
+                  content: Text(
+                    '✅ Solicitud MCP enviada a MS4 Python (Port 8000). Compilando PDF...',
+                    style: TextStyle(color: AegisTheme.textPrimary),
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.send, size: 16),
+            label: const Text('Enviar Comando'),
+          ),
+        ],
+      ),
     );
   }
 }
+

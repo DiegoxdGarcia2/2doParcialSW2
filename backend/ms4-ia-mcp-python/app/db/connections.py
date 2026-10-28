@@ -18,19 +18,20 @@ from pymongo import MongoClient
 from pymongo.database import Database
 import psycopg2
 
-# Cargar automáticamente .env raíz si no están presentes las variables
-_ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-_env_file = _ROOT_DIR / ".env"
-if _env_file.is_file():
-    with open(_env_file, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                k = k.strip()
-                v = v.strip().strip("'\"")
-                if k not in os.environ:
-                    os.environ[k] = v
+from dotenv import load_dotenv, find_dotenv
+# Cargar automáticamente .env buscando hacia arriba en el árbol de directorios
+_dotenv_path = find_dotenv(usecwd=True)
+if not _dotenv_path:
+    # Intento relativo al archivo actual
+    _curr = Path(__file__).resolve()
+    for _ in range(5):
+        _curr = _curr.parent
+        _candidate = _curr / ".env"
+        if _candidate.is_file():
+            _dotenv_path = str(_candidate)
+            break
+if _dotenv_path:
+    load_dotenv(_dotenv_path)
 
 # ---------------------------------------------------------------------------
 # 1. MongoDB Atlas Client
@@ -92,5 +93,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 def get_postgres_connection():
-    clean_url = DATABASE_URL.replace("&channel_binding=require", "")
+    db_url = os.getenv("DATABASE_URL") or DATABASE_URL
+    if not db_url:
+        raise ValueError("DATABASE_URL no está definida en las variables de entorno.")
+    clean_url = db_url.replace("&channel_binding=require", "")
     return psycopg2.connect(clean_url, connect_timeout=10)

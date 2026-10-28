@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>AegisCore AI Enterprise</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'on-error-container': '#93000a', 'surface-container-highest': '#d3e4fe', 'on-secondary-fixed': '#131b2e', 'on-tertiary': '#ffffff', 'on-primary': '#ffffff', 'on-tertiary-fixed-variant': '#3323cc', 'on-secondary-fixed-variant': '#3f465c', 'surface-container-lowest': '#ffffff', 'tertiary-container': '#5951ef', 'error': '#ba1a1a', 'tertiary-fixed-dim': '#c3c0ff', 'inverse-surface': '#213145', 'surface-variant': '#d3e4fe', 'surface-bright': '#f8f9ff', 'inverse-primary': '#80d5cb', 'surface-container': '#e5eeff', 'primary-fixed': '#9cf2e8', 'outline': '#6e7977', 'surface': '#f8f9ff', 'primary-fixed-dim': '#80d5cb', 'on-primary-fixed': '#00201d', 'secondary-fixed-dim': '#bec6e0', 'inverse-on-surface': '#eaf1ff', 'surface-container-high': '#dce9ff', 'on-tertiary-container': '#ebe8ff', 'secondary-fixed': '#dae2fd', 'secondary-container': '#dae2fd', 'tertiary-fixed': '#e2dfff', 'tertiary': '#3f33d6', 'on-error': '#ffffff', 'on-primary-container': '#a3faef', 'on-surface-variant': '#3e4947', 'background': '#f8f9ff', 'error-container': '#ffdad6', 'on-background': '#0b1c30', 'on-surface': '#0b1c30', 'primary-container': '#0f766e', 'on-secondary-container': '#5c647a', 'surface-dim': '#cbdbf5', 'secondary': '#565e74', 'outline-variant': '#bdc9c6', 'on-tertiary-fixed': '#0f0069', 'on-primary-fixed-variant': '#00504a', 'primary': '#005c55', 'surface-container-low': '#eff4ff', 'on-secondary': '#ffffff', 'surface-tint': '#006a63' }, borderRadius: { 'DEFAULT': '0.25rem', 'lg': '0.5rem', 'xl': '0.75rem', 'full': '9999px' }, spacing: { 'space-2xl': '2rem', 'space-xxs': '0.125rem', 'margin-mobile': '1rem', 'space-md': '0.75rem', 'space-xs': '0.25rem', 'gutter': '1.5rem', 'space-xl': '1.5rem', 'space-sm': '0.5rem', 'space-3xl': '3rem', 'margin': '2rem', 'space-lg': '1rem', 'gutter-mobile': '0.75rem' }, fontFamily: { 'headline-sm': ['Plus Jakarta Sans'], 'body-sm': ['Inter'], 'headline-md': ['Plus Jakarta Sans'], 'headline-xl-mobile': ['Plus Jakarta Sans'], 'body-xs': ['Inter'], 'body-lg': ['Inter'], 'headline-lg': ['Plus Jakarta Sans'], 'label-telemetry': ['JetBrains Mono'], 'headline-xl': ['Plus Jakarta Sans'], 'display-lg-mobile': ['Plus Jakarta Sans'], 'display-lg': ['Plus Jakarta Sans'], 'body-md': ['Inter'], 'label-code': ['JetBrains Mono'] }, fontSize: { 'headline-sm': ['16px', { lineHeight: '22px', letterSpacing: '-0.005em', fontWeight: '600' }], 'body-sm': ['13px', { lineHeight: '18px', fontWeight: '400' }], 'headline-md': ['18px', { lineHeight: '24px', letterSpacing: '-0.01em', fontWeight: '600' }], 'headline-xl-mobile': ['24px', { lineHeight: '32px', letterSpacing: '-0.015em', fontWeight: '600' }], 'body-xs': ['12px', { lineHeight: '16px', fontWeight: '500' }], 'body-lg': ['16px', { lineHeight: '24px', fontWeight: '400' }], 'headline-lg': ['22px', { lineHeight: '28px', letterSpacing: '-0.015em', fontWeight: '600' }], 'label-telemetry': ['11px', { lineHeight: '14px', letterSpacing: '0.04em', fontWeight: '600' }], 'headline-xl': ['30px', { lineHeight: '38px', letterSpacing: '-0.02em', fontWeight: '600' }], 'display-lg-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.02em', fontWeight: '700' }], 'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.025em', fontWeight: '700' }], 'body-md': ['14px', { lineHeight: '20px', fontWeight: '400' }], 'label-code': ['13px', { lineHeight: '18px', letterSpacing: '-0.01em', fontWeight: '500' }] } } } };</script><style>@layer base { html, body { width: 100%; margin: 0; padding: 0; min-height: 100%; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; } * { -webkit-tap-highlight-color: transparent; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(15,23,42,0.04)] pt-safe"><div class="h-20 px-margin-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><button aria-label="Navigation Menu" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[22px]">menu</span></button><div class="flex items-center gap-space-xs"><img alt="AegisCore AI Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VBsg3YvkBZB9XOaJfNkytB1PJ6SZZ0TgRCPdqmEDVY1k6bf2lIHgmnimgsL7pVh6Awwy77ovxh23RlDzTQkf4bCZqQHtEYMV8C-nGRUdspL4lklgdgnWIjp2CLmA5MOvOVkaMgfsIVx9_EEp6I4a6knDa96snu52NXHwV1ZODCA9oWIINyIBn0tejeuqhYNcO5QhBOeaRHI-Dc_HtkTrSu4EaMkM_NpGcQUd6StGnK"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary tracking-tight leading-none">AegisCore<span class="text-tertiary ml-0.5">AI</span></span><div class="flex items-center gap-1 mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">SSO OIDC • JWT RS256</span></div></div></div></div><div class="flex items-center gap-space-xs"><div class="hidden sm:flex items-center bg-surface-container px-2 py-1 rounded-full"><span class="font-label-code text-label-code text-on-secondary-container">Field Inspector</span></div><button aria-label="Notifications" class="relative w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span></span></button><div class="flex items-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_0_0_1px_rgba(15,118,110,0.3)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY53CqIUpGoTa-sXX8Xo2IYuIgj5OlqZBb7SMvWnNEUnDtnxsCcBdeEtd6e9Hb645X-GlF9NnE_YB1KNgiwu5UBEnaI2p0xywA8PH-3wiGEIm7GFic9hMOxUpCIH1bGkFFDIOdA5ApS7YxfRGPjRmIjG2AioE80K3JgKX8yRHw0E2fdRyk-dcBSuxcRWUhuIVBJdLZkUZPndV8QGQSL8O59b4w9SFOLqSaboQF8BQ"/></div></div></div></header><main class="flex flex-col relative w-full pt-20 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full px-margin-mobile pb-space-2xl space-y-space-lg">
+<!-- Threat Overview Header -->
+<section class="bg-surface-container-low rounded-xl p-space-md shadow-sm">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="min-w-0 flex-1">
+<div class="flex items-center gap-space-xs mb-space-xxs">
+<span class="material-symbols-outlined text-primary text-[20px]">shield_with_heart</span>
+<span class="font-headline-md text-headline-md text-on-surface truncate">Fraud Sentinel Engine</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+          Autonomous Fraud Ring Detection &amp; Behavioral Anomaly Scanning
+        </p>
+</div>
+<button aria-label="Refresh Telemetry" class="w-9 h-9 flex items-center justify-center rounded-lg bg-surface hover:bg-surface-container transition-all active:scale-95 shadow-sm text-primary" id="refresh-telemetry">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+</button>
+</div>
+<div class="mt-space-md pt-space-sm bg-surface-container-lowest rounded-lg p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+</span>
+<span class="font-label-telemetry text-label-telemetry text-on-surface truncate">
+          K-Means Cluster v5 • Isolation Forest Score 0.082
+        </span>
+</div>
+<span class="font-label-telemetry text-label-telemetry text-primary-container font-semibold bg-primary-fixed/40 px-1.5 py-0.5 rounded text-right flex-shrink-0">
+        Active Guard
+      </span>
+</div>
+</section>
+<!-- Sentinel Threat Gauge & Risk Matrix -->
+<section class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
+<!-- Circular SVG Gauge Bento -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm sm:col-span-1 flex flex-col items-center justify-center relative overflow-hidden">
+<div class="w-full flex items-center justify-between mb-space-xs">
+<span class="font-label-telemetry text-label-telemetry text-secondary uppercase">Fleet Threat Index</span>
+<span class="material-symbols-outlined text-secondary text-[16px]">radar</span>
+</div>
+<!-- Interactive SVG Gauge -->
+<div class="relative w-32 h-32 flex items-center justify-center my-space-xs">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle class="text-surface-container-high" cx="50" cy="50" fill="none" r="42" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary-container transition-all duration-1000 ease-out" cx="50" cy="50" fill="none" id="gauge-circle" r="42" stroke="currentColor" stroke-dasharray="263.89" stroke-dashoffset="231.1" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-headline-xl-mobile text-headline-xl-mobile text-on-surface font-bold leading-none">12.4%</span>
+<span class="font-label-telemetry text-[10px] text-primary-container font-semibold mt-1">LOW-MODERATE</span>
+</div>
+</div>
+<p class="font-body-xs text-body-xs text-on-surface-variant text-center">
+        Monitored Fleet Exposure (Sub-Threshold)
+      </p>
+</div>
+<!-- Metrics Stack -->
+<div class="grid grid-cols-2 sm:grid-cols-1 sm:col-span-2 gap-space-sm">
+<!-- Metric 1: Prevented Loss -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<span class="font-label-telemetry text-[10px] text-primary bg-primary-fixed/30 px-1.5 py-0.5 rounded">
+            +3.4% MoM
+          </span>
+</div>
+<div class="mt-space-sm">
+<span class="font-headline-xl-mobile text-headline-xl-mobile text-primary font-bold tracking-tight block">
+            $18.6M
+          </span>
+<span class="font-body-xs text-body-xs text-on-surface-variant">
+            Blocked Fraud Loss (YTD)
+          </span>
+</div>
+</div>
+<!-- Metric 2: Today's High-Risk Claims -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<div class="w-8 h-8 rounded-lg bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+</div>
+<span class="font-label-telemetry text-[10px] text-error font-semibold bg-error-container/60 px-1.5 py-0.5 rounded">
+            SIU Priority
+          </span>
+</div>
+<div class="mt-space-sm">
+<span class="font-headline-xl-mobile text-headline-xl-mobile text-error font-bold tracking-tight block">
+            9 Claims
+          </span>
+<span class="font-body-xs text-body-xs text-on-surface-variant">
+            Flagged Under Active Isolation Forest
+          </span>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Filter Tabs -->
+<section class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-space-xxs">
+<button class="filter-chip active flex-shrink-0 px-space-md py-1.5 rounded-full bg-primary text-on-primary font-body-xs text-body-xs font-semibold shadow-sm transition-all" data-filter="all">
+      All (42)
+    </button>
+<button class="filter-chip flex-shrink-0 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-xs text-body-xs transition-all" data-filter="critical">
+      Critical (9)
+    </button>
+<button class="filter-chip flex-shrink-0 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-xs text-body-xs transition-all" data-filter="siu">
+      Under SIU Review (18)
+    </button>
+<button class="filter-chip flex-shrink-0 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-xs text-body-xs transition-all" data-filter="archived">
+      Archived
+    </button>
+</section>
+<!-- Real-Time Flagged Claims Feed -->
+<section class="space-y-space-md" id="claims-container">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-on-surface">Neural Detection Pipeline</span>
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant">3 Stream Updates</span>
+</div>
+<!-- Card 1: Red Critical Flag (Collision Ring) -->
+<article class="claim-item critical bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all hover:shadow-md" data-category="critical">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-error flex-shrink-0"></span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Organized Staged Collision Ring #R-402</span>
+</div>
+<span class="font-label-telemetry text-[10px] text-error bg-error-container px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex-shrink-0">
+          Critical 98.4%
+        </span>
+</div>
+<div class="mt-space-sm bg-surface-container-low rounded-lg p-space-sm space-y-space-xs">
+<div class="flex items-center justify-between text-on-surface">
+<span class="font-label-code text-label-code font-bold text-primary">#POL-FL-99120</span>
+<span class="font-label-telemetry text-label-telemetry text-error font-medium">4 Claims • 3 Insureds in 48h</span>
+</div>
+<div class="flex items-center gap-space-sm text-on-surface-variant font-body-xs text-body-xs">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-error">hub</span>
+<span>Social Graph Correlation: 98.4%</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary">pin_drop</span>
+<span>Miami Metro</span>
+</div>
+</div>
+</div>
+<!-- Contextual Evidence Media Placeholder -->
+<div class="mt-space-sm relative rounded-lg overflow-hidden h-28 bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="High-contrast aerial forensic vehicle telemetry map showing multiple GPS trajectory overlays converging on an intersection in Miami at night, marked with red neural anomaly vectors and digital bounding boxes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1YavJ9DyF-GveSWZznuXBhvbzLMBUNbWvCvNWox0GEgGHGGmSYQtvVjJHZb9cJjgtbgmGiJWBhMMIkuOStx68jr4eYZf86oCdO3YvQtgDKPAB8TNVx6xo1NHM-6L8TXFxUEOAuk0KuRts1zC6Ey-r3DDuGUOp8rwOEL9SFqWw1pugrAqBeuyEYyWanoYJ2qRs49COqm_BI3p2A7o9zK8ztp7_CxFRF82Q8y7J6BQ"/>
+<div class="absolute bottom-2 left-2 bg-on-background/70 backdrop-blur-sm px-2 py-0.5 rounded text-white font-label-telemetry text-[10px]">
+          K-Means Centroid Link: Lat 25.7617, Lon -80.1918
+        </div>
+</div>
+<!-- Action Pills -->
+<div class="mt-space-md flex items-center gap-space-sm pt-space-xs">
+<button class="flex-1 h-9 rounded-lg bg-error text-on-error font-body-sm text-body-sm font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm" onclick="handleClaimAction(this, 'freeze')">
+<span class="material-symbols-outlined text-[16px]">pause_circle</span>
+<span>Freeze Payout</span>
+</button>
+<button class="flex-1 h-9 rounded-lg bg-surface-container-high text-on-surface font-body-sm text-body-sm font-medium flex items-center justify-center gap-1 active:scale-95 transition-all" onclick="handleClaimAction(this, 'escalate')">
+<span class="material-symbols-outlined text-[16px]">local_police</span>
+<span>Escalate to SIU</span>
+</button>
+</div>
+</article>
+<!-- Card 2: Amber Warning Flag (Phantom Medical Billing) -->
+<article class="claim-item siu bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all hover:shadow-md" data-category="siu">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container flex-shrink-0"></span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Phantom Medical Billing Pattern (Health)</span>
+</div>
+<span class="font-label-telemetry text-[10px] text-on-secondary-fixed bg-secondary-fixed px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex-shrink-0">
+          Anomaly +240%
+        </span>
+</div>
+<div class="mt-space-sm bg-surface-container-low rounded-lg p-space-sm space-y-space-xs">
+<div class="flex items-center justify-between text-on-surface">
+<span class="font-label-code text-label-code font-bold text-on-surface">Apex Orthopedics &amp; Rehab</span>
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant font-medium">Inpatient Code #ICD10-M25</span>
+</div>
+<p class="font-body-xs text-body-xs text-on-surface-variant">
+          Overbilling variance detected: 240% divergence against regional peer cohorts across 14 patient manifests.
+        </p>
+</div>
+<!-- Action Pills -->
+<div class="mt-space-md flex items-center gap-space-sm pt-space-xs">
+<button class="flex-1 h-9 rounded-lg bg-primary-container text-on-primary font-body-sm text-body-sm font-semibold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm" onclick="handleClaimAction(this, 'audit')">
+<span class="material-symbols-outlined text-[16px]">troubleshoot</span>
+<span>Audit Invoice</span>
+</button>
+<button class="flex-1 h-9 rounded-lg bg-surface-container-high text-on-surface font-body-sm text-body-sm font-medium flex items-center justify-center gap-1 active:scale-95 transition-all" onclick="handleClaimAction(this, 'ehr')">
+<span class="material-symbols-outlined text-[16px]">medical_information</span>
+<span>Request EHR Log</span>
+</button>
+</div>
+</article>
+<!-- Card 3: Emerald Verified (Straight-Through Authenticated) -->
+<article class="claim-item verified bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all hover:shadow-md" data-category="archived">
+<div class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Straight-Through Authenticated</span>
+<span class="font-body-xs text-body-xs text-on-surface-variant">Claim #CLM-90218 • Auto Glass Fast-Track</span>
+</div>
+</div>
+<span class="font-label-telemetry text-[10px] text-primary bg-primary-fixed/40 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex-shrink-0">
+          Score 0.004 Safe
+        </span>
+</div>
+<div class="mt-space-sm flex items-center justify-between bg-surface-container-low rounded-lg p-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">task_alt</span>
+<span class="font-body-xs text-body-xs text-on-surface">Zero synthetic anomaly variance • Geo-verified repair shop</span>
+</div>
+<span class="font-label-code text-label-code text-primary font-semibold">$480.00</span>
+</div>
+</article>
+</section>
+<!-- Security & OWASP Shield Live Telemetry -->
+<section class="bg-surface-container-highest/60 rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">lock</span>
+<span class="font-label-telemetry text-label-telemetry text-on-surface font-semibold uppercase tracking-wider">
+          OWASP API Shield Active
+        </span>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs mt-space-sm">
+<div class="bg-surface-container-lowest p-space-xs rounded-lg flex items-center justify-between">
+<span class="font-label-telemetry text-[10px] text-on-surface-variant">SQLi / Prompt Injections</span>
+<span class="font-label-telemetry text-[11px] font-bold text-primary">0 Blocked</span>
+</div>
+<div class="bg-surface-container-lowest p-space-xs rounded-lg flex items-center justify-between">
+<span class="font-label-telemetry text-[10px] text-on-surface-variant">Keycloak RS256 Token</span>
+<span class="font-label-telemetry text-[11px] font-bold text-primary">Valid (Exp 14m)</span>
+</div>
+</div>
+</section>
+<!-- Toast Notification Container for Micro-delights -->
+<div class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-on-background text-on-primary px-space-md py-space-sm rounded-full font-body-sm text-body-sm shadow-xl flex items-center gap-space-xs opacity-0 pointer-events-none transition-all duration-300 z-50" id="toast-sentinel">
+<span class="material-symbols-outlined text-primary-fixed text-[18px]">verified</span>
+<span id="toast-message">Action Dispatched</span>
+</div>
+</div>
+<script>
+  // Simple micro-interactions for filters & claim triage
+  const filterChips = document.querySelectorAll('.filter-chip');
+  const claimItems = document.querySelectorAll('.claim-item');
+  const toast = document.getElementById('toast-sentinel');
+  const toastMsg = document.getElementById('toast-message');
+
+  filterChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      filterChips.forEach(c => {
+        c.classList.remove('bg-primary', 'text-on-primary', 'font-semibold');
+        c.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+      });
+      chip.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+      chip.classList.add('bg-primary', 'text-on-primary', 'font-semibold');
+
+      const filter = chip.getAttribute('data-filter');
+      claimItems.forEach(item => {
+        if (filter === 'all' || item.getAttribute('data-category') === filter) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  function showToast(text) {
+    if (!toast) return;
+    toastMsg.textContent = text;
+    toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
+    toast.classList.add('opacity-100', 'translate-y-0');
+    setTimeout(() => {
+      toast.classList.remove('opacity-100', 'translate-y-0');
+      toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
+    }, 2400);
+  }
+
+  function handleClaimAction(button, type) {
+    const parentCard = button.closest('.claim-item');
+    if (type === 'freeze') {
+      button.disabled = true;
+      button.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">autorenew</span> Freezing...';
+      setTimeout(() => {
+        button.innerHTML = '<span class="material-symbols-outlined text-[16px]">lock</span> Payout Frozen';
+        button.classList.add('bg-surface-container-highest', 'text-on-surface-variant');
+        showToast('Claim #POL-FL-99120 payouts securely halted via Smart Contract.');
+      }, 700);
+    } else if (type === 'escalate') {
+      button.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span> Transferred to SIU';
+      button.disabled = true;
+      showToast('Dossier uploaded to Special Investigation Unit portal.');
+    } else if (type === 'audit') {
+      button.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span> In Audit';
+      showToast('Automated medical billing line items dispatched for forensic review.');
+    } else if (type === 'ehr') {
+      button.innerHTML = '<span class="material-symbols-outlined text-[16px]">done_all</span> EHR Requested';
+      showToast('FHIR API request transmitted to Apex Orthopedics.');
+    }
+  }
+
+  const refreshBtn = document.getElementById('refresh-telemetry');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      const icon = refreshBtn.querySelector('.material-symbols-outlined');
+      icon.classList.add('animate-spin');
+      const gauge = document.getElementById('gauge-circle');
+      if (gauge) {
+        gauge.style.strokeDashoffset = '263.89';
+        setTimeout(() => {
+          gauge.style.strokeDashoffset = '231.1';
+          icon.classList.remove('animate-spin');
+          showToast('Isolation Forest & K-Means clusters recalibrated.');
+        }, 800);
+      }
+    });
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(15,23,42,0.06)]" data-active-classes="text-primary font-bold"><div class="flex items-center justify-around h-16 px-space-xs"><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="executive-kpi-dashboard" href="#"><span class="material-symbols-outlined text-[22px]">analytics</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">KPIs</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="ai-damage-inspector" href="#"><span class="material-symbols-outlined text-[22px]">document_scanner</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Vision</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="risk-fraud-sentinel" href="#"><span class="material-symbols-outlined text-[22px]">shield</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Fraud</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="autonomous-agent-monitor" href="#"><span class="material-symbols-outlined text-[22px]">neurology</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Agents</span></a><a class="flex flex-col items-center justify-center w-12 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="policy-catalog-settlement" href="#"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-telemetry text-[10px] mt-0.5 tracking-tight">Policies</span></a></div></nav></body></html>

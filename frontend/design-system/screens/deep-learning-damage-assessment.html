@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface-variant":"#d3e4fe","error":"#ba1a1a","on-tertiary-fixed":"#0f0069","tertiary-fixed":"#e2dfff","on-tertiary":"#ffffff","on-secondary-fixed":"#131b2e","surface-container-lowest":"#ffffff","primary-fixed-dim":"#80d5cb","on-primary":"#ffffff","on-primary-fixed-variant":"#00504a","background":"#f8f9ff","tertiary-fixed-dim":"#c3c0ff","surface-dim":"#cbdbf5","outline":"#6e7977","inverse-surface":"#213145","on-surface":"#0b1c30","outline-variant":"#bdc9c6","error-container":"#ffdad6","on-error-container":"#93000a","on-tertiary-fixed-variant":"#3323cc","on-surface-variant":"#3e4947","on-secondary-container":"#5c647a","primary":"#005c55","inverse-primary":"#80d5cb","on-background":"#0b1c30","secondary-fixed":"#dae2fd","surface":"#f8f9ff","secondary-fixed-dim":"#bec6e0","primary-fixed":"#9cf2e8","surface-container-low":"#eff4ff","on-tertiary-container":"#ebe8ff","surface-container":"#e5eeff","surface-container-highest":"#d3e4fe","surface-tint":"#006a63","on-primary-fixed":"#00201d","on-error":"#ffffff","on-primary-container":"#a3faef","inverse-on-surface":"#eaf1ff","secondary-container":"#dae2fd","secondary":"#565e74","surface-container-high":"#dce9ff","tertiary":"#3f33d6","on-secondary":"#ffffff","primary-container":"#0f766e","tertiary-container":"#5951ef","on-secondary-fixed-variant":"#3f465c","surface-bright":"#f8f9ff"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-2xl":"2rem","space-lg":"1rem","space-3xl":"3rem","space-sm":"0.5rem","gutter-mobile":"0.75rem","margin-mobile":"1rem","gutter":"1.5rem","space-xs":"0.25rem","margin":"2rem","space-xxs":"0.125rem","space-md":"0.75rem","space-xl":"1.5rem"},"fontFamily":{"body-xs":["Inter"],"label-code":["JetBrains Mono"],"headline-lg":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"body-md":["Inter"],"headline-xl":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-lg":["Inter"],"headline-xl-mobile":["Plus Jakarta Sans"],"label-telemetry":["JetBrains Mono"],"headline-sm":["Plus Jakarta Sans"],"body-sm":["Inter"]},"fontSize":{"body-xs":["12px",{"lineHeight":"16px","fontWeight":"500"}],"label-code":["13px",{"lineHeight":"18px","letterSpacing":"-0.01em","fontWeight":"500"}],"headline-lg":["22px",{"lineHeight":"28px","letterSpacing":"-0.015em","fontWeight":"600"}],"display-lg":["36px",{"lineHeight":"44px","letterSpacing":"-0.025em","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"headline-xl":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"600"}],"display-lg-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-xl-mobile":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"600"}],"label-telemetry":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-sm":["16px",{"lineHeight":"22px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.06)]"><div class="flex flex-col"><div class="h-16 px-space-xl flex items-center justify-between border-b border-outline/20"><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[20px]">security</span></div><div class="flex flex-col"><div class="flex items-center gap-space-xxs"><span class="font-headline-sm text-headline-sm text-inverse-on-surface tracking-tight font-bold">AegisCore</span><span class="material-symbols-outlined text-primary-fixed text-[16px]">auto_awesome</span></div><span class="font-label-telemetry text-label-telemetry text-primary-fixed-dim uppercase tracking-wider">Enterprise AI ERP</span></div></div><button class="w-7 h-7 rounded flex items-center justify-center text-outline-variant hover:text-inverse-on-surface hover:bg-surface-variant/10 transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">menu_open</span></button></div><div class="px-space-lg pt-space-lg pb-space-xs"><span class="font-label-telemetry text-label-telemetry uppercase tracking-wider text-outline-variant font-semibold">Intelligence &amp; Underwriting</span></div><nav class="px-space-md space-y-space-xxs" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-[0_1px_4px_rgba(0,0,0,0.2)]"><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-surface-variant/10 transition-colors" data-path="actuarial-sales-prediction" href="#"><span class="material-symbols-outlined text-[20px]">stacked_line_chart</span><span class="font-body-sm text-body-sm flex-1 truncate">Actuarial &amp; Sales Prediction</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-surface-variant/10 transition-colors" data-path="executive-kpi-dashboard" href="#"><span class="material-symbols-outlined text-[20px]">speed</span><span class="font-body-sm text-body-sm flex-1 truncate">Executive KPI Dashboard</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-surface-variant/10 transition-colors" data-path="ai-damage-inspector" href="#"><span class="material-symbols-outlined text-[20px]">document_scanner</span><span class="font-body-sm text-body-sm flex-1 truncate">AI Damage Inspector (TensorFlow)</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-surface-variant/10 transition-colors" data-path="risk-fraud-sentinel" href="#"><span class="material-symbols-outlined text-[20px]">shield_with_heart</span><span class="font-body-sm text-body-sm flex-1 truncate">Risk &amp; Fraud Sentinel</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-surface-variant/10 transition-colors" data-path="autonomous-agent-monitor" href="#"><span class="material-symbols-outlined text-[20px]">hub</span><span class="font-body-sm text-body-sm flex-1 truncate">Autonomous Agent Monitor</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-outline-variant hover:text-inverse-on-surface hover:bg-surface-variant/10 transition-colors" data-path="policy-catalog-saga-settlement" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span class="font-body-sm text-body-sm flex-1 truncate">Policy Catalog &amp; Saga Settlement</span></a></nav></div><div class="p-space-lg border-t border-outline/20 space-y-space-md bg-inverse-surface/90"><div class="rounded-lg bg-surface-variant/5 p-space-sm border border-outline/20 space-y-space-xs"><div class="flex items-center justify-between"><span class="font-label-telemetry text-label-telemetry text-outline-variant uppercase">Inference Engine</span><span class="flex items-center gap-space-xxs text-primary-fixed font-label-telemetry text-label-telemetry"><span class="w-1.5 h-1.5 rounded-full bg-primary-fixed animate-pulse"></span>Online</span></div><div class="font-label-code text-label-code text-inverse-on-surface truncate">Random Forest v4.2r</div><div class="flex items-center justify-between text-outline-variant font-label-telemetry text-label-telemetry"><span>Solvency II Compliant</span><span class="material-symbols-outlined text-primary-fixed-dim text-[14px]">verified_user</span></div></div><div class="flex items-center justify-between px-space-xs"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary-fixed text-[16px]">security</span><span class="font-label-telemetry text-label-telemetry text-outline-variant uppercase font-semibold">OWASP Level 3</span></div><span class="px-space-xs py-space-xxs rounded bg-primary-container/40 text-primary-fixed font-label-telemetry text-label-telemetry font-bold uppercase tracking-wider">Safe</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-space-xl flex items-center justify-between border-b border-surface-container-high"><div class="flex items-center gap-space-lg flex-1 max-w-2xl"><div class="relative w-full max-w-md"><span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span><input class="w-full h-9 pl-10 pr-space-md rounded-lg bg-surface-container-low border border-outline-variant/60 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all" placeholder="Search policies, VIN, claims, actuarial models..." type="text"/></div><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-surface-container border border-surface-container-high"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span><span class="font-label-telemetry text-label-telemetry text-on-surface-variant font-medium">SSO OIDC Active • JWT RS256</span></div></div><div class="flex items-center gap-space-md"><div class="hidden lg:flex items-center p-space-xxs rounded-lg bg-surface-container-low border border-surface-container-high font-body-xs text-body-xs"><button class="px-space-md py-space-xs rounded bg-surface-container-lowest text-primary font-semibold shadow-sm" type="button">Admin ERP</button><button class="px-space-md py-space-xs text-on-surface-variant hover:text-on-surface transition-colors" type="button">Client Portal</button><button class="px-space-md py-space-xs text-on-surface-variant hover:text-on-surface transition-colors" type="button">Field Inspector</button></div><div class="hidden md:flex items-center gap-space-xs px-space-sm py-space-xxs rounded bg-surface-container font-label-telemetry text-label-telemetry text-on-surface-variant"><span class="material-symbols-outlined text-[14px] text-primary">sync</span><span>Cluster: Synced (42ms)</span></div><button aria-label="Notifications" class="relative w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><div class="h-6 w-px bg-outline-variant/50"></div><div class="flex items-center gap-space-sm"><div class="flex flex-col items-end hidden sm:flex"><span class="font-body-sm text-body-sm text-on-surface font-semibold">Dr. Elena Rostova</span><span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase">Chief Actuarial Officer</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-background min-h-screen"><div class="flex flex-col w-full">
+<div class="px-space-2xl py-space-xl space-y-space-xl">
+<!-- Top Workspace Breadcrumb & Header Bar -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-telemetry text-label-telemetry">
+<span class="hover:text-primary cursor-pointer transition-colors">Claims Intelligence</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-primary cursor-pointer transition-colors">Field Computer Vision</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-semibold bg-surface-container px-space-xs py-space-xxs rounded">Damage Inspection (#SIN-2026-0904)</span>
+</div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="space-y-space-xxs">
+<div class="flex items-center gap-space-md flex-wrap">
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">Deep Learning Damage Assessment Engine</h1>
+<div class="flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-telemetry text-label-telemetry shadow-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-bold">TensorFlow Core v3.8 • YOLO-v9 Spatial Mask Active</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
+<span>Ingested 14 mins ago via Field Inspector Pro Mobile • Session Cryptographic Hash: <span class="font-label-code text-label-code text-on-surface">sha256-8f3a9e...e01</span></span>
+</p>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap">
+<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>OWASP API Shield Active</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-lowest hover:bg-surface-container text-primary font-body-sm text-body-sm font-semibold transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary">archive</span>
+<span>Download Forensic Bundle (ZIP/PDF)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Telemetry & Meta Metadata Strip -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-space-sm p-space-md bg-surface-container-lowest rounded-xl shadow-sm">
+<div class="flex flex-col border-r border-surface-container px-space-sm last:border-none">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">Claim Number</span>
+<span class="font-label-code text-label-code text-on-surface font-semibold truncate">#SIN-2026-0904</span>
+</div>
+<div class="flex flex-col border-r border-surface-container px-space-sm last:border-none">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">Insured &amp; Policy</span>
+<span class="font-body-sm text-body-sm text-on-surface font-semibold truncate">Marcus Vance (POL-48821)</span>
+</div>
+<div class="flex flex-col border-r border-surface-container px-space-sm last:border-none">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">Target Vehicle</span>
+<span class="font-body-sm text-body-sm text-on-surface font-semibold truncate">2024 Toyota Corolla Cross</span>
+</div>
+<div class="flex flex-col border-r border-surface-container px-space-sm last:border-none">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">Chassis VIN</span>
+<span class="font-label-code text-label-code text-on-surface font-semibold truncate">4T1B11HK5PU92104</span>
+</div>
+<div class="flex flex-col border-r border-surface-container px-space-sm last:border-none">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">Lead Adjuster</span>
+<span class="font-body-sm text-body-sm text-on-surface font-semibold truncate">Dr. Elena Rostova</span>
+</div>
+<div class="flex flex-col px-space-sm">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">Audit Protocol</span>
+<span class="font-label-telemetry text-label-telemetry text-primary flex items-center gap-space-xxs font-bold">
+<span class="material-symbols-outlined text-[14px]">shield</span> Solvency II / ISO
+        </span>
+</div>
+</div>
+<!-- Main Split-Screen Workspace (12-Column Grid) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-xl items-start">
+<!-- LEFT PANEL (7 Columns): Visual Evidence & Computer Vision Overlays -->
+<div class="xl:col-span-7 flex flex-col gap-space-lg">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md space-y-space-md">
+<!-- Top Bar of Visual Player -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-space-sm border-b border-surface-container">
+<div class="inline-flex p-space-xxs bg-surface-container-low rounded-lg font-body-xs text-body-xs">
+<button class="px-space-md py-space-xs rounded bg-surface-container-lowest text-primary font-semibold shadow-sm flex items-center gap-space-xs" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>CV Overlays (Active)</span>
+</button>
+<button class="px-space-md py-space-xs text-on-surface-variant hover:text-on-surface transition-colors" type="button">Raw HD Stream</button>
+<button class="px-space-md py-space-xs text-on-surface-variant hover:text-on-surface transition-colors" type="button">LiDAR Mesh</button>
+<button class="px-space-md py-space-xs text-on-surface-variant hover:text-on-surface transition-colors" type="button">Thermal Heatmap</button>
+</div>
+<div class="flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-primary-fixed text-on-primary-fixed font-label-telemetry text-label-telemetry font-bold">
+<span class="material-symbols-outlined text-[14px]">checklist</span>
+<span>3 Hotspots Validated • 96.8% Confidence</span>
+</div>
+</div>
+<!-- Central Vehicle Viewport with High-Precision Computer Vision Overlays -->
+<div class="relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-inverse-surface shadow-md select-none group">
+<!-- Source Damage Image -->
+<img alt="Toyota Corolla Cross front right damage inspection" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOtOijrIJcDyaEgrsXodAwoTNDDVqgszmLUqFdypN23RCWUmXo5JE4m9LtDyQp95tHr5kCpG9VE-eEGe0jAUUij4mfnyG8l3oSFFYRkCB2ao0ddJIjX-KKkYNiUpYRDBLRaFqYFQM27v1_iz0q03WEK6_-xM9fSPyszJho9g8ATsBD3waGlta8oJ90HHptTlxp6vtFev2F4Zv5vYQzsv8y-K8VHLWijuIxD98cMEWZ4Isc3f-83Aci"/>
+<!-- Dark Ambient Vignette -->
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/60 via-transparent to-inverse-surface/40 pointer-events-none"></div>
+<!-- CV Grid Overlay Lines -->
+<div class="absolute inset-0 opacity-15 pointer-events-none" style="background-image: linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px); background-size: 40px 40px;"></div>
+<!-- HUD Header Telemetry -->
+<div class="absolute top-3 left-3 flex flex-col gap-space-xxs pointer-events-none">
+<div class="flex items-center gap-space-xs px-space-xs py-0.5 rounded bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-label-telemetry text-label-telemetry">
+<span class="material-symbols-outlined text-[13px] text-primary-fixed">photo_camera</span>
+<span>iPhone 15 Pro LiDAR • 4K 60FPS</span>
+</div>
+<div class="flex items-center gap-space-xs px-space-xs py-0.5 rounded bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-label-telemetry text-label-telemetry">
+<span class="material-symbols-outlined text-[13px] text-primary-fixed">speed</span>
+<span>3840x2160 • Latency: 420ms</span>
+</div>
+</div>
+<!-- HUD GPS Pin -->
+<div class="absolute top-3 right-3 pointer-events-none">
+<div class="flex items-center gap-space-xs px-space-xs py-0.5 rounded bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-label-telemetry text-label-telemetry">
+<span class="material-symbols-outlined text-[13px] text-tertiary-fixed">location_on</span>
+<span>Lat 37.7749, Long -122.4194 (Validated Location)</span>
+</div>
+</div>
+<!-- Bounding Box 1: Red (Severe Damage - Front Bumper Lower Fascia) -->
+<div class="absolute bottom-[18%] left-[24%] w-[38%] h-[34%] pointer-events-auto cursor-pointer transition-all hover:scale-[1.01]" style="outline: 2px solid #E11D48; background-color: rgba(225, 29, 72, 0.18);">
+<!-- Corner Crosshairs -->
+<div class="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-[#E11D48]"></div>
+<div class="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-[#E11D48]"></div>
+<div class="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-[#E11D48]"></div>
+<div class="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-[#E11D48]"></div>
+<!-- Floating Pill Tag -->
+<div class="absolute -top-8 left-0 flex items-center gap-space-xs px-space-xs py-0.5 rounded bg-[#E11D48] text-on-error font-label-telemetry text-label-telemetry shadow-md whitespace-nowrap">
+<span class="font-bold">Front Bumper - Severe (98.2%)</span>
+<span>• Deformity: 74mm • Est. $620</span>
+</div>
+</div>
+<!-- Bounding Box 2: Amber (Moderate Fracture - Right LED Headlamp Assembly) -->
+<div class="absolute top-[32%] left-[48%] w-[26%] h-[24%] pointer-events-auto cursor-pointer transition-all hover:scale-[1.01]" style="outline: 2px solid #D97706; background-color: rgba(217, 119, 6, 0.2);">
+<div class="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-[#D97706]"></div>
+<div class="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-[#D97706]"></div>
+<div class="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-[#D97706]"></div>
+<div class="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-[#D97706]"></div>
+<!-- Floating Tag -->
+<div class="absolute -top-8 right-0 flex items-center gap-space-xs px-space-xs py-0.5 rounded bg-[#D97706] text-surface-container-lowest font-label-telemetry text-label-telemetry shadow-md whitespace-nowrap">
+<span class="font-bold">Right LED Headlamp - Moderate (94.1%)</span>
+<span>• Lens Shear • Est. $340</span>
+</div>
+</div>
+<!-- Bounding Box 3: Teal (Minor Dent - Front Hood Crease) -->
+<div class="absolute top-[20%] left-[22%] w-[28%] h-[20%] pointer-events-auto cursor-pointer transition-all hover:scale-[1.01]" style="outline: 2px solid #0F766E; background-color: rgba(15, 118, 110, 0.18);">
+<div class="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-[#0F766E]"></div>
+<div class="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-[#0F766E]"></div>
+<div class="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-[#0F766E]"></div>
+<div class="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-[#0F766E]"></div>
+<!-- Floating Tag -->
+<div class="absolute -top-7 left-0 flex items-center gap-space-xs px-space-xs py-0.5 rounded bg-[#0F766E] text-on-primary font-label-telemetry text-label-telemetry shadow-md whitespace-nowrap">
+<span class="font-bold">Front Hood - Minor Dent (89.5%)</span>
+<span>• Est. $290</span>
+</div>
+</div>
+<!-- Bottom Left Controls Bar -->
+<div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-inverse-on-surface bg-inverse-surface/80 backdrop-blur-md px-space-md py-space-xs rounded-lg">
+<div class="flex items-center gap-space-md font-label-telemetry text-label-telemetry">
+<span class="flex items-center gap-space-xxs text-primary-fixed">
+<span class="w-2 h-2 rounded-full bg-primary-fixed animate-ping"></span>
+                  LiDAR Ingest: Synchronized
+                </span>
+<span class="text-outline-variant hidden sm:inline">|</span>
+<span class="hidden sm:inline">Sensor FOV: 82° Ultra-Wide</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="w-6 h-6 rounded flex items-center justify-center hover:bg-surface-variant/20 transition-colors text-inverse-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">zoom_in</span>
+</button>
+<button class="w-6 h-6 rounded flex items-center justify-center hover:bg-surface-variant/20 transition-colors text-inverse-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">layers</span>
+</button>
+<button class="w-6 h-6 rounded flex items-center justify-center hover:bg-surface-variant/20 transition-colors text-inverse-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">fullscreen</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Multi-Modal Evidence Carousel / Filmstrip -->
+<div class="space-y-space-xs pt-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry text-label-telemetry uppercase tracking-wider text-on-surface-variant font-semibold">
+                Multi-Modal Evidence Stream (6 Ingested Assets)
+              </span>
+<span class="font-label-telemetry text-label-telemetry text-primary font-bold">Auto-Correlated with Toyota EPC</span>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-space-sm">
+<!-- Frame 1 (Active) -->
+<div class="relative p-space-xs rounded-lg bg-surface-container-high ring-2 ring-primary flex flex-col gap-space-xxs cursor-pointer shadow-sm">
+<div class="h-14 rounded overflow-hidden bg-inverse-surface relative">
+<img alt="Front thumbnail" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOtOijrIJcDyaEgrsXodAwoTNDDVqgszmLUqFdypN23RCWUmXo5JE4m9LtDyQp95tHr5kCpG9VE-eEGe0jAUUij4mfnyG8l3oSFFYRkCB2ao0ddJIjX-KKkYNiUpYRDBLRaFqYFQM27v1_iz0q03WEK6_-xM9fSPyszJho9g8ATsBD3waGlta8oJ90HHptTlxp6vtFev2F4Zv5vYQzsv8y-K8VHLWijuIxD98cMEWZ4Isc3f-83Aci"/>
+<span class="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+</div>
+<span class="font-label-telemetry text-label-telemetry text-primary font-bold truncate">Frame 01: Front</span>
+</div>
+<!-- Frame 2 -->
+<div class="p-space-xs rounded-lg bg-surface-container-low hover:bg-surface-container flex flex-col gap-space-xxs cursor-pointer transition-colors shadow-sm">
+<div class="h-14 rounded overflow-hidden bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[24px]">view_in_ar</span>
+</div>
+<span class="font-label-telemetry text-label-telemetry text-on-surface font-medium truncate">Side Mesh (99% Safe)</span>
+</div>
+<!-- Frame 3 -->
+<div class="p-space-xs rounded-lg bg-surface-container-low hover:bg-surface-container flex flex-col gap-space-xxs cursor-pointer transition-colors shadow-sm">
+<div class="h-14 rounded overflow-hidden bg-surface-container-high flex flex-col items-center justify-center text-on-surface-variant relative">
+<span class="material-symbols-outlined text-[20px]">videocam</span>
+<span class="font-label-code text-[9px] text-on-surface-variant">0:14s</span>
+</div>
+<span class="font-label-telemetry text-label-telemetry text-on-surface font-medium truncate">Dashcam Clip</span>
+</div>
+<!-- Frame 4 -->
+<div class="p-space-xs rounded-lg bg-surface-container-low hover:bg-surface-container flex flex-col gap-space-xxs cursor-pointer transition-colors shadow-sm">
+<div class="h-14 rounded overflow-hidden bg-surface-container-high flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px] text-error">monitoring</span>
+<span class="font-label-code text-[9px] text-error font-bold">Peak 3.2G</span>
+</div>
+<span class="font-label-telemetry text-label-telemetry text-on-surface font-medium truncate">Telematics G-Force</span>
+</div>
+<!-- Frame 5 -->
+<div class="p-space-xs rounded-lg bg-surface-container-low hover:bg-surface-container flex flex-col gap-space-xxs cursor-pointer transition-colors shadow-sm">
+<div class="h-14 rounded overflow-hidden bg-surface-container-high flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px] text-primary">health_and_safety</span>
+<span class="font-label-code text-[9px] text-primary font-bold">0 Injuries</span>
+</div>
+<span class="font-label-telemetry text-label-telemetry text-on-surface font-medium truncate">FNOL Health Slip</span>
+</div>
+<!-- Frame 6 -->
+<div class="p-space-xs rounded-lg bg-surface-container-low hover:bg-surface-container flex flex-col gap-space-xxs cursor-pointer transition-colors shadow-sm">
+<div class="h-14 rounded overflow-hidden bg-surface-container-high flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px] text-tertiary">hub</span>
+<span class="font-label-code text-[9px] text-tertiary font-bold">EPC OEM Sync</span>
+</div>
+<span class="font-label-telemetry text-label-telemetry text-on-surface font-medium truncate">Parts Verified</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT PANEL (5 Columns): TensorFlow Inference & Cost Breakdown -->
+<div class="xl:col-span-5 flex flex-col gap-space-md">
+<!-- AI Severity & Model Health Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg space-y-space-md">
+<div class="flex items-center justify-between pb-space-xs border-b border-surface-container">
+<div>
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant uppercase tracking-wider">AI Severity Classification</span>
+<div class="flex items-center gap-space-xs mt-0.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">Moderate-High Impact</span>
+<span class="px-space-xs py-space-xxs rounded bg-primary-fixed text-on-primary-fixed font-label-telemetry text-label-telemetry font-bold">Level 3</span>
+</div>
+</div>
+<!-- Radial Gauge Visual Representation -->
+<div class="flex items-center gap-space-sm">
+<div class="relative w-14 h-14 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="96.8, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center font-label-code text-[11px] font-bold text-primary">
+                  96.8%
+                </div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant">Hybrid Score</span>
+<span class="font-label-code text-label-code text-on-surface font-bold">RF + YOLOv9</span>
+</div>
+</div>
+</div>
+<!-- Model Health Metrics Pills -->
+<div class="grid grid-cols-3 gap-space-xs pt-space-xxs text-center">
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant">Compute Latency</span>
+<span class="font-label-code text-label-code text-on-surface font-semibold">1.14s</span>
+</div>
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant">Backbone</span>
+<span class="font-label-code text-label-code text-on-surface font-semibold">ResNet-101</span>
+</div>
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col">
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant">HITL Threshold</span>
+<span class="font-label-code text-label-code text-primary font-semibold">Met (&gt;85%)</span>
+</div>
+</div>
+</div>
+<!-- Automated Repair Estimate Table Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg space-y-space-md">
+<div class="flex items-center justify-between pb-space-xs border-b border-surface-container">
+<div class="space-y-space-xxs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Automated Repair Estimate</h2>
+<span class="font-label-telemetry text-label-telemetry text-on-surface-variant">Toyota EPC Sync • OEM List Pricing v2025.3</span>
+</div>
+<div class="px-space-xs py-space-xxs rounded bg-surface-container text-on-surface-variant font-label-code text-label-code">
+              ISO-20022 Direct
+            </div>
+</div>
+<!-- Detailed Itemized Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead>
+<tr class="border-b border-surface-container text-on-surface-variant font-label-telemetry text-label-telemetry uppercase tracking-wider">
+<th class="py-space-xs font-semibold">Component &amp; Part #</th>
+<th class="py-space-xs font-semibold">Action</th>
+<th class="py-space-xs font-semibold text-right">Cost (USD)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low">
+<!-- Row 1 -->
+<tr>
+<td class="py-space-sm pr-space-sm">
+<div class="font-medium text-on-surface">Front Bumper Fascia &amp; Grille</div>
+<div class="font-label-code text-label-telemetry text-on-surface-variant">OEM #52119-42930 • Severe</div>
+</td>
+<td class="py-space-sm pr-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-error-container text-on-error-container font-label-telemetry text-[10px] font-bold">Replace</span>
+</td>
+<td class="py-space-sm text-right font-label-code text-label-code text-on-surface font-semibold">
+                    $620.00
+                  </td>
+</tr>
+<!-- Row 2 -->
+<tr>
+<td class="py-space-sm pr-space-sm">
+<div class="font-medium text-on-surface">Right Matrix LED Headlamp</div>
+<div class="font-label-code text-label-telemetry text-on-surface-variant">OEM #81110-42B20 • Moderate</div>
+</td>
+<td class="py-space-sm pr-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-telemetry text-[10px] font-bold">Replace &amp; Align</span>
+</td>
+<td class="py-space-sm text-right font-label-code text-label-code text-on-surface font-semibold">
+                    $340.00
+                  </td>
+</tr>
+<!-- Row 3 -->
+<tr>
+<td class="py-space-sm pr-space-sm">
+<div class="font-medium text-on-surface">Front Hood Structural Labor</div>
+<div class="font-label-code text-label-telemetry text-on-surface-variant">Panel Blend &amp; Finish • Minor</div>
+</td>
+<td class="py-space-sm pr-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface-variant font-label-telemetry text-[10px] font-bold">Repair &amp; Finish</span>
+</td>
+<td class="py-space-sm text-right font-label-code text-label-code text-on-surface font-semibold">
+                    $290.00
+                  </td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Financial Calculation Breakdown -->
+<div class="p-space-md rounded-lg bg-surface-container-low space-y-space-xs">
+<div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<span>Gross Repair Subtotal</span>
+<span class="font-label-code text-label-code font-medium text-on-surface">$1,250.00</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<span class="flex items-center gap-space-xxs">
+<span>Applied Deductible</span>
+<span class="font-label-telemetry text-[10px] bg-surface-container px-1 rounded">(Collision Tier 1)</span>
+</span>
+<span class="font-label-code text-label-code font-medium text-error">-$250.00</span>
+</div>
+<div class="pt-space-xs border-t border-surface-container-high flex items-center justify-between">
+<div>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">Net STP Payout</span>
+<div class="font-label-telemetry text-label-telemetry text-primary font-semibold">Instant FedNow Settlement Ready</div>
+</div>
+<span class="font-display-lg text-headline-xl text-primary font-bold tracking-tight font-headline-xl">$1,000.00 <span class="font-body-xs text-body-xs text-on-surface-variant">USD</span></span>
+</div>
+</div>
+</div>
+<!-- Instant Fraud & Telematics Check Badge -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-start gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[24px]">verified_user</span>
+</div>
+<div class="space-y-space-xxs flex-1">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface font-semibold">Zero Anomaly Variance Detected</span>
+<span class="font-label-telemetry text-label-telemetry text-primary font-bold bg-primary-fixed/50 px-1.5 py-0.5 rounded">SIU Clear</span>
+</div>
+<p class="font-body-xs text-body-xs text-on-surface-variant">
+              Telemetry matches FNOL impact timeline precisely. SIU Fraud Risk Score: <span class="font-label-code text-label-code text-on-surface font-bold">0.04</span>. Pre-authorized for autonomous straight-through liquidation.
+            </p>
+</div>
+</div>
+<!-- Underwriter Decision & Action Footer -->
+<div class="space-y-space-sm pt-space-xs">
+<button class="w-full h-11 px-space-lg rounded-lg bg-primary hover:bg-primary-container text-on-primary font-body-md text-body-md font-semibold flex items-center justify-center gap-space-sm shadow-md transition-all active:scale-[0.99]" type="button">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+<span>Approve AI Assessment &amp; Send to Saga Settlement ($1,000.00)</span>
+</button>
+<button class="w-full h-10 px-space-lg rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface font-body-sm text-body-sm font-medium flex items-center justify-center gap-space-xs transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">rule</span>
+<span>Request Manual Field Re-inspection</span>
+</button>
+<div class="flex items-center justify-center pt-space-xxs">
+<button class="flex items-center gap-space-xs text-tertiary hover:underline font-label-telemetry text-label-telemetry font-bold" type="button">
+<span class="material-symbols-outlined text-[16px]">mic</span>
+<span>Open Voice-to-Report Adjuster Dictation (Whisper MCP)</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

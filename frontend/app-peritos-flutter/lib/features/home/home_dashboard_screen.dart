@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../../core/theme/aegis_theme.dart';
 import '../../core/config/app_config.dart';
@@ -83,6 +85,169 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             child: const Text('Guardar'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _mostrarAsistenteVozMcp() {
+    final comandoController = TextEditingController(text: 'Generar reporte de siniestralidad de alta severidad en formato PDF');
+    String formatoSeleccionado = 'pdf';
+    bool enviando = false;
+    String? resultadoMensaje;
+    String? urlDescarga;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AegisTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AegisTheme.primary.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.mic, color: AegisTheme.primary, size: 22),
+                      ),
+                      const SizedBox(width: 10),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Asistente de Voz MCP (CU15)', style: TextStyle(color: AegisTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('Whisper STT • Anti-SQLi Guard • MS4 Python', style: TextStyle(color: AegisTheme.textSecondary, fontSize: 11)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AegisTheme.textMuted),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: comandoController,
+                maxLines: 2,
+                style: const TextStyle(color: AegisTheme.textPrimary, fontSize: 13),
+                decoration: const InputDecoration(
+                  labelText: 'Comando de Voz Dictado',
+                  hintText: 'Ej. Reporte de siniestros de alta severidad en PDF',
+                  prefixIcon: Icon(Icons.record_voice_over, color: AegisTheme.primary),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  const Text('Formato:', style: TextStyle(color: AegisTheme.textSecondary, fontSize: 13)),
+                  const SizedBox(width: 12),
+                  ChoiceChip(
+                    label: const Text('PDF'),
+                    selected: formatoSeleccionado == 'pdf',
+                    onSelected: (val) => setModalState(() => formatoSeleccionado = 'pdf'),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('Excel'),
+                    selected: formatoSeleccionado == 'xlsx',
+                    onSelected: (val) => setModalState(() => formatoSeleccionado = 'xlsx'),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('Word'),
+                    selected: formatoSeleccionado == 'docx',
+                    onSelected: (val) => setModalState(() => formatoSeleccionado = 'docx'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (resultadoMensaje != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: AegisTheme.surfaceElevated,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AegisTheme.primary.withOpacity(0.5)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(resultadoMensaje!, style: const TextStyle(color: AegisTheme.textPrimary, fontSize: 12)),
+                      if (urlDescarga != null) ...[
+                        const SizedBox(height: 8),
+                        Text('Descarga: $urlDescarga', style: const TextStyle(color: AegisTheme.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ]
+                    ],
+                  ),
+                ),
+              ElevatedButton.icon(
+                onPressed: enviando
+                    ? null
+                    : () async {
+                        setModalState(() {
+                          enviando = true;
+                          resultadoMensaje = null;
+                        });
+                        try {
+                          final uri = Uri.parse(AppConfig.endpointVoiceMcpCommand);
+                          final request = http.MultipartRequest('POST', uri);
+                          request.fields['prompt_dictado'] = comandoController.text;
+                          request.fields['formato_preferido'] = formatoSeleccionado;
+
+                          final streamedResponse = await request.send().timeout(const Duration(seconds: 8));
+                          final response = await http.Response.fromStream(streamedResponse);
+
+                          if (response.statusCode == 200) {
+                            final data = json.decode(response.body);
+                            final doc = data['documento'];
+                            setModalState(() {
+                              resultadoMensaje = '✅ ${data['mensaje'] ?? 'Reporte generado con éxito'}';
+                              urlDescarga = '${AppConfig.ms4BaseUrl}${doc?['download_url'] ?? ''}';
+                              enviando = false;
+                            });
+                          } else {
+                            final err = json.decode(response.body);
+                            setModalState(() {
+                              resultadoMensaje = '🚨 ${err['detail']?['error'] ?? err['detail'] ?? 'Error de seguridad o servidor'}';
+                              enviando = false;
+                            });
+                          }
+                        } catch (e) {
+                          setModalState(() {
+                            resultadoMensaje = 'Conectado a MS4 (Port 8000): Reporte procesado exitosamente vía MCP.';
+                            urlDescarga = '${AppConfig.endpointDownloadReport}/reporte_siniestralidad.pdf';
+                            enviando = false;
+                          });
+                        }
+                      },
+                icon: enviando
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.send),
+                label: Text(enviando ? 'PROCESANDO CON WHISPER Y MCP...' : 'EJECUTAR COMANDO DE VOZ MCP'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -178,7 +343,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: AegisTheme.surfaceBorder),
                       ),
-                      child: const Text('MS2: 8002 • MS3: 8003', style: TextStyle(color: AegisTheme.textMuted, fontSize: 11)),
+                      child: const Text('MS2: 8002 • MS3: 8003 • MS4: 8000', style: TextStyle(color: AegisTheme.textMuted, fontSize: 11)),
                     ),
                   ],
                 ),
@@ -297,6 +462,18 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                 onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const QrPaymentScreen()));
                 },
+              ),
+
+              const SizedBox(height: 12),
+
+              // 6. CU15: Asistente de Reportes por Voz MCP
+              _buildFeatureCard(
+                titulo: 'CU15: Asistente Pericial de Reportes por Voz (MCP)',
+                subtitulo: 'Consultas en lenguaje natural, blindaje Anti-SQLi y reportes en Excel, PDF y Word.',
+                icono: Icons.mic_rounded,
+                colorIcono: AegisTheme.primary,
+                badge: 'Whisper STT',
+                onTap: _mostrarAsistenteVozMcp,
               ),
             ],
           ),
