@@ -175,6 +175,55 @@ export class AiDamageInspectorComponent implements OnInit {
   }
 
   /**
+   * Calcula la posición absoluta de la tarjeta sobre el lienzo a partir del bounding box
+   */
+  getTagPosition(part: DetectedPart, index: number): { [key: string]: string } {
+    if (part.bounding_box) {
+      const topPct = Math.min(Math.max((part.bounding_box.ymin || 0.3) * 100, 8), 75);
+      if ((part.bounding_box.xmin || 0) > 0.45) {
+        const rightPct = Math.min(Math.max((1 - (part.bounding_box.xmax || 0.85)) * 100, 5), 45);
+        return {
+          top: `${topPct}%`,
+          right: `${rightPct}%`,
+          left: 'auto'
+        };
+      } else {
+        const leftPct = Math.min(Math.max((part.bounding_box.xmin || 0.1) * 100, 5), 65);
+        return {
+          top: `${topPct}%`,
+          left: `${leftPct}%`,
+          right: 'auto'
+        };
+      }
+    }
+    const defaults = [
+      { top: '56%', left: '8%', right: 'auto' },
+      { top: '40%', right: '8%', left: 'auto' },
+      { top: '12%', left: '30%', right: 'auto' },
+      { top: '65%', left: '45%', right: 'auto' }
+    ];
+    return defaults[index % defaults.length];
+  }
+
+  getTagDotClass(severidad: number): string {
+    if (severidad >= 80) return 'pulsing-dot-red';
+    if (severidad >= 50) return 'dot-amber';
+    return 'dot-indigo';
+  }
+
+  getTagTitleClass(severidad: number): string {
+    if (severidad >= 80) return 'error';
+    if (severidad >= 50) return 'amber';
+    return 'indigo';
+  }
+
+  getTagActionLabel(part: DetectedPart): string {
+    if (part.accion_recomendada === 'REEMPLAZO') return 'Impacto';
+    if (part.porcentaje_severidad >= 50) return 'Deformación';
+    return 'Tensión';
+  }
+
+  /**
    * Confirma formalmente el peritaje y lo transfiere a la Saga de Liquidación (CU09)
    */
   confirmAndSendToSaga(): void {

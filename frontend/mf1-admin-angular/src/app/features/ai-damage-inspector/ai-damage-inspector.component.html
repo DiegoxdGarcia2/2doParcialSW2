@@ -140,43 +140,23 @@
           ></polygon>
         </svg>
 
-        <!-- Floating Bounding Tag: Front Bumper -->
+        <!-- Tarjetas Flotantes de Daño Dinámicas vinculadas a la Inferencia IA -->
         <div
-          class="bounding-tag tag-bumper"
-          [class.selected]="selectedPartId === 'bumper'"
-          (click)="selectZone('bumper')"
+          *ngFor="let part of assessment?.piezas_averiadas; let i = index"
+          class="bounding-tag"
+          [ngStyle]="getTagPosition(part, i)"
+          [class.selected]="selectedPartId === part.parte_id"
+          (click)="selectZone(part.parte_id)"
         >
           <div class="tag-header">
-            <span class="pulsing-dot-red"></span>
-            <span class="tag-title error">Núcleo de Parachoques Frontal</span>
+            <span [ngClass]="getTagDotClass(part.porcentaje_severidad)"></span>
+            <span class="tag-title" [ngClass]="getTagTitleClass(part.porcentaje_severidad)">
+              {{ part.nombre_pieza }}
+            </span>
           </div>
-          <span class="tag-meta">Impacto 94.2% • Est. $3,450</span>
-        </div>
-
-        <!-- Floating Bounding Tag: Left Headlamp -->
-        <div
-          class="bounding-tag tag-headlamp"
-          [class.selected]="selectedPartId === 'headlamp'"
-          (click)="selectZone('headlamp')"
-        >
-          <div class="tag-header">
-            <span class="dot-amber"></span>
-            <span class="tag-title amber">Matriz LED y Guardabarros</span>
-          </div>
-          <span class="tag-meta">Deformación 88.7% • Est. $1,820</span>
-        </div>
-
-        <!-- Floating Bounding Tag: Hood Structure -->
-        <div
-          class="bounding-tag tag-hood"
-          [class.selected]="selectedPartId === 'hood'"
-          (click)="selectZone('hood')"
-        >
-          <div class="tag-header">
-            <span class="dot-indigo"></span>
-            <span class="tag-title indigo">Fractura Estructural de Capó</span>
-          </div>
-          <span class="tag-meta">Tensión 96.1% • Est. $2,100</span>
+          <span class="tag-meta">
+            {{ getTagActionLabel(part) }} {{ part.porcentaje_severidad | number:'1.1-1' }}% • Est. ${{ part.costo_total_usd | number:'1.0-0' }}
+          </span>
         </div>
       </div>
 
@@ -231,9 +211,9 @@
             <span
               class="part-dot"
               [ngClass]="{
-                'dot-red': part.parte_id === 'bumper',
-                'dot-amber': part.parte_id === 'headlamp',
-                'dot-indigo': part.parte_id === 'hood'
+                'dot-red': part.porcentaje_severidad >= 80,
+                'dot-amber': part.porcentaje_severidad >= 50 && part.porcentaje_severidad < 80,
+                'dot-indigo': part.porcentaje_severidad < 50
               }"
             ></span>
             <div class="part-text">

@@ -10,6 +10,7 @@ import datetime
 import uuid
 import time
 from typing import Dict, Any, List, Optional, TypedDict
+# pyrefly: ignore[missing-import]
 from langgraph.graph import StateGraph, END
 
 from app.db.connections import get_mongo_db
@@ -84,6 +85,44 @@ class LangGraphAutonomousAgentControl:
     # -----------------------------------------------------------------------
     # Nodos de Procesamiento de Micro-Agentes
     # -----------------------------------------------------------------------
+    def _obtener_siniestros_estancados_canonicos(self):
+        """Retorna los siniestros estancados canonicos para re-planning continuo."""
+        return [
+            {
+                "numero_reclamo": "REC-2026-STALL-101",
+                "numero_poliza": "POL-2026-AUT-00101",
+                "estado_actual": "PERITAJE_PENDIENTE",
+                "dias_estancado": 3,
+                "cuello_botella": "Perito asignado no asistio a inspeccion de campo (SLA excedido 72h)",
+                "accion_sugerida": "SKILL_REASIGNAR_PERITO_GPS",
+                "modelo_vehiculo": "Toyota Corolla 2022",
+                "monto_estimado_usd": 1200.00,
+                "score_fraude": 0.08
+            },
+            {
+                "numero_reclamo": "REC-2026-STALL-102",
+                "numero_poliza": "POL-2026-AUT-00102",
+                "estado_actual": "DOCUMENTACION_PENDIENTE",
+                "dias_estancado": 4,
+                "cuello_botella": "Fotografias de WhatsApp borrosas. Falta fotografia de odometro",
+                "accion_sugerida": "SKILL_SOLICITAR_SEGUNDA_EVIDENCIA",
+                "modelo_vehiculo": "Hyundai Tucson 2023",
+                "monto_estimado_usd": 850.00,
+                "score_fraude": 0.12
+            },
+            {
+                "numero_reclamo": "REC-2026-STALL-103",
+                "numero_poliza": "POL-2026-AUT-00103",
+                "estado_actual": "EN_REVISION",
+                "dias_estancado": 2,
+                "cuello_botella": "Reclamo menor (< $1,500 USD) en cola de aprobacion manual sin riesgo de fraude",
+                "accion_sugerida": "SKILL_FAST_TRACK_APROBACION",
+                "modelo_vehiculo": "Nissan Versa 2021",
+                "monto_estimado_usd": 950.00,
+                "score_fraude": 0.05
+            }
+        ]
+
     def _nodo_fnol_ingestion(self, state: AgentGraphState) -> Dict[str, Any]:
         """Nodo 1: Clasificación inicial y filtro de siniestros estancados."""
         t0 = time.time()
@@ -215,6 +254,8 @@ class LangGraphAutonomousAgentControl:
                     "monto_estimado_usd": float(doc.get("monto_estimado_reparacion", 1200.0)),
                     "score_fraude": float(doc.get("score_fraude", 0.08))
                 })
+            if not claims:
+                return self._obtener_siniestros_estancados_canonicos()
             return claims
         except Exception as e:
             print(f"[LangGraphControl] Advertencia al consultar MongoDB Atlas: {e}")

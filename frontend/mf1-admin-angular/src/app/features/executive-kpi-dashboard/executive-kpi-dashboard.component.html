@@ -70,7 +70,7 @@
           </span>
         </div>
         <div class="mt-2">
-          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">248.6%</div>
+          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">{{ solvencyRatio | number:'1.1-1' }}%</div>
           <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
             <span class="material-symbols-outlined text-sm">trending_up</span>
             <span class="font-mono font-bold">+4.2% Anual</span>
@@ -79,7 +79,7 @@
       </div>
       <div class="mt-4">
         <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
-          <div class="bg-primary h-full rounded-full" style="width: 82%"></div>
+          <div class="bg-primary h-full rounded-full" [style.width.%]="solvencyRatio / 3"></div>
         </div>
         <span class="text-[10px] text-secondary font-mono mt-1 block">Umbral regulatorio mínimo: 160%</span>
       </div>
@@ -95,7 +95,7 @@
           </span>
         </div>
         <div class="mt-2">
-          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">81.4%</div>
+          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">{{ netLossRatio | number:'1.1-1' }}%</div>
           <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
             <span class="material-symbols-outlined text-sm">trending_down</span>
             <span class="font-mono font-bold">-2.6% vs Mercado</span>
@@ -118,7 +118,7 @@
           <span class="text-xs font-mono text-tertiary font-bold">+14.1%</span>
         </div>
         <div class="mt-2">
-          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">$842.5M</div>
+          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">${{ gwpTotal | number:'1.1-1' }}M</div>
           <div class="flex items-center gap-1 mt-1 text-secondary text-xs">
             <span class="material-symbols-outlined text-sm text-tertiary">pie_chart</span>
             <span class="font-mono text-[11px]">Auto 62% • Salud 38%</span>
@@ -142,7 +142,7 @@
           <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
         </div>
         <div class="mt-2">
-          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">76.8%</div>
+          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">{{ stpAutomationPct | number:'1.1-1' }}%</div>
           <div class="flex items-center gap-1 mt-1 text-primary text-xs font-bold">
             <span class="material-symbols-outlined text-sm">bolt</span>
             <span class="font-mono">&lt;45s Auto-Liquidado</span>
@@ -151,9 +151,9 @@
       </div>
       <div class="mt-4">
         <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
-          <div class="bg-tertiary h-full rounded-full" style="width: 76.8%"></div>
+          <div class="bg-tertiary h-full rounded-full" [style.width.%]="stpAutomationPct"></div>
         </div>
-        <span class="text-[10px] text-secondary font-mono mt-1 block">21,480 siniestros / mes</span>
+        <span class="text-[10px] text-secondary font-mono mt-1 block">Dataset: {{ totalPolizasDataset }} pólizas PG</span>
       </div>
     </div>
   </section>
