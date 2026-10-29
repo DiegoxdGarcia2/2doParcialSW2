@@ -36,14 +36,26 @@ class DetectedPartDTO(BaseModel):
     descripcion_dano: str = Field(..., description="Descripción técnica del daño estructural observado")
 
 
+class KeyframeDTO(BaseModel):
+    """Representa un fotograma clave extraído de un video de colisión vehicular."""
+    keyframe_id: str = Field(..., description="Identificador único del keyframe (ej: frame_01)")
+    timestamp_segundos: float = Field(..., description="Segundo exacto en la línea de tiempo del video")
+    label: str = Field(..., description="Etiqueta descriptiva (ej: Frame 02: Pico de Deformación)")
+    imagen_url: str = Field(..., description="Imagen del cuadro para renderizar en el canvas")
+    severidad_frame: float = Field(..., description="Severidad estructural computada para este cuadro (0.0 a 1.0)")
+    piezas_averiadas: List[DetectedPartDTO] = Field(default_factory=list, description="Piezas detectadas en este cuadro")
+
+
 class DamageAnalysisInputDTO(BaseModel):
-    """Payload de entrada para auditar una imagen con la red convolucional CrashNet."""
+    """Payload de entrada para auditar una imagen o video con la red convolucional CrashNet."""
     numero_reclamo: str = Field(default="REC-2026-00492", description="Identificador único del expediente de siniestro")
     reclamo_id: Optional[str] = Field(None, description="Alias para numero_reclamo")
     numero_poliza: Optional[str] = Field("POL-2026-AUT-00892", description="Código de la póliza de seguros")
     poliza_id: Optional[str] = Field(None, description="Alias para numero_poliza")
     imagen_url: Optional[str] = Field(None, description="URL pública o interna de la fotografía de colisión")
     imagen_base64: Optional[str] = Field(None, description="Contenido de la imagen codificado en Base64")
+    video_base64: Optional[str] = Field(None, description="Contenido del video codificado en Base64")
+    es_video: bool = Field(default=False, description="True si la evidencia corresponde a un video .mp4")
     angulo_toma: Optional[str] = Field("FRONTAL_CUARTO_DERECHO", description="Perspectiva de la captura fotográfica")
     modelo_vehiculo: Optional[str] = Field("Tesla Model Y / SUV", description="Marca y modelo del vehículo asegurado")
 
@@ -87,6 +99,8 @@ class DamageAssessmentOutputDTO(BaseModel):
     liquidacion_financiera: FinancialSettlementDTO
     lidar_telemetria: Dict[str, Any] = Field(default_factory=dict)
     estres_termico: Dict[str, Any] = Field(default_factory=dict)
+    keyframes: Optional[List[KeyframeDTO]] = Field(default=None, description="Fotogramas clave extraídos si la evidencia es un video")
+    es_video: bool = Field(default=False, description="True si la inspección proviene de un video")
     estado_peritaje: str = Field(default="PERITAJE_COMPLETADO")
     timestamp: str
 

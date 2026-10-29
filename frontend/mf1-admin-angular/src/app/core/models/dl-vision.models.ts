@@ -29,11 +29,22 @@ export interface DetectedPart {
   descripcion_dano: string;
 }
 
+export interface Keyframe {
+  keyframe_id: string;
+  timestamp_segundos: number;
+  label: string;
+  imagen_url: string;
+  severidad_frame: number;
+  piezas_averiadas: DetectedPart[];
+}
+
 export interface DamageAnalysisInput {
   numero_reclamo: string;
   numero_poliza?: string;
   imagen_url?: string;
   imagen_base64?: string;
+  video_base64?: string;
+  es_video?: boolean;
   angulo_toma?: string;
   modelo_vehiculo?: string;
 }
@@ -66,6 +77,8 @@ export interface DamageAssessmentOutput {
     zona_fatiga_critica?: string;
     [key: string]: any;
   };
+  keyframes?: Keyframe[];
+  es_video?: boolean;
   estado_peritaje: string;
   timestamp: string;
 }

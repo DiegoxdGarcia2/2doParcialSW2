@@ -1,3 +1,5 @@
+import * as dns from 'dns';
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';

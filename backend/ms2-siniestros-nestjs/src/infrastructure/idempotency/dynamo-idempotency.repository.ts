@@ -29,19 +29,25 @@ export class DynamoIdempotencyRepository {
     this.tableName =
       process.env.DYNAMODB_TABLE_IDEMPOTENCY || 'AegisCore_IdempotencyRecords';
 
-    const region = process.env.AWS_REGION || 'us-east-1';
-    const accessKeyId = process.env.AWS_ACCESS_KEY_ID || 'local';
-    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || 'local';
-    const endpoint = process.env.DYNAMODB_ENDPOINT || 'http://127.0.0.1:8000';
+    const region = process.env.AWS_REGION || 'us-east-2';
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+    const endpoint = process.env.DYNAMODB_ENDPOINT;
 
     const clientConfig: any = {
       region,
-      endpoint,
-      credentials: {
+    };
+
+    if (accessKeyId && secretAccessKey) {
+      clientConfig.credentials = {
         accessKeyId,
         secretAccessKey,
-      },
-    };
+      };
+    }
+
+    if (endpoint) {
+      clientConfig.endpoint = endpoint;
+    }
 
     const client = new DynamoDBClient(clientConfig);
 

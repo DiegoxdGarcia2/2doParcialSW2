@@ -39,7 +39,7 @@ async def listar_herramientas_mcp():
 async def procesar_comando_voz(
     audio_file: Optional[UploadFile] = File(default=None, description="Archivo de audio binario desde micrófono (.wav, .webm, .mp3)"),
     prompt_dictado: Optional[str] = Form(default=None, description="Texto dictado opcional (vía Web Speech API o prompt directo)"),
-    formato_preferido: str = Form(default="pdf", description="Formato preferido: xlsx, pdf o docx"),
+    formato_preferido: Optional[str] = Form(default=None, description="Formato preferido opcional: xlsx, pdf o docx"),
     herramienta_sugerida: Optional[str] = Form(default=None, description="Herramienta MCP específica (opcional)")
 ):
     """
@@ -60,11 +60,15 @@ async def procesar_comando_voz(
             detail="Debe proporcionar un archivo de audio o un texto dictado en el parámetro 'prompt_dictado'."
         )
 
+    herramienta_limpia = (herramienta_sugerida.strip() 
+                          if (herramienta_sugerida and herramienta_sugerida.strip()) 
+                          else None)
+
     response = control.procesarComandoVozCompleto(
         audio_bytes=audio_bytes,
         texto_dictado=prompt_dictado,
         formato_preferido=formato_preferido,
-        herramienta_sugerida=herramienta_sugerida
+        herramienta_sugerida=herramienta_limpia
     )
 
     # Si fue bloqueado por inyección SQL, retornamos HTTP 400 con la auditoría de amenaza

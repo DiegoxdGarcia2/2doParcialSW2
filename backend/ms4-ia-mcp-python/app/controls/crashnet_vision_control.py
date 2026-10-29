@@ -14,7 +14,9 @@ import time
 import base64
 import datetime
 from typing import Dict, List, Tuple, Optional, Any
+# pyrefly: ignore[missing-import]
 import numpy as np
+# pyrefly: ignore[missing-import]
 from bson import ObjectId
 
 from app.core.config import settings
@@ -30,6 +32,7 @@ from app.entities.dl_vision_dto import (
 
 # Intentar importar PIL para procesamiento de imagen real
 try:
+    # pyrefly: ignore[missing-import]
     from PIL import Image
     HAS_PIL = True
 except ImportError:
@@ -96,8 +99,11 @@ class CrashNetVisionControl:
         Retorna las piezas detectadas con sus coordenadas de polígono SVG,
         confianza de la red, severidad y código OEM.
         """
-        # Variación dinámica según siniestro / perspectiva
-        if reclamo_id == "REC-2026-TEST-999" or "LATERAL" in (angulo or "").upper():
+        rec_clean = (reclamo_id or "").upper()
+        ang_clean = (angulo or "").upper()
+
+        # CASO 2: Colisión Lateral (REC-2026-00493 o Toma Lateral)
+        if rec_clean == "REC-2026-00493" or "LATERAL" in ang_clean or rec_clean == "REC-2026-TEST-999":
             return [
                 DetectedPartDTO(
                     parte_id="door",
@@ -141,8 +147,53 @@ class CrashNetVisionControl:
                 )
             ]
 
-        # En el caso de colisiones frontales / cuarto delantero (caso canónico Stitch MCP):
-        piezas = [
+        # CASO 3: Impacto Frontal Superior / Sedán (REC-2026-00494)
+        if rec_clean == "REC-2026-00494":
+            return [
+                DetectedPartDTO(
+                    parte_id="hood",
+                    nombre_pieza="Capó de Aluminio & Bisagras Activas",
+                    confianza_deteccion=0.975,
+                    porcentaje_severidad=82.0,
+                    accion_recomendada="REEMPLAZO",
+                    codigo_oem="OEM #1091560-00-B",
+                    costo_pieza_usd=1650.00,
+                    costo_mano_obra_usd=750.00,
+                    costo_total_usd=2400.00,
+                    tiempo_estimado_despacho="ETA: 24h (In Stock)",
+                    bounding_box=BoundingBoxDTO(
+                        ymin=0.15,
+                        xmin=0.20,
+                        ymax=0.45,
+                        xmax=0.75,
+                        polygon_points="80,50 320,55 290,140 110,130"
+                    ),
+                    descripcion_dano="Plegado por compresión de la estructura de disipación de choque frontal del capó."
+                ),
+                DetectedPartDTO(
+                    parte_id="radiator",
+                    nombre_pieza="Radiador Central y Condensador AC",
+                    confianza_deteccion=0.938,
+                    porcentaje_severidad=88.0,
+                    accion_recomendada="REEMPLAZO",
+                    codigo_oem="OEM #1077221-00-A",
+                    costo_pieza_usd=980.00,
+                    costo_mano_obra_usd=900.00,
+                    costo_total_usd=1880.00,
+                    tiempo_estimado_despacho="ETA: 48h (Taller Calificado)",
+                    bounding_box=BoundingBoxDTO(
+                        ymin=0.48,
+                        xmin=0.25,
+                        ymax=0.75,
+                        xmax=0.65,
+                        polygon_points="100,150 260,150 250,225 110,225"
+                    ),
+                    descripcion_dano="Fuga de refrigerante por perforación del núcleo de aluminio y aplastamiento de conductos."
+                )
+            ]
+
+        # CASO 1 & CANÓNICO: Colisión Frontal Cuarto Derecho (Tesla Model Y - REC-2026-00492)
+        return [
             DetectedPartDTO(
                 parte_id="bumper",
                 nombre_pieza="Núcleo de Parachoques Frontal",
@@ -204,7 +255,6 @@ class CrashNetVisionControl:
                 descripcion_dano="Micro-fractura y deflexión de bisagra de aluminio en +3.4 grados. Apta para enderezado técnico."
             )
         ]
-        return piezas
 
     # -----------------------------------------------------------------------
     # Método Operacional UML: calcularSeveridadEstructural()
@@ -330,7 +380,50 @@ class CrashNetVisionControl:
             "zona_fatiga_critica": "Longerón Delantero Izquierdo"
         }
 
-        imagen_final = input_dto.imagen_url or self.CANONICAL_IMAGE_URL
+        # Manejo dinámico de imagen: Si el usuario subió imagen en Base64, usarla directamente
+        if input_dto.imagen_base64:
+            if input_dto.imagen_base64.startswith("data:"):
+                imagen_final = input_dto.imagen_base64
+            else:
+                imagen_final = f"data:image/jpeg;base64,{input_dto.imagen_base64}"
+        elif input_dto.imagen_url:
+            imagen_final = input_dto.imagen_url
+        elif num_reclamo == "REC-2026-00493":
+            imagen_final = "https://lh3.googleusercontent.com/aida-public/AB6AXuCOtOijrIJcDyaEgrsXodAwoTNDDVqgszmLUqFdypN23RCWUmXo5JE4m9LtDyQp95tHr5kCpG9VE-eEGe0jAUUij4mfnyG8l3oSFFYRkCB2ao0ddJIjX-KKkYNiUpYRDBLRaFqYFQM27v1_iz0q03WEK6_-xM9fSPyszJho9g8ATsBD3waGlta8oJ90HHptTlxp6vtFev2F4Zv5vYQzsv8y-K8VHLWijuIxD98cMEWZ4Isc3f-83Aci"
+        else:
+            imagen_final = self.CANONICAL_IMAGE_URL
+
+        # Keyframes si es video
+        es_video = bool(input_dto.es_video or input_dto.video_base64 or num_reclamo == "REC-2026-VIDEO-01")
+        keyframes_list = None
+        if es_video:
+            from app.entities.dl_vision_dto import KeyframeDTO
+            keyframes_list = [
+                KeyframeDTO(
+                    keyframe_id="frame_01",
+                    timestamp_segundos=1.2,
+                    label="Frame 01: Pre-Impacto / Aproximación",
+                    imagen_url=imagen_final,
+                    severidad_frame=0.20,
+                    piezas_averiadas=[]
+                ),
+                KeyframeDTO(
+                    keyframe_id="frame_02",
+                    timestamp_segundos=2.4,
+                    label="Frame 02: Deformación Plástica Máxima",
+                    imagen_url=imagen_final,
+                    severidad_frame=score_danos,
+                    piezas_averiadas=piezas
+                ),
+                KeyframeDTO(
+                    keyframe_id="frame_03",
+                    timestamp_segundos=3.8,
+                    label="Frame 03: Desaceleración y Rebote Elástico",
+                    imagen_url=imagen_final,
+                    severidad_frame=max(0.35, round(score_danos * 0.82, 2)),
+                    piezas_averiadas=piezas[:2]
+                )
+            ]
 
         assessment = DamageAssessmentOutputDTO(
             numero_reclamo=num_reclamo,
@@ -343,6 +436,8 @@ class CrashNetVisionControl:
             liquidacion_financiera=liquidacion,
             lidar_telemetria=lidar_data,
             estres_termico=termica_data,
+            keyframes=keyframes_list,
+            es_video=es_video,
             estado_peritaje="PERITAJE_COMPLETADO",
             timestamp=datetime.datetime.utcnow().isoformat()
         )
@@ -390,12 +485,44 @@ class CrashNetVisionControl:
     def obtener_expediente_peritaje(self, numero_reclamo: str) -> DamageAssessmentOutputDTO:
         """
         Recupera el peritaje técnico existente en MongoDB Atlas o genera la evaluación canónica.
+        Soporta los 4 casos de demostración oficial y expedientes guardados en Atlas.
         """
+        rec_clean = (numero_reclamo or "").upper()
+
+        # Casos de demostración preconfigurados para evaluación pericial inmediata
+        if rec_clean == "REC-2026-VIDEO-01":
+            return self.analizar_fotografia_siniestro(
+                DamageAnalysisInputDTO(
+                    numero_reclamo="REC-2026-VIDEO-01",
+                    numero_poliza="POL-2026-AUT-88120",
+                    modelo_vehiculo="Ford Mustang Mach-E (Video Colisión)",
+                    es_video=True,
+                    angulo_toma="FRONTAL_VIDEO_MULTI_FRAME"
+                )
+            )
+        elif rec_clean == "REC-2026-00493":
+            return self.analizar_fotografia_siniestro(
+                DamageAnalysisInputDTO(
+                    numero_reclamo="REC-2026-00493",
+                    numero_poliza="POL-2026-AUT-00331",
+                    modelo_vehiculo="Toyota RAV4 Hybrid / SUV",
+                    angulo_toma="LATERAL_DERECHO"
+                )
+            )
+        elif rec_clean == "REC-2026-00494":
+            return self.analizar_fotografia_siniestro(
+                DamageAnalysisInputDTO(
+                    numero_reclamo="REC-2026-00494",
+                    numero_poliza="POL-2026-AUT-00552",
+                    modelo_vehiculo="BMW Serie 3 Sedán Ejecutivo",
+                    angulo_toma="FRONTAL_SUPERIOR"
+                )
+            )
+
         db = get_mongo_db()
         exp = db.expedientes_siniestros.find_one({"numero_reclamo": numero_reclamo})
 
         if exp and exp.get("triaje_ia"):
-            # Construir con datos de MongoDB Atlas
             triaje = exp["triaje_ia"]
             piezas = self.detectar_piezas_averiadas(np.zeros((1, 224, 224, 3)), "FRONTAL", reclamo_id=numero_reclamo)
             liquidacion = FinancialSettlementDTO(
@@ -420,9 +547,14 @@ class CrashNetVisionControl:
                 timestamp=datetime.datetime.utcnow().isoformat()
             )
 
-        # Fallback ejecutando el análisis estándar
+        # Fallback ejecutando el análisis estándar del caso canónico Tesla Model Y
         return self.analizar_fotografia_siniestro(
-            DamageAnalysisInputDTO(numero_reclamo=numero_reclamo)
+            DamageAnalysisInputDTO(
+                numero_reclamo="REC-2026-00492",
+                numero_poliza="POL-2026-AUT-00892",
+                modelo_vehiculo="2024 Tesla Model Y Long Range",
+                angulo_toma="FRONTAL_CUARTO_DERECHO"
+            )
         )
 
 

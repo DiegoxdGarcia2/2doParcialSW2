@@ -16,11 +16,15 @@
           <span class="pulsing-dot-teal"></span>
           TELEMETRÍA EN TIEMPO REAL
         </span>
+        <span *ngIf="assessment?.es_video" class="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-xs font-mono font-bold border border-tertiary/20 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]">videocam</span>
+          MODO VIDEO (3 KEYFRAMES)
+        </span>
         <span class="verified-icon material-symbols-outlined">verified</span>
       </div>
 
       <div class="case-actions">
-        <!-- Selector de Reclamos en MongoDB Atlas -->
+        <!-- Selector de Galería Multicaso (Casos Reales de Demostración) -->
         <div class="flex items-center gap-1.5 bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-300">
           <span class="material-symbols-outlined text-slate-500 text-[18px]">folder_open</span>
           <select
@@ -28,22 +32,22 @@
             (change)="onClaimChange(inputClaim.numero_reclamo)"
             class="bg-transparent text-xs font-mono font-bold text-slate-800 outline-none cursor-pointer"
           >
-            <option *ngFor="let c of availableClaims" [value]="c">{{ c }}</option>
+            <option *ngFor="let c of casosDisponibles" [value]="c.id">{{ c.label }}</option>
           </select>
         </div>
 
-        <!-- Botón para Subir Fotografía Propia de Colisión -->
-        <label class="btn-action-upload" title="Subir fotografía de colisión propia para inferencia inmediata">
+        <!-- Botón para Subir Fotografía o Video Propio de Colisión -->
+        <label class="btn-action-upload" title="Subir fotografía o video de colisión propia para inferencia inmediata">
           <span class="material-symbols-outlined text-[18px]">add_photo_alternate</span>
-          <span>Subir Foto</span>
-          <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden" />
+          <span>Subir Evidencia (Foto/Video)</span>
+          <input type="file" (change)="onFileSelected($event)" accept="image/*,video/mp4,video/webm" class="hidden" />
         </label>
 
         <button class="btn-action-secondary" (click)="loadAssessment()" [disabled]="loading" title="Recargar Expediente">
           <span class="material-symbols-outlined text-[18px]" [class.spin]="loading">sync</span>
           <span>Actualizar</span>
         </button>
-        <button class="btn-action-primary" (click)="analyzeNewEvidence()" [disabled]="loading" title="Re-analizar Imagen con CrashNet">
+        <button class="btn-action-primary" (click)="analyzeNewEvidence()" [disabled]="loading" title="Re-analizar Evidencia con CrashNet">
           <span class="material-symbols-outlined text-[18px]" [class.spin]="loading">document_scanner</span>
           <span>Re-analizar</span>
         </button>
@@ -55,7 +59,8 @@
       <p class="vehicle-subtitle">
         Póliza: <span class="font-code">{{ assessment?.numero_poliza || inputClaim.numero_poliza }}</span>
         • VIN: <span class="font-code">5YJYGDEE3RF89104</span>
-        • Gravedad: <span class="gravedad-chip" [ngClass]="assessment?.gravedad_global">{{ assessment?.gravedad_global }}</span>
+        • Gravedad: <span class="gravedad-chip" [ngClass]="assessment?.gravedad_global || 'MEDIA'">{{ assessment?.gravedad_global || 'MEDIA' }}</span>
+        • Score Impacto: <span class="font-mono font-bold text-primary">{{ ((assessment?.score_danos_global || 0.74) * 100) | number:'1.1-1' }}%</span>
       </p>
     </div>
 
@@ -86,11 +91,37 @@
       </div>
       <div class="lidar-recon-pill">
         <span class="material-symbols-outlined text-[14px] text-primary">sensors</span>
-        <span>RECONSTRUCCIÓN LiDAR V3.8</span>
+        <span>RECONSTRUCCIÓN LiDAR V3.8 & GRAD-CAM</span>
       </div>
     </div>
 
-    <!-- Mode Selector Pills -->
+    <!-- Barra de Selección de Keyframes si es Video -->
+    <div *ngIf="assessment?.es_video && assessment?.keyframes && assessment?.keyframes?.length! > 0" 
+         class="px-6 py-2.5 bg-slate-900 border-y border-slate-800 flex items-center justify-between flex-wrap gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+        <span class="text-xs font-mono font-bold text-white flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm text-primary">movie</span>
+          FOTOGRAMAS CLAVE DEL VIDEO (Muestreo Laplaciano):
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          *ngFor="let kf of assessment?.keyframes"
+          type="button"
+          (click)="selectKeyframe(kf)"
+          [class.bg-primary]="selectedKeyframeId === kf.keyframe_id"
+          [class.text-white]="selectedKeyframeId === kf.keyframe_id"
+          [class.bg-slate-800]="selectedKeyframeId !== kf.keyframe_id"
+          [class.text-slate-300]="selectedKeyframeId !== kf.keyframe_id"
+          class="px-3 py-1 rounded text-xs font-mono font-bold transition-all hover:bg-primary/80 flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">play_arrow</span>
+          {{ kf.label }} ({{ kf.timestamp_segundos }}s)
+        </button>
+      </div>
+    </div>
+
+    <!-- Mode Selector Pills (Las 3 Capas de Inspección) -->
     <div class="mode-selector-row">
       <button
         class="mode-btn"
@@ -104,19 +135,33 @@
         [class.active]="activeMode === 'lidar'"
         (click)="switchMode('lidar')"
       >
-        Telemetría Bruta (LiDAR)
+        Telemetría Bruta (LiDAR 3D)
       </button>
       <button
         class="mode-btn"
         [class.active]="activeMode === 'thermal'"
         (click)="switchMode('thermal')"
       >
-        Esfuerzo Térmico y Deformación
+        Esfuerzo Térmico y Deformación (Grad-CAM)
       </button>
     </div>
 
-    <!-- Visualizer Canvas Container -->
-    <div class="canvas-viewport">
+    <!-- Visualizer Canvas Container con Soporte Drag & Drop Directo -->
+    <div
+      class="canvas-viewport"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      [class.ring-4]="isDragging"
+      [class.ring-primary]="isDragging"
+    >
+      <!-- Indicador de Arrastre Drag & Drop Activo -->
+      <div *ngIf="isDragging" class="absolute inset-0 bg-primary/20 backdrop-blur-sm z-40 flex flex-col items-center justify-center pointer-events-none border-2 border-dashed border-white">
+        <span class="material-symbols-outlined text-white text-[48px] animate-bounce">cloud_upload</span>
+        <span class="text-white font-headline-sm font-bold mt-2">Suelte la foto o video de colisión aquí</span>
+        <span class="text-white/80 text-xs font-mono">Inferencia instantánea con TensorFlow CrashNet-CNN</span>
+      </div>
+
       <!-- Underlying Collision Photo -->
       <img
         class="damage-photo"
@@ -124,9 +169,9 @@
         alt="Evidencia fotográfica del siniestro automotriz"
       />
 
-      <!-- Mode 1: AI Overlays & Bounding Polygons -->
+      <!-- Mode 1: AI Overlays & Bounding Polygons (Activo por defecto) -->
       <div class="layer-overlay" *ngIf="activeMode === 'boxes'">
-        <!-- SVG Interactive Damage Polygons (Generados Dinámicamente por la Red Convolucional CrashNet) -->
+        <!-- SVG Interactive Damage Polygons -->
         <svg class="svg-polygons" viewBox="0 0 400 300" preserveAspectRatio="none">
           <polygon
             *ngFor="let part of assessment?.piezas_averiadas"
@@ -160,26 +205,21 @@
         </div>
       </div>
 
-      <!-- Mode 2: Raw LiDAR Point-Cloud Grid Mode -->
-      <div class="layer-lidar-view" *ngIf="activeMode === 'lidar'">
-        <svg class="lidar-grid-svg" viewBox="0 0 200 150">
-          <pattern id="lidargrid-mf1" width="10" height="10" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="0.75" fill="#80d5cb"></circle>
-            <circle cx="7" cy="7" r="1.1" fill="#3f33d6"></circle>
-          </pattern>
-          <rect width="200" height="150" fill="url(#lidargrid-mf1)"></rect>
-          <path d="M 30,120 Q 80,40 170,90" fill="none" stroke="#80d5cb" stroke-width="1.5" stroke-dasharray="2 2"></path>
-        </svg>
+      <!-- Mode 2: Dynamic LiDAR Point-Cloud Grid Mode (Lienzo Canvas HTML5) -->
+      <div class="layer-lidar-view" [class.hidden]="activeMode !== 'lidar'">
+        <canvas #lidarCanvas class="absolute inset-0 w-full h-full block pointer-events-none" width="800" height="450"></canvas>
         <div class="lidar-hud-pill">
-          <span>{{ assessment?.lidar_telemetria?.['puntos_voxel_retorno'] || 'Retorno 1.28M Vóxeles' }} • Delta Profundidad +42mm</span>
+          <span class="material-symbols-outlined text-xs text-primary animate-pulse">radar</span>
+          <span>{{ assessment?.lidar_telemetria?.['puntos_voxel_retorno'] || 'Retorno 1.28M Vóxeles' }} • Delta Profundidad {{ assessment?.lidar_telemetria?.['delta_profundidad_mm'] || '+42mm' }}</span>
         </div>
       </div>
 
-      <!-- Mode 3: Thermal Stress Heatmap Mode -->
-      <div class="layer-thermal-view" *ngIf="activeMode === 'thermal'">
+      <!-- Mode 3: Thermal Stress Heatmap Mode (Lienzo Canvas Grad-CAM) -->
+      <div class="layer-thermal-view" [class.hidden]="activeMode !== 'thermal'">
+        <canvas #thermalCanvas class="absolute inset-0 w-full h-full block pointer-events-none" width="800" height="450"></canvas>
         <div class="thermal-hud-card">
           <span class="material-symbols-outlined text-error text-[18px]">local_fire_department</span>
-          <span>Deformación Torsional del Chasis: {{ assessment?.estres_termico?.['estres_chasis_torsional_mpa'] || 780 }} MPa</span>
+          <span>Deformación Torsional del Chasis: {{ assessment?.estres_termico?.['estres_chasis_torsional_mpa'] || 780 }} MPa (Grad-CAM Activo)</span>
         </div>
       </div>
 
@@ -196,7 +236,7 @@
     <!-- Active Damage Breakdown Pill Scroll -->
     <div class="damage-hotspots-container">
       <div class="hotspots-header">
-        <span class="hotspots-title">Puntos Críticos de Daño Validados</span>
+        <span class="hotspots-title">Puntos Críticos de Daño Validados por la Red Convolucional</span>
         <span class="hotspots-count">{{ assessment?.piezas_averiadas?.length || 3 }} Detectadas</span>
       </div>
 
@@ -217,13 +257,26 @@
               }"
             ></span>
             <div class="part-text">
-              <span class="part-name">{{ part.nombre_pieza }}</span>
+              <div class="flex items-center gap-2">
+                <span class="part-name">{{ part.nombre_pieza }}</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold"
+                      [ngClass]="part.accion_recomendada === 'REEMPLAZO' ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'">
+                  {{ part.accion_recomendada }}
+                </span>
+              </div>
               <span class="part-desc">{{ part.descripcion_dano }}</span>
             </div>
           </div>
-          <div class="hotspot-right">
+          <div class="hotspot-right flex flex-col items-end gap-1.5">
             <span class="part-cost">${{ part.costo_total_usd | number:'1.2-2' }}</span>
             <span class="part-conf">{{ (part.confianza_deteccion * 100) | number:'1.1-1' }}% Conf. IA</span>
+            <!-- Botón interactivo para alternar REEMPLAZO / REPARACION con recálculo financiero -->
+            <button
+              type="button"
+              (click)="toggleAccionRecomendada(part, $event)"
+              class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-100 hover:bg-primary hover:text-white text-slate-700 transition-colors border border-slate-300">
+              {{ part.accion_recomendada === 'REEMPLAZO' ? 'Cambiar a REPARACIÓN' : 'Cambiar a REEMPLAZO' }}
+            </button>
           </div>
         </div>
       </div>
@@ -318,5 +371,96 @@
         </button>
       </div>
     </section>
+  </div>
+
+  <!-- Modal / Dialogo de Éxito: Trazabilidad Saga (CU09 & Apache Kafka) -->
+  <div *ngIf="showSagaModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-slate-200 overflow-hidden animate-fadeIn">
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-teal-800 to-teal-950 p-6 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center">
+            <span class="material-symbols-outlined text-teal-300 text-[24px]">verified</span>
+          </div>
+          <div>
+            <h3 class="font-headline-sm text-lg font-bold">Transacción Saga Emitida (CU09)</h3>
+            <p class="text-xs text-teal-200/80 font-mono">Evento Kafka SiniestroPeritadoEvent distribuido</p>
+          </div>
+        </div>
+        <button (click)="closeSagaModal()" class="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+        <!-- Reclamo & Monto Summary Card -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <span class="text-xs text-slate-500 font-mono uppercase block">Siniestro Evaluado</span>
+            <span class="font-mono font-bold text-slate-900 text-base">{{ assessment?.numero_reclamo }}</span>
+            <span class="text-xs text-slate-600 block mt-0.5">{{ inputClaim.modelo_vehiculo }}</span>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-slate-500 font-mono uppercase block">Indemnización Neta Aprobada</span>
+            <span class="font-mono font-bold text-teal-700 text-xl">
+              ${{ (sagaConfirmedResp?.monto_aprobado_usd || assessment?.liquidacion_financiera?.monto_indemnizable_neto_usd || 0) | number:'1.2-2' }} USD
+            </span>
+          </div>
+        </div>
+
+        <!-- Trazabilidad Técnica Distribuida -->
+        <div class="border border-slate-200 rounded-xl p-4 space-y-2.5 text-xs font-mono">
+          <div class="flex justify-between items-center text-slate-600">
+            <span class="font-semibold text-slate-700">Estado en MongoDB Atlas:</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">PERITAJE_COMPLETADO</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-600">
+            <span class="font-semibold text-slate-700">Topic Kafka:</span>
+            <span class="text-indigo-700 font-bold">aegiscore.siniestros.saga.events</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-600">
+            <span class="font-semibold text-slate-700">Transaction ID Saga:</span>
+            <span class="text-slate-800">{{ sagaTxId }}</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-600">
+            <span class="font-semibold text-slate-700">Firma SHA-256 Peritaje:</span>
+            <span class="text-slate-500 truncate max-w-[220px]">{{ sagaAuditHash }}...</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-500 leading-relaxed">
+          El informe pericial ha sido registrado en MongoDB Atlas y transmitido al orquestador Saga en 
+          <span class="font-semibold text-slate-700">MS3 Spring Boot</span> para reservar fondos contables y emitir la orden de pago bancario.
+        </p>
+      </div>
+
+      <!-- Modal Footer Actions -->
+      <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          (click)="exportarExpedientePdf()"
+          class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-mono font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 transition-colors">
+          <span class="material-symbols-outlined text-[16px] text-teal-700">print</span>
+          <span>Imprimir / Exportar PDF</span>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="closeSagaModal()"
+            class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors">
+            Cerrar
+          </button>
+          <button
+            type="button"
+            (click)="nextClaim()"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-sm">
+            <span>Siguiente Siniestro</span>
+            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

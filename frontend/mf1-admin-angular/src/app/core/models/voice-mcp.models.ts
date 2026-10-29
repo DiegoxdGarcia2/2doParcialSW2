@@ -45,6 +45,8 @@ export interface VoiceMcpResponse {
   auditoria_seguridad: OwaspSecurityAudit;
   traza_mcp?: McpToolInvocationTrace;
   kpis_resumen: Record<string, any>;
+  columnas?: string[];
+  filas?: Record<string, any>[];
   documento?: GeneratedDocument;
   mensaje: string;
   timestamp: string;

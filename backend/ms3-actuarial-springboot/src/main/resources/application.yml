@@ -5,13 +5,13 @@ spring:
   application:
     name: ms3-actuarial-springboot
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/neondb}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://ep-damp-salad-b5enofaj-pooler.c-7.us-east-2.aws.neon.tech:5432/neondb?sslmode=require}
     username: ${SPRING_DATASOURCE_USERNAME:neondb_owner}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    password: ${SPRING_DATASOURCE_PASSWORD:npg_JiV18QkLUMwF}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: 5
+      minimum-idle: 1
       idle-timeout: 30000
       pool-name: AegisCoreHikariCP
       max-lifetime: 1800000
@@ -30,11 +30,13 @@ spring:
     consumer:
       group-id: ms3-saga-orchestrator-group
       auto-offset-reset: earliest
+    listener:
+      auto-startup: ${KAFKA_AUTO_STARTUP:false}
 
 aws:
   region: ${AWS_REGION:us-east-2}
-  accessKeyId: ${AWS_ACCESS_KEY_ID:}
-  secretAccessKey: ${AWS_SECRET_ACCESS_KEY:}
+  accessKeyId: ${AWS_ACCESS_KEY_ID:dummy-access-key}
+  secretAccessKey: ${AWS_SECRET_ACCESS_KEY:dummy-secret-key}
   dynamodb:
     table:
       idempotency: ${DYNAMODB_TABLE_IDEMPOTENCY:AegisCore_IdempotencyRecords}

@@ -88,13 +88,21 @@
             <span class="material-symbols-outlined text-primary text-xl">graphic_eq</span>
             <span class="text-sm font-bold font-headline text-on-surface">Grabación Acústica Whisper STT (Modo A)</span>
           </div>
-          <span *ngIf="isRecording" class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-error/10 text-error flex items-center gap-1.5 animate-pulse">
-            <span class="w-2 h-2 rounded-full bg-error"></span>
-            GRABANDO ({{ recordingDuration }}s)
-          </span>
-          <span *ngIf="!isRecording" class="text-xs font-mono text-outline-variant">
-            Listo para grabar
-          </span>
+
+          <!-- Badges de Estado en Tiempo Real -->
+          <div class="flex items-center gap-2">
+            <span *ngIf="isRecording && cuentaRegresivaEnvio > 0" class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-primary/20 text-primary border border-primary/30 flex items-center gap-1.5 animate-pulse">
+              <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+              SILENCIO DETECTADO • ENVIANDO EN {{ cuentaRegresivaEnvio }}s
+            </span>
+            <span *ngIf="isRecording && cuentaRegresivaEnvio === 0" class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-error/10 text-error flex items-center gap-1.5 animate-pulse">
+              <span class="w-2 h-2 rounded-full bg-error"></span>
+              ESCUCHANDO VOZ ({{ recordingDuration }}s)
+            </span>
+            <span *ngIf="!isRecording" class="text-xs font-mono text-outline-variant">
+              Listo para dictar
+            </span>
+          </div>
         </div>
 
         <!-- Canvas del Osciloscopio de Audio -->
@@ -103,21 +111,43 @@
           <div *ngIf="!isRecording" class="absolute inset-0 flex items-center justify-center text-outline-variant text-xs font-mono pointer-events-none">
             Presiona el micrófono para iniciar la captura de voz
           </div>
+          <div *ngIf="isRecording && cuentaRegresivaEnvio > 0" class="absolute inset-0 flex items-center justify-center bg-inverse-surface/75 text-primary-fixed text-xs font-mono font-bold pointer-events-none">
+            ⚡ Silencio detectado: Procesando y enviando reporte automáticamente...
+          </div>
         </div>
 
-        <!-- Botón Gigante del Micrófono -->
-        <div class="flex items-center justify-center py-2">
-          <button 
-            type="button"
-            (click)="toggleGrabacion()"
-            [class.bg-error]="isRecording"
-            [class.bg-primary]="!isRecording"
-            class="relative w-16 h-16 rounded-full text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all">
-            <span class="material-symbols-outlined text-3xl">
-              {{ isRecording ? 'stop' : 'mic' }}
-            </span>
-            <span *ngIf="isRecording" class="absolute -inset-1 rounded-full border-2 border-error animate-ping pointer-events-none opacity-75"></span>
-          </button>
+        <!-- Controles de Captura de Voz -->
+        <div class="flex flex-col items-center justify-center py-2 space-y-2">
+          <!-- Modo Reposo: Botón de Inicio de Micrófono -->
+          <div *ngIf="!isRecording" class="flex flex-col items-center space-y-1">
+            <button 
+              type="button"
+              (click)="toggleGrabacion()"
+              title="Presiona para hablar"
+              class="relative w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-3xl">mic</span>
+            </button>
+            <span class="text-[10px] font-mono text-outline-variant">Clic para iniciar dictado</span>
+          </div>
+
+          <!-- Modo Grabación Activa: Toolbar de Acción Inmediata (Enviar Ahora / Cancelar) -->
+          <div *ngIf="isRecording" class="flex flex-wrap items-center justify-center gap-3 w-full">
+            <button 
+              type="button"
+              (click)="detenerYEnviarComando()"
+              class="px-6 py-2.5 rounded-full bg-primary text-on-primary text-xs font-bold font-headline flex items-center gap-2 shadow-lg hover:bg-primary-container active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-base">send</span>
+              DETENER Y ENVIAR REPORTE AHORA
+            </button>
+
+            <button 
+              type="button"
+              (click)="cancelarGrabacion()"
+              class="px-4 py-2.5 rounded-full bg-error/10 text-error hover:bg-error/20 text-xs font-semibold font-headline flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-base">close</span>
+              Cancelar
+            </button>
+          </div>
         </div>
 
         <!-- Entrada de Texto Dictado o Manual -->
@@ -128,59 +158,90 @@
           </label>
           <textarea 
             [(ngModel)]="promptDictado"
+            (ngModelChange)="onPromptInput($event)"
             rows="2"
             placeholder="Ejemplo: Generar reporte de siniestros de alta severidad con costos estimados en formato PDF"
             class="w-full px-3 py-2 text-xs rounded-lg bg-surface border border-outline/30 focus:border-primary focus:outline-none transition-colors text-on-surface">
           </textarea>
         </div>
 
-        <!-- Selector de Formato & Herramienta -->
+        <!-- Inferencia Dinámica Autónoma: Formato y Herramienta MCP (100% Automático) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          <!-- Formato -->
+          <!-- 1. Formato de Exportación Autónomo -->
           <div>
-            <label class="text-[11px] font-semibold text-on-surface-variant block mb-1">Formato de Exportación:</label>
-            <div class="flex rounded-lg bg-surface-container p-1 border border-outline/20">
+            <label class="text-[11px] font-semibold text-on-surface-variant flex items-center justify-between mb-1">
+              <span>Formato de Exportación Resuelto:</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-tertiary/10 text-tertiary font-bold">AUTO-IA</span>
+            </label>
+            <div class="p-2.5 rounded-lg bg-surface border border-outline/30 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1.5 font-mono font-bold text-xs text-on-surface">
+                  <span class="material-symbols-outlined text-base text-primary">
+                    {{ getFormatIcon(formatoDetectado) }}
+                  </span>
+                  {{ getFormatLabel(formatoDetectado) }}
+                </span>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">
+                  {{ formatoDetectado.toUpperCase() }}
+                </span>
+              </div>
+              <div class="text-[10px] text-outline-variant font-mono truncate" [title]="formatoRazon">
+                {{ formatoRazon }}
+              </div>
+            </div>
+            <!-- Chips opcionales de forzado rápido si el usuario lo desea sin hablar -->
+            <div class="flex items-center gap-1.5 mt-1.5">
+              <span class="text-[9px] font-mono text-outline-variant">Forzar:</span>
               <button 
                 type="button"
-                (click)="formatoSeleccionado = 'pdf'"
-                [class.bg-primary]="formatoSeleccionado === 'pdf'"
-                [class.text-on-primary]="formatoSeleccionado === 'pdf'"
-                [class.text-on-surface-variant]="formatoSeleccionado !== 'pdf'"
-                class="flex-1 py-1 rounded text-xs font-semibold transition-colors">
-                PDF (.pdf)
+                (click)="cambiarFormatoManual('xlsx')"
+                [class.bg-primary]="formatoDetectado === 'xlsx'"
+                [class.text-on-primary]="formatoDetectado === 'xlsx'"
+                [class.bg-surface-container]="formatoDetectado !== 'xlsx'"
+                class="px-2 py-0.5 rounded text-[10px] font-mono transition-colors">
+                Excel
               </button>
               <button 
                 type="button"
-                (click)="formatoSeleccionado = 'xlsx'"
-                [class.bg-primary]="formatoSeleccionado === 'xlsx'"
-                [class.text-on-primary]="formatoSeleccionado === 'xlsx'"
-                [class.text-on-surface-variant]="formatoSeleccionado !== 'xlsx'"
-                class="flex-1 py-1 rounded text-xs font-semibold transition-colors">
-                Excel (.xlsx)
+                (click)="cambiarFormatoManual('pdf')"
+                [class.bg-primary]="formatoDetectado === 'pdf'"
+                [class.text-on-primary]="formatoDetectado === 'pdf'"
+                [class.bg-surface-container]="formatoDetectado !== 'pdf'"
+                class="px-2 py-0.5 rounded text-[10px] font-mono transition-colors">
+                PDF
               </button>
               <button 
                 type="button"
-                (click)="formatoSeleccionado = 'docx'"
-                [class.bg-primary]="formatoSeleccionado === 'docx'"
-                [class.text-on-primary]="formatoSeleccionado === 'docx'"
-                [class.text-on-surface-variant]="formatoSeleccionado !== 'docx'"
-                class="flex-1 py-1 rounded text-xs font-semibold transition-colors">
-                Word (.docx)
+                (click)="cambiarFormatoManual('docx')"
+                [class.bg-primary]="formatoDetectado === 'docx'"
+                [class.text-on-primary]="formatoDetectado === 'docx'"
+                [class.bg-surface-container]="formatoDetectado !== 'docx'"
+                class="px-2 py-0.5 rounded text-[10px] font-mono transition-colors">
+                Word
               </button>
             </div>
           </div>
 
-          <!-- Herramienta MCP Sugerida -->
+          <!-- 2. Resolución MCP 100% Automática por IA (Sin selección manual) -->
           <div>
-            <label class="text-[11px] font-semibold text-on-surface-variant block mb-1">Herramienta MCP:</label>
-            <select 
-              [(ngModel)]="herramientaSugerida"
-              class="w-full px-3 py-2 text-xs rounded-lg bg-surface border border-outline/30 text-on-surface focus:outline-none focus:border-primary">
-              <option value="tool_reporte_siniestralidad">Siniestralidad & Peritajes TFLite</option>
-              <option value="tool_reporte_ventas_primas">Ventas & Primas (Random Forest)</option>
-              <option value="tool_auditoria_fraude_siu">Auditoría SIU (Isolation Forest)</option>
-              <option value="tool_solvencia_reservas">Solvencia Técnica & Reservas</option>
-            </select>
+            <label class="text-[11px] font-semibold text-on-surface-variant flex items-center justify-between mb-1">
+              <span>Resolución MCP Autónoma:</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">AUTO-IA</span>
+            </label>
+            <div class="p-2.5 rounded-lg bg-surface border border-primary/30 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1.5 font-mono font-bold text-xs text-primary truncate">
+                  <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                  {{ obtenerNombreHerramienta(herramientaDetectada || lastResponse?.traza_mcp?.tool_name) }}
+                </span>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold ml-1">
+                  ACTIVO
+                </span>
+              </div>
+              <div class="text-[10px] text-outline-variant font-mono truncate">
+                Mapeo automático a consulta SQL/Mongo parametrizada
+              </div>
+            </div>
           </div>
         </div>
 
@@ -196,24 +257,31 @@
         </button>
       </div>
 
-      <!-- Presets Rápidos de Negocio -->
+      <!-- Ejemplos Dinámicos de Dictado Conversacional (Inspiración en Lenguaje Natural) -->
       <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline/20 space-y-3">
-        <span class="text-xs font-mono uppercase tracking-wider text-outline-variant font-bold block">
-          Comandos Ejecutivos Rápidos (Presets)
-        </span>
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono uppercase tracking-wider text-outline-variant font-bold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-primary">lightbulb</span>
+            Ejemplos de Dictado Natural (Dinámicos)
+          </span>
+          <span class="text-[10px] font-mono text-outline-variant">Dicta o prueba con un clic</span>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <button 
-            *ngFor="let p of comandosVozPresets"
+            *ngFor="let s of sugerenciasVoz"
             type="button"
-            (click)="seleccionarPreset(p)"
+            (click)="aplicarSugerencia(s)"
             class="text-left p-2.5 rounded-lg bg-surface hover:bg-surface-container-high border border-outline/20 transition-all group">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-bold text-primary group-hover:text-primary-container">{{ p.titulo }}</span>
+              <span class="text-xs font-bold text-primary group-hover:text-primary-container flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">{{ s.icono }}</span>
+                {{ s.titulo }}
+              </span>
               <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-surface-container font-semibold">
-                {{ p.formato }}
+                {{ s.tag }}
               </span>
             </div>
-            <p class="text-[11px] text-on-surface-variant line-clamp-1 font-body">"{{ p.comando }}"</p>
+            <p class="text-[11px] text-on-surface-variant line-clamp-1 font-body">"{{ s.frase }}"</p>
           </button>
         </div>
       </div>
@@ -344,12 +412,74 @@
         <div class="w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
           <span class="material-symbols-outlined text-2xl">record_voice_over</span>
         </div>
-        <h4 class="text-xs font-bold text-on-surface">Esperando Comando de Voz</h4>
+        <h4 class="text-xs font-bold text-on-surface">Esperando Dictado o Comando de Voz</h4>
         <p class="text-[11px] text-on-surface-variant font-body max-w-xs mx-auto">
-          Presiona el micrófono o selecciona uno de los comandos preestablecidos para generar un informe pericial o actuarial.
+          Presiona el micrófono para dictar libremente en lenguaje natural o escribe tu requerimiento pericial o actuarial.
         </p>
       </div>
 
+    </div>
+
+    <!-- Previsualización Tabular de Datos en Vivo (Executive Precision Data Table) -->
+    <div *ngIf="lastResponse?.columnas && lastResponse?.filas && lastResponse?.filas?.length! > 0" 
+         class="lg:col-span-12 bg-surface-container-lowest rounded-2xl p-6 border-2 border-primary/30 shadow-md space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline/20">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-lg">table_chart</span>
+          </span>
+          <div>
+            <h3 class="text-sm font-bold font-headline text-on-surface">
+              Previsualización de Datos Procesados ({{ lastResponse?.filas?.length }} registros)
+            </h3>
+            <p class="text-[11px] text-on-surface-variant font-body">
+              Obtenido en tiempo real desde {{ lastResponse?.traza_mcp?.fuente_datos }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-surface-container border border-outline/20 text-primary flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">filter_list</span>
+            {{ lastResponse?.filas?.length }} filas
+          </span>
+          <a 
+            [href]="obtenerDownloadUrl(lastResponse!.documento!.filename)"
+            download
+            target="_blank"
+            class="px-3 py-1.5 rounded-md bg-primary text-on-primary text-xs font-semibold flex items-center gap-1.5 shadow hover:bg-primary-container transition-colors">
+            <span class="material-symbols-outlined text-sm">download</span>
+            Descargar {{ lastResponse?.documento?.format?.toUpperCase() }}
+          </a>
+        </div>
+      </div>
+
+      <!-- Tabla Responsive -->
+      <div class="overflow-x-auto rounded-xl border border-outline/20 max-h-96">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-primary text-on-primary font-headline sticky top-0 z-10 shadow-sm">
+              <th *ngFor="let col of lastResponse?.columnas" class="px-4 py-3 font-semibold uppercase tracking-wider text-[11px] border-b border-primary/20 whitespace-nowrap">
+                {{ formatColumnHeader(col) }}
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline/10 font-body">
+            <tr *ngFor="let row of lastResponse?.filas; let i = index" 
+                [class.bg-surface-container-lowest]="i % 2 === 0" 
+                [class.bg-surface-container-low]="i % 2 !== 0"
+                class="hover:bg-primary/5 transition-colors">
+              <td *ngFor="let col of lastResponse?.columnas" class="px-4 py-2.5 text-on-surface font-mono text-[11px] whitespace-nowrap">
+                <span [class.font-bold]="col === 'tipo_vehiculo' || col === 'numero_reclamo' || col === 'poliza'"
+                      [class.text-primary]="col === 'demanda_polizas' || col === 'volumen_total_usd'"
+                      [class.text-error]="col === 'siniestralidad_pct' || col === 'tasa_siniestralidad_pct'">
+                  {{ formatCellValue(row[col], col) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
   </div>

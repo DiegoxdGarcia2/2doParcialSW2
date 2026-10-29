@@ -22,10 +22,10 @@ class VoiceCommandRequest(BaseModel):
         description="Texto dictado por el usuario o transcrito por el micrófono",
         examples=["Generar reporte de siniestros de alta severidad en formato PDF"]
     )
-    formato_preferido: str = Field(
-        default="pdf",
-        description="Formato de salida deseado: xlsx, pdf o docx",
-        examples=["pdf", "xlsx", "docx"]
+    formato_preferido: Optional[str] = Field(
+        default=None,
+        description="Formato de salida deseado: xlsx, pdf o docx (None para resolución autónoma)",
+        examples=["xlsx", "pdf", "docx"]
     )
     herramienta_sugerida: Optional[str] = Field(
         default=None,
@@ -85,6 +85,8 @@ class VoiceMcpExecutionResponse(BaseModel):
     auditoria_seguridad: OwaspSecurityAuditDTO = Field(description="Inspección de seguridad OWASP Anti-SQLi")
     traza_mcp: Optional[McpToolInvocationTraceDTO] = Field(default=None, description="Telemetría de la herramienta MCP")
     kpis_resumen: Dict[str, Any] = Field(default_factory=dict, description="Métricas ejecutivas clave extraídas")
+    columnas: List[str] = Field(default_factory=list, description="Nombres de columnas de la tabla generada")
+    filas: List[Dict[str, Any]] = Field(default_factory=list, description="Filas tabulares procesadas para previsualización inmediata en navegador")
     documento: Optional[GeneratedDocumentDTO] = Field(default=None, description="Metadatos del archivo descargable")
     mensaje: str = Field(description="Mensaje legible para el usuario o perito")
     timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())

@@ -41,7 +41,7 @@ class VoiceMcpControl:
         self,
         audio_bytes: Optional[bytes] = None,
         texto_dictado: Optional[str] = None,
-        formato: str = "pdf"
+        formato: Optional[str] = None
     ) -> Tuple[str, str, str, Dict[str, Any]]:
         """
         Operación UML 2.5+: transcribirAudioWhisper()
@@ -96,7 +96,7 @@ class VoiceMcpControl:
         self,
         audio_bytes: Optional[bytes] = None,
         texto_dictado: Optional[str] = None,
-        formato_preferido: str = "pdf",
+        formato_preferido: Optional[str] = None,
         herramienta_sugerida: Optional[str] = None,
         parametros_manuales: Optional[Dict[str, Any]] = None
     ) -> VoiceMcpExecutionResponse:
@@ -112,11 +112,32 @@ class VoiceMcpControl:
         texto, herramienta_detectada, formato_detectado, params = self.transcribirAudioWhisper(
             audio_bytes=audio_bytes,
             texto_dictado=texto_dictado,
-            formato=formato_preferido
+            formato=formato_preferido or "auto"
         )
 
-        herramienta = herramienta_sugerida or herramienta_detectada
-        formato_final = formato_detectado or formato_preferido
+        # Inferencia Autónoma por Intención / NLP:
+        # La intención detectada desde el texto o la voz SIEMPRE prevalece sobre sugerencias estáticas
+        if herramienta_detectada and herramienta_detectada != "tool_reporte_siniestralidad":
+            herramienta = herramienta_detectada
+        elif herramienta_sugerida:
+            herramienta = herramienta_sugerida
+        else:
+            herramienta = herramienta_detectada or "tool_reporte_siniestralidad"
+
+        # Resolución Dinámica Autónoma del Formato:
+        if formato_detectado and formato_detectado in ["xlsx", "pdf", "docx"]:
+            formato_final = formato_detectado
+        elif formato_preferido and formato_preferido.lower() in ["xlsx", "pdf", "docx"]:
+            formato_final = formato_preferido.lower()
+        else:
+            # Inferencia según naturaleza de los datos del dominio asegurador:
+            if herramienta in ["tool_reporte_ventas_primas", "tool_solvencia_reservas"]:
+                formato_final = "xlsx"
+            elif herramienta == "tool_reporte_auditoria_fraude_siu":
+                formato_final = "docx"
+            else:
+                formato_final = "pdf"
+
         if parametros_manuales:
             params.update(parametros_manuales)
         params["formato"] = formato_final
@@ -165,6 +186,8 @@ class VoiceMcpControl:
             auditoria_seguridad=auditoria,
             traza_mcp=traza,
             kpis_resumen=kpis,
+            columnas=cols,
+            filas=filas[:50],
             documento=documento,
             mensaje=f"✅ Comando de voz procesado con éxito. Reporte '{documento.filename}' generado y listo para descarga."
         )

@@ -17,7 +17,7 @@ export class VoiceMcpService {
   procesarComandoVoz(
     audioBlob?: Blob,
     promptDictado?: string,
-    formato: string = 'pdf',
+    formato?: string,
     herramienta?: string
   ): Observable<VoiceMcpResponse> {
     const formData = new FormData();
@@ -27,7 +27,9 @@ export class VoiceMcpService {
     if (promptDictado) {
       formData.append('prompt_dictado', promptDictado);
     }
-    formData.append('formato_preferido', formato);
+    if (formato) {
+      formData.append('formato_preferido', formato);
+    }
     if (herramienta) {
       formData.append('herramienta_sugerida', herramienta);
     }
@@ -42,14 +44,18 @@ export class VoiceMcpService {
    */
   procesarComandoJson(
     promptDictado: string,
-    formato: string = 'pdf',
+    formato?: string,
     herramienta?: string
   ): Observable<VoiceMcpResponse> {
-    const body = {
-      prompt_dictado: promptDictado,
-      formato_preferido: formato,
-      herramienta_sugerida: herramienta
+    const body: Record<string, any> = {
+      prompt_dictado: promptDictado
     };
+    if (formato) {
+      body['formato_preferido'] = formato;
+    }
+    if (herramienta) {
+      body['herramienta_sugerida'] = herramienta;
+    }
     return this.http.post<VoiceMcpResponse>(`${this.baseUrl}/voice-command/json`, body).pipe(
       catchError(err => throwError(() => err))
     );
