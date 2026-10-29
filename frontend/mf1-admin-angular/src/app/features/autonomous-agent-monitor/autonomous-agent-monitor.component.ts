@@ -43,11 +43,313 @@ export class AutonomousAgentMonitorComponent implements OnInit {
   healthCheckResult: string | null = null;
   executingSkills: { [reclamoId: string]: boolean } = {};
 
+  // Estado del Canal WebSocket en Vivo
+  isWsConnected: boolean = false;
+
+  // Estado del Panel HUD / Drawer Lateral de Alertas Críticas
+  isHudOpen: boolean = false;
+  hudData: any = null;
+
+  // Notificaciones Push Flotantes de Alto Impacto
+  pushNotifications: Array<{
+    id: string;
+    titulo: string;
+    mensaje: string;
+    nivel: 'SUCCESS' | 'CRITICO' | 'INFO';
+    timestamp: string;
+    nuevo_estado?: string;
+  }> = [];
+
+  isSeedingClaim: boolean = false;
+  isResettingClaims: boolean = false;
+
   feedbackMessage: string | null = null;
   errorMessage: string | null = null;
 
+  // Control de Visualización y Filtros para la Bitácora Ejecutiva
+  vistaLog: 'ejecutiva' | 'raw' = 'ejecutiva';
+  filtroTipoLog: string = 'TODOS';
+  busquedaLog: string = '';
+
+  get totalRemediaciones(): number {
+    return this.logs.filter(l => l.tipo_evento === 'AUTO_REMEDIACION' || l.nodo === 'LANGGRAPH_DAEMON').length;
+  }
+
+  get totalCiclos(): number {
+    return this.logs.filter(l => l.tipo_evento === 'CICLO_AUTONOMO' || l.nodo === 'LANGGRAPH_ORCHESTRATOR').length;
+  }
+
+  get logsFiltrados(): AgentLogEvent[] {
+    let list = this.logs;
+    if (this.filtroTipoLog !== 'TODOS') {
+      list = list.filter(l => l.tipo_evento === this.filtroTipoLog || l.nodo === this.filtroTipoLog);
+    }
+    if (this.busquedaLog.trim()) {
+      const q = this.busquedaLog.toLowerCase().trim();
+      list = list.filter(l =>
+        l.detalle.toLowerCase().includes(q) ||
+        l.nodo.toLowerCase().includes(q) ||
+        l.evento_id.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }
+
+  get parsedLogsFiltrados(): any[] {
+    return this.logsFiltrados.map(log => this.parseLogItem(log));
+  }
+
+  parseLogItem(log: AgentLogEvent) {
+    const hora = log.timestamp && log.timestamp.length >= 19 ? log.timestamp.slice(11, 19) : '--:--:--';
+    const fecha = log.timestamp && log.timestamp.length >= 10 ? log.timestamp.slice(0, 10) : '';
+
+    let referenciaId: string | undefined;
+    const refMatch = log.detalle.match(/\[(REC-[A-Z0-9\-]+|CYCLE-[A-Z0-9\-]+)\]/i);
+    if (refMatch) {
+      referenciaId = refMatch[1];
+    }
+
+    const esCiclo = log.tipo_evento === 'CICLO_AUTONOMO' || log.nodo === 'LANGGRAPH_ORCHESTRATOR';
+    const esRemediacion = log.tipo_evento === 'AUTO_REMEDIACION' || log.nodo === 'LANGGRAPH_DAEMON';
+    const esSkill = log.tipo_evento === 'DISPARO_SKILL' || log.nodo === 'SKILL_DISPATCHER';
+
+    let nodoLabel = log.nodo;
+    let nodoIcon = 'terminal';
+    let nodoColorClass = 'badge-slate';
+
+    if (esCiclo) {
+      nodoLabel = 'Orquestador LangGraph';
+      nodoIcon = 'account_tree';
+      nodoColorClass = 'badge-indigo';
+    } else if (esRemediacion) {
+      nodoLabel = 'Daemon Autónomo';
+      nodoIcon = 'auto_fix_high';
+      nodoColorClass = 'badge-teal';
+    } else if (esSkill) {
+      nodoLabel = 'Despachador Skills';
+      nodoIcon = 'flash_on';
+      nodoColorClass = 'badge-amber';
+    } else if (log.nodo.includes('FRAUD') || log.nodo.includes('CENTINELA')) {
+      nodoLabel = 'Centinela Anti-Fraude';
+      nodoIcon = 'security';
+      nodoColorClass = 'badge-red';
+    } else if (log.nodo.includes('VISION')) {
+      nodoLabel = 'CrashNet CNN Visión';
+      nodoIcon = 'visibility';
+      nodoColorClass = 'badge-purple';
+    }
+
+    let tituloEjecutivo = 'Evento Transaccional Kafka';
+    let descripcionLimpia = log.detalle;
+    let cleanText = log.detalle.replace(/^(\[[^\]]+\]\s*)+/g, '');
+
+    const skills: Array<{ codigo: string; nombre: string; reclamo?: string }> = [];
+    const skillsMatch = log.detalle.match(/Skills:\s*(.+)$/i);
+    if (skillsMatch && !skillsMatch[1].toLowerCase().includes('ninguna')) {
+      const rawSkills = skillsMatch[1].split(',');
+      for (const raw of rawSkills) {
+        const trimmed = raw.trim();
+        const skillCodeMatch = trimmed.match(/(SKILL_[A-Z0-9_]+)/);
+        const claimMatch = trimmed.match(/\((REC-[^\)]+)\)/);
+        if (skillCodeMatch) {
+          skills.push({
+            codigo: skillCodeMatch[1],
+            nombre: this.getSkillFriendlyName(skillCodeMatch[1]),
+            reclamo: claimMatch ? claimMatch[1] : undefined
+          });
+        }
+      }
+    }
+
+    let estadoBadge = { texto: 'AUDITADO', cssClass: 'badge-info', icon: 'verified' };
+
+    if (esRemediacion) {
+      tituloEjecutivo = 'Auto-Remediación de Siniestro en MongoDB Atlas';
+      descripcionLimpia = cleanText;
+      estadoBadge = { texto: 'DESBLOQUEADO', cssClass: 'badge-success', icon: 'check_circle' };
+    } else if (esCiclo) {
+      tituloEjecutivo = 'Ciclo de Evaluación y Re-Planning LangGraph';
+      const evalMatch = log.detalle.match(/Se evaluaron (\d+) siniestros.*disparó (\d+) skills/i);
+      if (evalMatch) {
+        const ev = evalMatch[1];
+        const skCount = evalMatch[2];
+        descripcionLimpia = `Ciclo LangGraph completado con éxito. Se evaluaron ${ev} expediente(s) y se dispararon ${skCount} habilidad(es) autónoma(s). Cobertura de solvencia verificada.`;
+      } else {
+        descripcionLimpia = cleanText;
+      }
+      estadoBadge = { texto: 'CICLO EXITOSO', cssClass: 'badge-indigo', icon: 'task_alt' };
+    } else if (esSkill) {
+      tituloEjecutivo = 'Ejecución Asistida de Habilidad Pericial';
+      descripcionLimpia = cleanText;
+      estadoBadge = { texto: 'EJECUTADO', cssClass: 'badge-amber', icon: 'bolt' };
+    }
+
+    return {
+      raw: log,
+      id: log.evento_id,
+      hora,
+      fecha,
+      nodo: log.nodo,
+      nodoLabel,
+      nodoIcon,
+      nodoColorClass,
+      tipoEvento: log.tipo_evento,
+      referenciaId,
+      esCiclo,
+      esRemediacion,
+      tituloEjecutivo,
+      descripcionLimpia,
+      skills,
+      estadoBadge,
+      impacto: log.impacto_expedientes || 0
+    };
+  }
+
   ngOnInit(): void {
     this.cargarDatosCluster();
+    this.conectarCanalWebSocket();
+  }
+
+  conectarCanalWebSocket(): void {
+    this.agentService.conectarWebSocket().subscribe({
+      next: (data) => {
+        this.isWsConnected = true;
+
+        if (data.cluster_state) {
+          this.clusterState = data.cluster_state;
+        }
+
+        // 1. Auto-despliegue del Panel HUD Lateral si hay Alerta Crítica (Fraude / SLA severo)
+        if (data.alerta_critica && data.alerta_critica.abrir_hud) {
+          this.hudData = data.alerta_critica;
+          this.isHudOpen = true;
+          this.reproducirAlertaSonora();
+          this.agregarNotificacionPush({
+            id: data.alerta_critica.id,
+            titulo: data.alerta_critica.titulo,
+            mensaje: `[${data.alerta_critica.reclamo_id}] ${data.alerta_critica.motivo}`,
+            nivel: 'CRITICO',
+            timestamp: data.alerta_critica.timestamp
+          });
+        }
+
+        // 2. Notificaciones Push de Auto-Remediación ejecutada por el Daemon
+        if (data.notificaciones && Array.isArray(data.notificaciones)) {
+          for (const n of data.notificaciones) {
+            this.agregarNotificacionPush({
+              id: n.id,
+              titulo: n.titulo,
+              mensaje: n.mensaje,
+              nivel: n.nivel || 'SUCCESS',
+              timestamp: n.timestamp,
+              nuevo_estado: n.nuevo_estado
+            });
+
+            // Agregar traza a la terminal de logs en vivo
+            this.logs.unshift({
+              evento_id: n.id,
+              timestamp: n.timestamp,
+              nodo: 'LANGGRAPH_DAEMON',
+              tipo_evento: 'AUTO_REMEDIACION',
+              detalle: n.mensaje,
+              impacto_expedientes: 1
+            });
+          }
+        }
+
+        // 3. Si llega un ciclo completado bajo demanda
+        if (data.tipo === 'CICLO_AUTONOMO_COMPLETADO') {
+          this.feedbackMessage = `Ciclo #${data.ciclo_id} ejecutado. Skills: ${data.skills_disparadas?.length || 0}`;
+          setTimeout(() => this.feedbackMessage = null, 4000);
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isWsConnected = false;
+        console.warn('[AutonomousAgentMonitor] Error en suscripción WS:', err);
+      }
+    });
+  }
+
+  agregarNotificacionPush(notif: any): void {
+    this.pushNotifications.unshift(notif);
+    if (this.pushNotifications.length > 5) {
+      this.pushNotifications.pop();
+    }
+    // Auto-descartar después de 8 segundos
+    setTimeout(() => {
+      this.descartarNotificacion(notif.id);
+    }, 8000);
+  }
+
+  descartarNotificacion(id: string): void {
+    this.pushNotifications = this.pushNotifications.filter(n => n.id !== id);
+    this.cdr.detectChanges();
+  }
+
+  cerrarHud(): void {
+    this.isHudOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  reproducirAlertaSonora(): void {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
+
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch {
+      // Audio silencioso en entornos restringidos
+    }
+  }
+
+  inyectarSiniestroPrueba(): void {
+    this.isSeedingClaim = true;
+    this.agentService.seedStalledClaim().subscribe({
+      next: (res) => {
+        this.isSeedingClaim = false;
+        this.feedbackMessage = `¡Siniestro de prueba ${res.numero_reclamo} inyectado! El Daemon lo detectará y resolverá en su siguiente ciclo.`;
+        this.cargarDatosCluster();
+        setTimeout(() => this.feedbackMessage = null, 6000);
+      },
+      error: (err) => {
+        this.isSeedingClaim = false;
+        this.errorMessage = 'Error al inyectar siniestro de prueba en MongoDB.';
+        console.error(err);
+      }
+    });
+  }
+
+  restaurarSiniestrosCanonicos(): void {
+    this.isResettingClaims = true;
+    this.agentService.resetStalledClaims().subscribe({
+      next: (res) => {
+        this.isResettingClaims = false;
+        this.feedbackMessage = 'Los 3 siniestros estancados canónicos han sido restaurados en MongoDB Atlas.';
+        this.cargarDatosCluster();
+        setTimeout(() => this.feedbackMessage = null, 6000);
+      },
+      error: (err) => {
+        this.isResettingClaims = false;
+        this.errorMessage = 'Error al restaurar siniestros en MongoDB.';
+        console.error(err);
+      }
+    });
   }
 
   cargarDatosCluster(): void {
@@ -64,8 +366,8 @@ export class AutonomousAgentMonitorComponent implements OnInit {
       },
       error: (err) => {
         console.error('[AutonomousAgentMonitor] Error al conectar con MS4 LangGraph:', err);
-        this.clusterState = this.agentService.getFallbackClusterState();
-        this.errorMessage = 'Aviso: Operando con telemetría canónica sincronizada.';
+        this.clusterState = null;
+        this.errorMessage = 'Error de conexión con Backend MS4 (FastAPI). No se pudo sincronizar el estado del cluster LangGraph.';
         this.isLoading = false;
         this.cdr.detectChanges();
       }
@@ -94,7 +396,7 @@ export class AutonomousAgentMonitorComponent implements OnInit {
       next: (res) => {
         this.lastCycleResult = res;
         this.isCycleRunning = false;
-        this.feedbackMessage = `Ciclo LangGraph #${res.ciclo_id} completado en ${res.duracion_total_ms}ms. Siniestros evaluados: ${res.siniestros_evaluados}.`;
+        this.feedbackMessage = `Ciclo LangGraph #${res.ciclo_id} completado en ${res.duracion_total_ms}ms. Siniestros evaluados: ${res.siniestros_analizados} | Resueltos: ${res.siniestros_resueltos} | Skills: ${res.skills_disparadas.length}.`;
         this.cargarDatosCluster();
         setTimeout(() => this.feedbackMessage = null, 6000);
       },

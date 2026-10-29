@@ -9,11 +9,13 @@
 import datetime
 import uuid
 import time
+import random
+import asyncio
 from typing import Dict, Any, List, Optional, TypedDict
 # pyrefly: ignore[missing-import]
 from langgraph.graph import StateGraph, END
 
-from app.db.connections import get_mongo_db
+from app.db.connections import get_mongo_db, get_postgres_connection
 from app.entities.agent_monitor_dto import (
     AgentNodeStatusDTO,
     ActiveMicroAgentDTO,
@@ -23,6 +25,32 @@ from app.entities.agent_monitor_dto import (
     ExecuteSkillResponseDTO,
     RunCycleResponseDTO
 )
+
+
+# ---------------------------------------------------------------------------
+# Gestor de Conexiones WebSocket para Monitoreo en Tiempo Real
+# ---------------------------------------------------------------------------
+class AgentWebSocketManager:
+    """Administrador de conexiones WebSocket para el monitor de agentes autónomos."""
+    def __init__(self):
+        self.active_connections: List[Any] = []
+
+    async def connect(self, websocket: Any):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        print(f"[WS-Manager] Cliente conectado. Conexiones activas: {len(self.active_connections)}")
+
+    def disconnect(self, websocket: Any):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+            print(f"[WS-Manager] Cliente desconectado. Conexiones activas: {len(self.active_connections)}")
+
+    async def broadcast(self, message: Dict[str, Any]):
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_json(message)
+            except Exception:
+                self.disconnect(connection)
 
 
 # ---------------------------------------------------------------------------
@@ -52,6 +80,9 @@ class LangGraphAutonomousAgentControl:
 
     def __init__(self):
         self.grafo_compilado = self._construir_grafo_langgraph()
+        self.ws_manager = AgentWebSocketManager()
+        self.worker_activo = False
+        self._last_alerted_frauds = set()
 
     # -----------------------------------------------------------------------
     # Método Operacional UML: inicializarGrafoLangGraph()
@@ -254,47 +285,15 @@ class LangGraphAutonomousAgentControl:
                     "monto_estimado_usd": float(doc.get("monto_estimado_reparacion", 1200.0)),
                     "score_fraude": float(doc.get("score_fraude", 0.08))
                 })
-            if not claims:
+            # Si no hay siniestros estancados, verificar si la colección está vacía (primer arranque)
+            if not claims and db.expedientes_siniestros.count_documents({}) == 0:
+                self.reiniciar_siniestros_demostracion()
                 return self._obtener_siniestros_estancados_canonicos()
+
             return claims
         except Exception as e:
             print(f"[LangGraphControl] Advertencia al consultar MongoDB Atlas: {e}")
-            # Fallback canónico con los 3 siniestros modelados
-            return [
-                {
-                    "numero_reclamo": "REC-2026-STALL-101",
-                    "numero_poliza": "POL-2026-AUT-00101",
-                    "estado_actual": "PERITAJE_PENDIENTE",
-                    "dias_estancado": 3,
-                    "cuello_botella": "Perito asignado no asistió a inspección de campo (SLA excedido 72h)",
-                    "accion_sugerida": "SKILL_REASIGNAR_PERITO_GPS",
-                    "modelo_vehiculo": "Toyota Corolla 2022",
-                    "monto_estimado_usd": 1200.00,
-                    "score_fraude": 0.08
-                },
-                {
-                    "numero_reclamo": "REC-2026-STALL-102",
-                    "numero_poliza": "POL-2026-AUT-00102",
-                    "estado_actual": "DOCUMENTACION_PENDIENTE",
-                    "dias_estancado": 4,
-                    "cuello_botella": "Fotografías de WhatsApp borrosas. Falta fotografía de odómetro",
-                    "accion_sugerida": "SKILL_SOLICITAR_SEGUNDA_EVIDENCIA",
-                    "modelo_vehiculo": "Hyundai Tucson 2023",
-                    "monto_estimado_usd": 850.00,
-                    "score_fraude": 0.12
-                },
-                {
-                    "numero_reclamo": "REC-2026-STALL-103",
-                    "numero_poliza": "POL-2026-AUT-00103",
-                    "estado_actual": "EN_REVISION",
-                    "dias_estancado": 2,
-                    "cuello_botella": "Reclamo menor (< $1,500 USD) en cola de aprobación manual sin riesgo de fraude",
-                    "accion_sugerida": "SKILL_FAST_TRACK_APROBACION",
-                    "modelo_vehiculo": "Nissan Versa 2021",
-                    "monto_estimado_usd": 950.00,
-                    "score_fraude": 0.05
-                }
-            ]
+            return []
 
     # -----------------------------------------------------------------------
     # Método Operacional UML: calcularEstresLiquidezReservas()
@@ -586,6 +585,407 @@ class LangGraphAutonomousAgentControl:
             metricas_liquidez=liquidez,
             ultima_reflexion=reflexion
         )
+
+    # -----------------------------------------------------------------------
+    # Métodos Operacionales UML para Monitoreo 24/7 y Demostración
+    # -----------------------------------------------------------------------
+    def reiniciar_siniestros_demostracion(self) -> List[Dict[str, Any]]:
+        """Inserta o resetea los 3 siniestros canónicos en MongoDB Atlas para demostración del enjambre."""
+        db = get_mongo_db()
+        canonicos = self._obtener_siniestros_estancados_canonicos()
+        for c in canonicos:
+            db.expedientes_siniestros.update_one(
+                {"numero_reclamo": c["numero_reclamo"]},
+                {"$set": {
+                    "numero_poliza": c["numero_poliza"],
+                    "estado": c["estado_actual"],
+                    "dias_estancado": c["dias_estancado"],
+                    "cuello_botella": c["cuello_botella"],
+                    "accion_sugerida": c["accion_sugerida"],
+                    "modelo_vehiculo": c["modelo_vehiculo"],
+                    "monto_estimado_reparacion": c["monto_estimado_usd"],
+                    "score_fraude": c["score_fraude"],
+                    "updated_at": datetime.datetime.now(datetime.timezone.utc)
+                }},
+                upsert=True
+            )
+        return canonicos
+
+    def inyectar_siniestro_prueba(self) -> Dict[str, Any]:
+        """Inserta un siniestro estancado diverso en MongoDB Atlas consultando una póliza real de PostgreSQL."""
+        db = get_mongo_db()
+        idx = random.randint(100, 999)
+        num_reclamo = f"REC-2026-STALL-{idx}"
+
+        # Consultar póliza real en Neon PostgreSQL
+        vehiculo = "Vehículo Asegurado"
+        num_pol = f"POL-2026-AUT-{random.randint(10000, 99999)}"
+        monto_estimado = 1250.0
+        try:
+            conn = get_postgres_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT id, tipo_vehiculo, anio_vehiculo, valor_comercial_usd, costo_siniestro_usd 
+                FROM dataset_historico_ml_polizas 
+                ORDER BY RANDOM() 
+                LIMIT 1;
+            """)
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            if row:
+                pol_id, tipo_v, anio_v, val_v, costo_s = row
+                num_pol = f"POL-2026-AUT-{pol_id:05d}"
+                marcas_por_tipo = {
+                    "SUV": ["Toyota RAV4", "Honda CR-V", "Ford Explorer", "Hyundai Tucson", "Jeep Compass", "Mazda CX-5"],
+                    "SEDAN": ["Toyota Corolla", "Honda Civic", "Nissan Sentra", "Volkswagen Jetta", "Chevrolet Cruze", "BMW 320i"],
+                    "PICKUP": ["Toyota Hilux", "Ford Ranger", "Chevrolet S10", "Nissan Frontier", "Volkswagen Amarok"],
+                    "HATCHBACK": ["Volkswagen Golf", "Chevrolet Onix", "Peugeot 208", "Toyota Yaris", "Renault Sandero"],
+                    "MOTOCICLETA": ["Yamaha MT-03", "Honda CB500", "Kawasaki Ninja 400", "BMW G310R"]
+                }
+                tipo_str = str(tipo_v).upper()
+                modelo_elegido = random.choice(marcas_por_tipo.get(tipo_str, ["Automóvil Estándar"]))
+                vehiculo = f"{modelo_elegido} {anio_v}"
+                if float(costo_s) > 100:
+                    monto_estimado = round(float(costo_s), 2)
+                else:
+                    monto_estimado = round(random.uniform(750.0, 3200.0), 2)
+        except Exception as e_sql:
+            print(f"[LangGraph-Daemon] Aviso consultando póliza en Neon PG: {e_sql}")
+            vehiculos_backup = ["Mazda CX-5 2023", "Chevrolet Tracker 2024", "Nissan Kicks 2022", "Volkswagen Taos 2024"]
+            vehiculo = random.choice(vehiculos_backup)
+
+        scenarios = [
+            {
+                "cuello_botella": "Inspección de campo demorada: Perito fuera de rango territorial (SLA >48h)",
+                "accion_sugerida": "SKILL_REASIGNAR_PERITO_GPS",
+                "dias": random.randint(2, 4),
+                "fraude": round(random.uniform(0.04, 0.12), 3)
+            },
+            {
+                "cuello_botella": "Fotografías de WhatsApp con baja resolución: Falta captura de odómetro y chasis",
+                "accion_sugerida": "SKILL_SOLICITAR_SEGUNDA_EVIDENCIA",
+                "dias": random.randint(3, 5),
+                "fraude": round(random.uniform(0.08, 0.18), 3)
+            },
+            {
+                "cuello_botella": "Reclamo menor (< $1,500 USD) en cola de auditoría manual sin indicios de riesgo",
+                "accion_sugerida": "SKILL_FAST_TRACK_APROBACION",
+                "dias": random.randint(1, 2),
+                "fraude": round(random.uniform(0.01, 0.05), 3)
+            }
+        ]
+        scen = random.choice(scenarios)
+
+        nuevo_doc = {
+            "numero_reclamo": num_reclamo,
+            "numero_poliza": num_pol,
+            "estado": "PERITAJE_PENDIENTE",
+            "dias_estancado": scen["dias"],
+            "cuello_botella": scen["cuello_botella"],
+            "accion_sugerida": scen["accion_sugerida"],
+            "modelo_vehiculo": vehiculo,
+            "monto_estimado_reparacion": monto_estimado,
+            "score_fraude": scen["fraude"],
+            "created_at": datetime.datetime.now(datetime.timezone.utc),
+            "updated_at": datetime.datetime.now(datetime.timezone.utc)
+        }
+        res = db.expedientes_siniestros.insert_one(nuevo_doc)
+        return {
+            "exito": True,
+            "numero_reclamo": num_reclamo,
+            "estado": "PERITAJE_PENDIENTE",
+            "mensaje": f"Siniestro {num_reclamo} ({vehiculo}) registrado en MongoDB Atlas.",
+            "persistencia_id": str(res.inserted_id)
+        }
+
+    def obtener_notificaciones_recientes(self, limite: int = 15, incluir_descartadas: bool = False) -> List[Dict[str, Any]]:
+        """Recupera notificaciones y alertas reales persistidas en MongoDB Atlas con estado de lectura."""
+        db = get_mongo_db()
+        items = []
+
+        # 0. Recuperar estado global de notificaciones leídas y archivadas en MongoDB Atlas
+        read_ids = set()
+        dismissed_ids = set()
+        cleared_at = None
+        all_read_at = None
+        try:
+            st = db.notificaciones_estado.find_one({"_id": "GLOBAL_STATUS"})
+            if st:
+                read_ids = set(st.get("read_ids", []))
+                dismissed_ids = set(st.get("dismissed_ids", []))
+                cleared_at = st.get("cleared_at")
+                all_read_at = st.get("all_read_at")
+        except Exception as e_st:
+            print(f"[Notifications] Aviso consultando notificaciones_estado: {e_st}")
+
+        def parse_dt(val):
+            if not val:
+                return datetime.datetime.now(datetime.timezone.utc)
+            if isinstance(val, datetime.datetime):
+                return val if val.tzinfo else val.replace(tzinfo=datetime.timezone.utc)
+            if isinstance(val, str):
+                try:
+                    d = datetime.datetime.fromisoformat(val.replace("Z", "+00:00"))
+                    return d if d.tzinfo else d.replace(tzinfo=datetime.timezone.utc)
+                except Exception:
+                    return datetime.datetime.now(datetime.timezone.utc)
+            return datetime.datetime.now(datetime.timezone.utc)
+
+        # 1. Alertas de Fraude reales de Isolation Forest
+        try:
+            for f in db.alertas_fraude_anomalias.find().sort("fecha_alerta", -1).limit(10):
+                notif_id = f"FRAUD-{str(f.get('_id'))[-6:]}"
+                if not incluir_descartadas and notif_id in dismissed_ids:
+                    continue
+
+                t_obj = parse_dt(f.get("fecha_alerta"))
+                t_str = t_obj.isoformat()
+
+                if not incluir_descartadas and cleared_at:
+                    c_obj = parse_dt(cleared_at)
+                    if t_obj <= c_obj:
+                        continue
+
+                is_read = notif_id in read_ids
+                if not is_read and all_read_at:
+                    ar_obj = parse_dt(all_read_at)
+                    if t_obj <= ar_obj:
+                        is_read = True
+
+                items.append({
+                    "id": notif_id,
+                    "titulo": f"Alerta Fraude: {f.get('taller_mecanico', 'Taller')}",
+                    "mensaje": f"[{f.get('reclamo_id')}] {f.get('motivo_sospecha', 'Sobreprecio anómalo')} (+{f.get('divergencia_porcentaje', 0)}%)",
+                    "nivel": "CRITICO",
+                    "timestamp": t_str,
+                    "leido": is_read,
+                    "reclamo_id": f.get("reclamo_id"),
+                    "skill_ejecutada": "SKILL_CONGELAR_LIQUIDACION_SAGA"
+                })
+        except Exception as e_f:
+            print(f"[Notifications] Error leyendo fraudes: {e_f}")
+
+        # 2. Expedientes reales con resoluciones automáticas en MongoDB
+        try:
+            estados_resueltos = ["PERITAJE_ASIGNADO_GPS", "ESPERANDO_FOTO_ODOMETRO", "APROBADO_FAST_TRACK", "PERITAJE_COMPLETADO"]
+            for exp in db.expedientes_siniestros.find({"estado": {"$in": estados_resueltos}}).sort("updated_at", -1).limit(15):
+                notif_id = f"CLAIM-{str(exp.get('_id'))[-6:]}"
+                if not incluir_descartadas and notif_id in dismissed_ids:
+                    continue
+
+                t_obj = parse_dt(exp.get("updated_at") or exp.get("created_at"))
+                t_str = t_obj.isoformat()
+
+                if not incluir_descartadas and cleared_at:
+                    c_obj = parse_dt(cleared_at)
+                    if t_obj <= c_obj:
+                        continue
+
+                is_read = notif_id in read_ids
+                if not is_read and all_read_at:
+                    ar_obj = parse_dt(all_read_at)
+                    if t_obj <= ar_obj:
+                        is_read = True
+
+                vehiculo = exp.get("modelo_vehiculo") or "Vehículo Asegurado"
+                estado = exp.get("estado", "")
+                
+                if estado == "PERITAJE_ASIGNADO_GPS":
+                    accion_desc = "Perito reasignado automáticamente vía geolocalización GPS (Radio 2.4 km)."
+                elif estado == "ESPERANDO_FOTO_ODOMETRO":
+                    accion_desc = "Notificación push y WhatsApp enviada solicitando evidencia nítida de odómetro."
+                elif estado == "APROBADO_FAST_TRACK":
+                    accion_desc = "Aprobación Fast-Track autorizada (< $1,500 USD sin riesgo de fraude)."
+                elif estado == "PERITAJE_COMPLETADO":
+                    accion_desc = "Peritaje de daños estructurales completado por CrashNet CNN."
+                else:
+                    accion_desc = exp.get("cuello_botella") or f"Estado actualizado a {estado}"
+
+                items.append({
+                    "id": notif_id,
+                    "titulo": f"Resolución de Siniestro: {exp.get('numero_reclamo')}",
+                    "mensaje": f"[{vehiculo}] {accion_desc}",
+                    "nivel": "SUCCESS",
+                    "timestamp": t_str,
+                    "leido": is_read,
+                    "reclamo_id": exp.get("numero_reclamo"),
+                    "nuevo_estado": estado,
+                    "skill_ejecutada": exp.get("accion_sugerida") or "SKILL_AUTONOMA"
+                })
+        except Exception as e_e:
+            print(f"[Notifications] Error leyendo expedientes: {e_e}")
+
+        # Ordenar por timestamp descendente
+        items.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
+        return items[:limite]
+
+    def marcar_notificacion_leida(self, notif_id: str) -> bool:
+        """Persiste en MongoDB Atlas que una notificación fue leída individualmente."""
+        try:
+            db = get_mongo_db()
+            db.notificaciones_estado.update_one(
+                {"_id": "GLOBAL_STATUS"},
+                {
+                    "$addToSet": {"read_ids": notif_id},
+                    "$set": {"updated_at": datetime.datetime.now(datetime.timezone.utc)}
+                },
+                upsert=True
+            )
+            return True
+        except Exception as e:
+            print(f"[Notifications] Error al marcar leída en MongoDB: {e}")
+            return False
+
+    def marcar_todas_notificaciones_leidas(self) -> int:
+        """Marca de manera atómica todas las notificaciones actuales como leídas en MongoDB Atlas."""
+        try:
+            db = get_mongo_db()
+            ahora = datetime.datetime.now(datetime.timezone.utc)
+            items = self.obtener_notificaciones_recientes(limite=50, incluir_descartadas=False)
+            ids = [it["id"] for it in items]
+            update_op = {
+                "$set": {
+                    "all_read_at": ahora,
+                    "updated_at": ahora
+                }
+            }
+            if ids:
+                update_op["$addToSet"] = {"read_ids": {"$each": ids}}
+
+            db.notificaciones_estado.update_one(
+                {"_id": "GLOBAL_STATUS"},
+                update_op,
+                upsert=True
+            )
+            return len(ids)
+        except Exception as e:
+            print(f"[Notifications] Error al marcar todas leídas en MongoDB: {e}")
+            return 0
+
+    def limpiar_notificaciones(self) -> int:
+        """Archiva y oculta todas las notificaciones actuales en MongoDB Atlas."""
+        try:
+            db = get_mongo_db()
+            ahora = datetime.datetime.now(datetime.timezone.utc)
+            items = self.obtener_notificaciones_recientes(limite=50, incluir_descartadas=False)
+            ids = [it["id"] for it in items]
+            update_op = {
+                "$set": {
+                    "cleared_at": ahora,
+                    "updated_at": ahora
+                }
+            }
+            if ids:
+                update_op["$addToSet"] = {
+                    "read_ids": {"$each": ids},
+                    "dismissed_ids": {"$each": ids}
+                }
+
+            db.notificaciones_estado.update_one(
+                {"_id": "GLOBAL_STATUS"},
+                update_op,
+                upsert=True
+            )
+            return len(ids)
+        except Exception as e:
+            print(f"[Notifications] Error al limpiar notificaciones en MongoDB: {e}")
+            return 0
+
+    async def bucle_monitoreo_segundo_plano(self, intervalo_segundos: int = 25):
+        """
+        Bucle de vigilancia continua 24/7 en segundo plano.
+        Supervisa MongoDB Atlas, ejecuta el ciclo LangGraph, aplica skills de auto-remediación
+        100% autónomas y transmite notificaciones push y alertas críticas al HUD vía WebSocket.
+        """
+        self.worker_activo = True
+        print(f"[LangGraph-Daemon] Worker autónomo iniciado (Intervalo de chequeo: {intervalo_segundos}s).")
+
+        while self.worker_activo:
+            try:
+                await asyncio.sleep(intervalo_segundos)
+
+                # 1. Consultar expedientes con SLA excedido o cuellos de botella
+                stalled_claims = self.evaluar_siniestros_estancados()
+
+                skills_ejecutadas = []
+                notificaciones_emitidas = []
+                alerta_critica_hud = None
+
+                # 2. Si hay expedientes estancados, ejecutar auto-remediación 100% autónoma
+                if stalled_claims:
+                    for claim in stalled_claims:
+                        reclamo_id = claim.get("numero_reclamo")
+                        skill_id = claim.get("accion_sugerida")
+
+                        if reclamo_id and skill_id:
+                            # Ejecutar skill atómica en MongoDB
+                            resp_skill = self.ejecutar_skill_resolucion(
+                                reclamo_id=reclamo_id,
+                                skill_id=skill_id,
+                                motivo="Remediación 100% autónoma por LangGraph Daemon"
+                            )
+                            skills_ejecutadas.append(f"{skill_id} ({reclamo_id})")
+
+                            notificaciones_emitidas.append({
+                                "id": f"NOTIF-{uuid.uuid4().hex[:6].upper()}",
+                                "reclamo_id": reclamo_id,
+                                "skill_ejecutada": skill_id,
+                                "titulo": "Remediación Autónoma de Siniestro",
+                                "mensaje": f"[{reclamo_id}] {resp_skill.detalle}",
+                                "nuevo_estado": resp_skill.nuevo_estado_expediente,
+                                "nivel": "SUCCESS",
+                                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                            })
+
+                # 3. Detectar si existe una alerta crítica reciente de fraude para abrir el HUD
+                try:
+                    db = get_mongo_db()
+                    fraudes_recientes = list(
+                        db.alertas_fraude_anomalias.find(
+                            {"nivel_criticidad": "CRÍTICO", "estado_pago": "CONGELADO_PREVENTIVO_SAGA"}
+                        ).sort("fecha_alerta", -1).limit(1)
+                    )
+                    if fraudes_recientes:
+                        f = fraudes_recientes[0]
+                        f_id = f.get("reclamo_id")
+                        if f_id and f_id not in self._last_alerted_frauds:
+                            self._last_alerted_frauds.add(f_id)
+                            alerta_critica_hud = {
+                                "id": f"HUD-{uuid.uuid4().hex[:6].upper()}",
+                                "reclamo_id": f_id,
+                                "poliza_id": f.get("poliza_id", "POL-DESCONOCIDA"),
+                                "titulo": "ALERTA CRÍTICA: Intento de Fraude Congelado",
+                                "motivo": f.get("motivo_sospecha", "Sobreprecio anómalo severo detectado por Isolation Forest."),
+                                "monto_solicitado_usd": float(f.get("monto_solicitado_usd", 0.0)),
+                                "monto_mercado_usd": float(f.get("monto_promedio_mercado_usd", 0.0)),
+                                "divergencia": float(f.get("divergencia_porcentaje", 0.0)),
+                                "score_anomalia": float(f.get("score_anomalia", -0.84)),
+                                "taller_mecanico": f.get("taller_mecanico", "Taller No Homologado"),
+                                "estado_pago": f.get("estado_pago", "CONGELADO_PREVENTIVO_SAGA"),
+                                "abrir_hud": True,
+                                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                            }
+                except Exception as e_f:
+                    print(f"[LangGraph-Daemon] Advertencia chequeando fraudes: {e_f}")
+
+                # 4. Obtener estado consolidado fresco
+                estado_actual = self.obtener_estado_cluster()
+
+                # 5. Broadcast a todos los WebSockets conectados
+                if self.ws_manager.active_connections:
+                    payload = {
+                        "tipo": "TELEMETRIA_EN_VIVO",
+                        "cluster_state": estado_actual.model_dump(),
+                        "skills_disparadas": skills_ejecutadas,
+                        "notificaciones": notificaciones_emitidas,
+                        "alerta_critica": alerta_critica_hud,
+                        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    }
+                    await self.ws_manager.broadcast(payload)
+
+            except Exception as e_loop:
+                print(f"[LangGraph-Daemon] Error en ciclo de monitoreo: {e_loop}")
 
 
 # Instancia singleton del Control

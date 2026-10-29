@@ -6,8 +6,10 @@
 =============================================================================
 """
 
+import datetime
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, status, HTTPException, Query
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends, status, HTTPException, Query, WebSocket, WebSocketDisconnect
 from app.core.security import require_roles, CurrentUser
 from app.entities.agent_monitor_dto import (
     AgentClusterStateDTO,
@@ -203,4 +205,170 @@ def get_execution_logs(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al consultar bitácora del agente en MongoDB Atlas: {str(e)}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Canal WebSocket en Tiempo Real para el Monitor Autónomo
+# ---------------------------------------------------------------------------
+@router.websocket("/ws")
+@router.websocket("/ws/agent-monitor")
+async def websocket_agent_monitor(websocket: WebSocket):
+    """
+    Canal WebSocket bidireccional en tiempo real para el monitor del Agente Autónomo.
+    Transmite telemetría del cluster, logs de eventos, disparos de skills y alertas críticas (HUD).
+    """
+    await langgraph_agent_control.ws_manager.connect(websocket)
+    try:
+        # Enviar de inmediato el estado inicial del cluster al conectar
+        initial_state = langgraph_agent_control.obtener_estado_cluster()
+        await websocket.send_json({
+            "tipo": "CONEXION_ESTABLECIDA",
+            "cluster_state": initial_state.model_dump(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        })
+        while True:
+            # Escucha mensajes del cliente (ej. comando manual de re-planning o ping)
+            data = await websocket.receive_text()
+            if "ping" in data.lower():
+                await websocket.send_json({"tipo": "PONG", "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()})
+            elif "trigger_cycle" in data.lower():
+                res = langgraph_agent_control.ejecutar_ciclo_autonomo()
+                state = langgraph_agent_control.obtener_estado_cluster()
+                await langgraph_agent_control.ws_manager.broadcast({
+                    "tipo": "CICLO_AUTONOMO_COMPLETADO",
+                    "ciclo_id": res.ciclo_id,
+                    "duracion_ms": res.duracion_total_ms,
+                    "skills_disparadas": res.skills_disparadas,
+                    "reflexion": res.reflexion_final,
+                    "cluster_state": state.model_dump(),
+                    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                })
+    except WebSocketDisconnect:
+        langgraph_agent_control.ws_manager.disconnect(websocket)
+    except Exception:
+        langgraph_agent_control.ws_manager.disconnect(websocket)
+
+
+# ---------------------------------------------------------------------------
+# Endpoints de Apoyo para Demostración y Pruebas en Vivo
+# ---------------------------------------------------------------------------
+@router.post(
+    "/seed-stalled-claim",
+    summary="Inyectar Siniestro Estancado de Prueba (Demostración de Auto-Remediación)",
+    description="Inserta un nuevo siniestro estancado en MongoDB para verificar que el worker lo detecte y resuelva automáticamente."
+)
+def seed_stalled_claim(
+    current_user: CurrentUser = Depends(require_roles(["ACTUARIO", "ADMIN", "PERITO", "AUDITOR"]))
+):
+    try:
+        return langgraph_agent_control.inyectar_siniestro_prueba()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al inyectar siniestro: {str(e)}"
+        )
+
+
+@router.get(
+    "/notifications",
+    summary="Obtener Notificaciones y Alertas Reales de MongoDB Atlas",
+    description="Recupera las alertas críticas de fraude y eventos de remediación autónoma persistidos en la base de datos."
+)
+def get_notifications(
+    limit: int = 15,
+    current_user: CurrentUser = Depends(require_roles(["ACTUARIO", "ADMIN", "PERITO", "AUDITOR"]))
+):
+    try:
+        return langgraph_agent_control.obtener_notificaciones_recientes(limite=limit)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al obtener notificaciones de MongoDB: {str(e)}"
+        )
+
+
+class MarkNotificationDTO(BaseModel):
+    id: Optional[str] = None
+    all: Optional[bool] = False
+
+
+@router.post(
+    "/notifications/mark-read",
+    summary="Marcar Notificación como Leída en MongoDB Atlas",
+    description="Persiste el estado de lectura de una o todas las notificaciones en la base de datos."
+)
+def mark_notification_read(
+    req: Optional[MarkNotificationDTO] = None,
+    current_user: CurrentUser = Depends(require_roles(["ACTUARIO", "ADMIN", "PERITO", "AUDITOR"]))
+):
+    try:
+        if req and req.id:
+            langgraph_agent_control.marcar_notificacion_leida(req.id)
+            return {"status": "SUCCESS", "mensaje": f"Notificación {req.id} marcada como leída.", "id": req.id}
+        else:
+            total = langgraph_agent_control.marcar_todas_notificaciones_leidas()
+            return {"status": "SUCCESS", "mensaje": "Todas las notificaciones marcadas como leídas.", "total": total}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al marcar notificación como leída en MongoDB: {str(e)}"
+        )
+
+
+@router.post(
+    "/notifications/mark-all-read",
+    summary="Marcar Todas las Notificaciones como Leídas",
+    description="Marca de manera persistente todas las notificaciones actuales como leídas en MongoDB Atlas."
+)
+def mark_all_notifications_read(
+    current_user: CurrentUser = Depends(require_roles(["ACTUARIO", "ADMIN", "PERITO", "AUDITOR"]))
+):
+    try:
+        total = langgraph_agent_control.marcar_todas_notificaciones_leidas()
+        return {"status": "SUCCESS", "mensaje": "Todas las notificaciones marcadas como leídas.", "total": total}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al marcar todas las notificaciones en MongoDB: {str(e)}"
+        )
+
+
+@router.delete(
+    "/notifications",
+    summary="Limpiar y Archivar Historial de Notificaciones",
+    description="Archiva y oculta las notificaciones actuales en MongoDB Atlas."
+)
+def clear_notifications(
+    current_user: CurrentUser = Depends(require_roles(["ACTUARIO", "ADMIN", "PERITO", "AUDITOR"]))
+):
+    try:
+        total = langgraph_agent_control.limpiar_notificaciones()
+        return {"status": "SUCCESS", "mensaje": "Historial de notificaciones archivado y limpiado.", "total": total}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al limpiar notificaciones en MongoDB: {str(e)}"
+        )
+
+
+@router.post(
+    "/reset-stalled-claims",
+    summary="Restaurar Siniestros Estancados Canónicos (Demostración)",
+    description="Restaura los 3 siniestros estancados originales en MongoDB Atlas para ejecutar nuevamente la demostración del enjambre."
+)
+def reset_stalled_claims(
+    current_user: CurrentUser = Depends(require_roles(["ACTUARIO", "ADMIN", "PERITO", "AUDITOR"]))
+):
+    try:
+        canonicos = langgraph_agent_control.reiniciar_siniestros_demostracion()
+        return {
+            "status": "SUCCESS",
+            "mensaje": "3 siniestros canónicos restaurados en MongoDB Atlas.",
+            "total_restaurados": len(canonicos)
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al restaurar siniestros: {str(e)}"
         )

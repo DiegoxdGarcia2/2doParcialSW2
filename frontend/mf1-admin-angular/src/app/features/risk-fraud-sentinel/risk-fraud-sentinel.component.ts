@@ -88,10 +88,9 @@ export class RiskFraudSentinelComponent implements OnInit, OnDestroy {
         setTimeout(() => this.renderClustersChart(), 100);
       },
       error: (err) => {
-        console.error('[RiskFraudSentinel] Error cargando telemetría:', err);
+        console.error('[RiskFraudSentinel] Error cargando telemetría desde MS4:', err);
         this.loading = false;
-        this.showToast('Error al conectar con MS4. Mostrando estado preventivo local.', 'error');
-        this.loadFallbackSummary();
+        this.showToast('Error de comunicación con Backend MS4: No se pudieron cargar clusters ni alertas de fraude.', 'error');
       }
     });
   }
@@ -339,71 +338,17 @@ export class RiskFraudSentinelComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Resumen de respaldo si la conexión no responde
+   * Determina la clase de estilo del cluster según su nivel de riesgo real
    */
-  private loadFallbackSummary(): void {
-    this.summary = {
-      threat_index_percentage: 12.4,
-      threat_level_label: 'BAJO-MODERADO',
-      perdidas_prevenidas_usd: 18600000.0,
-      total_siniestros_auditados: 1200,
-      total_alertas_activas: 2,
-      silhouette_score_kmeans: 0.42,
-      clusters_kmeans: [
-        {
-          cluster_id: 0,
-          nombre: 'Conductores Prudentes VIP (Bajo Riesgo)',
-          total_asegurados: 540,
-          porcentaje_flota: 45.0,
-          edad_media: 48.2,
-          valor_vehiculo_medio_usd: 34500.0,
-          frecuencia_siniestros_anual: 0.04,
-          score_riesgo_medio: 18.5,
-          prima_recomendada_descuento: '-15% (Bonificación No Siniestro)'
-        },
-        {
-          cluster_id: 1,
-          nombre: 'Riesgo Moderado Estándar',
-          total_asegurados: 480,
-          porcentaje_flota: 40.0,
-          edad_media: 38.6,
-          valor_vehiculo_medio_usd: 24200.0,
-          frecuencia_siniestros_anual: 0.18,
-          score_riesgo_medio: 46.2,
-          prima_recomendada_descuento: '0% (Tarifa Base de Mercado)'
-        },
-        {
-          cluster_id: 2,
-          nombre: 'Alta Siniestralidad / Conductores Jóvenes',
-          total_asegurados: 180,
-          porcentaje_flota: 15.0,
-          edad_media: 23.4,
-          valor_vehiculo_medio_usd: 16800.0,
-          frecuencia_siniestros_anual: 0.62,
-          score_riesgo_medio: 82.1,
-          prima_recomendada_descuento: '+25% (Recargo Actuarial por Frecuencia)'
-        }
-      ],
-      alertas_recientes: [
-        {
-          reclamo_id: 'REC-2026-00402',
-          poliza_id: 'POL-2026-AUT-99120',
-          monto_solicitado_usd: 9200.0,
-          monto_promedio_mercado_usd: 2100.0,
-          divergencia_porcentaje: 338.1,
-          score_anomalia: -0.8420,
-          es_anomalo: true,
-          nivel_criticidad: 'CRÍTICO',
-          taller_mecanico: 'Taller Mecánico Los Álamos',
-          motivo_sospecha: 'Colisión múltiple simulada (#R-402). 4 siniestros consecutivos en 48 horas.',
-          estado_pago: 'CONGELADO_PREVENTIVO_SAGA',
-          fecha_alerta: new Date().toISOString()
-        }
-      ],
-      timestamp: new Date().toISOString()
-    };
-    this.alerts = this.summary.alertas_recientes;
-    this.applyFilter();
-    setTimeout(() => this.renderClustersChart(), 100);
+  getClusterCardClass(cluster: ClusterProfile): string {
+    if (!cluster) return 'cluster-mid';
+    if (cluster.nombre?.includes('Bajo') || cluster.nombre?.includes('VIP') || cluster.score_riesgo_medio < 40) {
+      return 'cluster-safe';
+    }
+    if (cluster.nombre?.includes('Alta') || cluster.score_riesgo_medio >= 75) {
+      return 'cluster-danger';
+    }
+    return 'cluster-mid';
   }
+
 }

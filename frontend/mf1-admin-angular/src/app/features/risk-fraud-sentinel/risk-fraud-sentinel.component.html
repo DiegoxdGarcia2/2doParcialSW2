@@ -134,11 +134,7 @@
         <div
           *ngFor="let cluster of summary?.clusters_kmeans"
           class="cluster-card"
-          [ngClass]="{
-            'cluster-safe': cluster.cluster_id === 0,
-            'cluster-mid': cluster.cluster_id === 1,
-            'cluster-danger': cluster.cluster_id === 2
-          }"
+          [ngClass]="getClusterCardClass(cluster)"
         >
           <div class="cluster-card-top">
             <span class="cluster-name">{{ cluster.nombre }}</span>

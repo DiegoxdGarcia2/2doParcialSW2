@@ -8,7 +8,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, catchError, throwError, timeout, of } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, catchError, throwError, timeout, of, map } from 'rxjs';
 import {
   AgentClusterState,
   StalledClaim,
@@ -16,7 +16,8 @@ import {
   ExecuteSkillRequest,
   ExecuteSkillResponse,
   LiquidityMetrics,
-  AgentLogEvent
+  AgentLogEvent,
+  SystemNotification
 } from '../models/agent-monitor.models';
 
 @Injectable({
@@ -25,12 +26,255 @@ import {
 export class AgentMonitorService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = 'http://127.0.0.1:8000/api/agent';
+  private wsSubject: Subject<any> | null = null;
+  private wsConnection: WebSocket | null = null;
+
+  // Repositorio reactivo de notificaciones del enjambre para toda la aplicación (Datos reales de MongoDB Atlas)
+  private readonly notificationsSubject = new BehaviorSubject<SystemNotification[]>([]);
+  private readonly STORAGE_READ_KEY = 'aegis_notifications_read_ids';
+  private readonly STORAGE_DISMISSED_KEY = 'aegis_notifications_dismissed_ids';
+
+  readonly notifications$ = this.notificationsSubject.asObservable();
+  readonly unreadCount$ = this.notificationsSubject.pipe(
+    map(list => list.filter(n => !n.leido).length)
+  );
+
+  constructor() {
+    this.cargarNotificacionesReales();
+  }
+
+  private getStoredReadIds(): Set<string> {
+    try {
+      const data = localStorage.getItem(this.STORAGE_READ_KEY);
+      return data ? new Set(JSON.parse(data)) : new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  private saveStoredReadIds(ids: Set<string>): void {
+    try {
+      localStorage.setItem(this.STORAGE_READ_KEY, JSON.stringify(Array.from(ids)));
+    } catch (e) {
+      console.warn('Error guardando read_ids en localStorage:', e);
+    }
+  }
+
+  private getStoredDismissedIds(): Set<string> {
+    try {
+      const data = localStorage.getItem(this.STORAGE_DISMISSED_KEY);
+      return data ? new Set(JSON.parse(data)) : new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  private saveStoredDismissedIds(ids: Set<string>): void {
+    try {
+      localStorage.setItem(this.STORAGE_DISMISSED_KEY, JSON.stringify(Array.from(ids)));
+    } catch (e) {
+      console.warn('Error guardando dismissed_ids en localStorage:', e);
+    }
+  }
+
+  cargarNotificacionesReales(): void {
+    const readIds = this.getStoredReadIds();
+    const dismissedIds = this.getStoredDismissedIds();
+
+    this.http.get<SystemNotification[]>(`${this.baseUrl}/notifications`, { headers: this.getHeaders() })
+      .pipe(catchError(e => of([])))
+      .subscribe(list => {
+        if (list && list.length > 0) {
+          const processed = list
+            .filter(n => !dismissedIds.has(n.id))
+            .map(n => ({
+              ...n,
+              leido: Boolean(n.leido || readIds.has(n.id))
+            }));
+          this.notificationsSubject.next(processed);
+        } else {
+          this.notificationsSubject.next([]);
+        }
+      });
+  }
 
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     });
+  }
+
+  /**
+   * Conecta al canal WebSocket en tiempo real de MS4 para recibir telemetría,
+   * alertas críticas para el HUD y notificaciones push.
+   */
+  conectarWebSocket(): Observable<any> {
+    if (!this.wsSubject) {
+      this.wsSubject = new Subject<any>();
+      this.iniciarConexionWs();
+    }
+    return this.wsSubject.asObservable();
+  }
+
+  private iniciarConexionWs(): void {
+    try {
+      this.wsConnection = new WebSocket('ws://127.0.0.1:8000/api/agent/ws');
+      this.wsConnection.onopen = () => {
+        console.log('[AgentMonitorService] WebSocket conectado exitosamente a MS4');
+      };
+      this.wsConnection.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+          this.procesarMensajeWS(parsed);
+          this.wsSubject?.next(parsed);
+        } catch (e) {
+          console.warn('[AgentMonitorService] Error procesando mensaje WS:', e);
+        }
+      };
+      this.wsConnection.onerror = (err) => {
+        console.warn('[AgentMonitorService] Evento de error en WebSocket:', err);
+      };
+      this.wsConnection.onclose = () => {
+        console.log('[AgentMonitorService] Conexión WS cerrada. Reintentando en 5s...');
+        setTimeout(() => {
+          if (this.wsSubject) {
+            this.iniciarConexionWs();
+          }
+        }, 5000);
+      };
+    } catch (err) {
+      console.error('[AgentMonitorService] Excepción al inicializar WS:', err);
+    }
+  }
+
+  private procesarMensajeWS(parsed: any): void {
+    const list = [...this.notificationsSubject.value];
+    const readIds = this.getStoredReadIds();
+    const dismissedIds = this.getStoredDismissedIds();
+
+    // 1. Alerta crítica HUD (Fraude / Anomalía extrema)
+    if (parsed.alerta_critica && parsed.alerta_critica.abrir_hud) {
+      const crit = parsed.alerta_critica;
+      const notifId = crit.id || ('CRIT-' + Date.now());
+      if (!dismissedIds.has(notifId) && !list.some(n => n.id === notifId)) {
+        list.unshift({
+          id: notifId,
+          titulo: crit.titulo || 'Alerta Crítica de Fraude',
+          mensaje: '[' + (crit.reclamo_id || 'SINIESTRO') + '] ' + (crit.motivo || 'Alerta de Fraude'),
+          nivel: 'CRITICO',
+          timestamp: crit.timestamp || new Date().toISOString(),
+          leido: readIds.has(notifId),
+          reclamo_id: crit.reclamo_id,
+          skill_ejecutada: crit.skill_ejecutada
+        });
+      }
+    }
+
+    // 2. Notificaciones de auto-remediación emitidas por el Daemon
+    if (parsed.notificaciones && Array.isArray(parsed.notificaciones)) {
+      for (const notif of parsed.notificaciones) {
+        if (!dismissedIds.has(notif.id) && !list.some(n => n.id === notif.id)) {
+          list.unshift({
+            id: notif.id,
+            titulo: notif.titulo,
+            mensaje: notif.mensaje,
+            nivel: notif.nivel || 'SUCCESS',
+            timestamp: notif.timestamp || new Date().toISOString(),
+            leido: readIds.has(notif.id),
+            reclamo_id: notif.reclamo_id,
+            nuevo_estado: notif.nuevo_estado,
+            skill_ejecutada: notif.skill_ejecutada
+          });
+        }
+      }
+    }
+
+    if (list.length > 30) {
+      list.length = 30;
+    }
+    this.notificationsSubject.next(list);
+  }
+
+  markAllAsRead(): void {
+    const current = this.notificationsSubject.value;
+    const readIds = this.getStoredReadIds();
+    current.forEach(n => readIds.add(n.id));
+    this.saveStoredReadIds(readIds);
+
+    const updated = current.map(n => ({ ...n, leido: true }));
+    this.notificationsSubject.next(updated);
+
+    // Persistir de forma atómica en MongoDB Atlas vía MS4
+    this.http.post(`${this.baseUrl}/notifications/mark-all-read`, {}, { headers: this.getHeaders() })
+      .pipe(catchError(e => of(null)))
+      .subscribe();
+  }
+
+  markAsRead(id: string): void {
+    const readIds = this.getStoredReadIds();
+    readIds.add(id);
+    this.saveStoredReadIds(readIds);
+
+    const updated = this.notificationsSubject.value.map(n => n.id === id ? { ...n, leido: true } : n);
+    this.notificationsSubject.next(updated);
+
+    // Persistir en MongoDB Atlas vía MS4
+    this.http.post(`${this.baseUrl}/notifications/mark-read`, { id }, { headers: this.getHeaders() })
+      .pipe(catchError(e => of(null)))
+      .subscribe();
+  }
+
+  clearAllNotifications(): void {
+    const current = this.notificationsSubject.value;
+    const dismissedIds = this.getStoredDismissedIds();
+    current.forEach(n => dismissedIds.add(n.id));
+    this.saveStoredDismissedIds(dismissedIds);
+
+    this.notificationsSubject.next([]);
+
+    // Archivar y limpiar en MongoDB Atlas vía MS4
+    this.http.delete(`${this.baseUrl}/notifications`, { headers: this.getHeaders() })
+      .pipe(catchError(e => of(null)))
+      .subscribe();
+  }
+
+  agregarNotificacion(notif: SystemNotification): void {
+    const list = [notif, ...this.notificationsSubject.value];
+    if (list.length > 30) list.length = 30;
+    this.notificationsSubject.next(list);
+  }
+
+  /**
+   * Inyecta un siniestro estancado aleatorio en MongoDB para demostrar la auto-remediación
+   */
+  seedStalledClaim(): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/seed-stalled-claim`,
+      {},
+      { headers: this.getHeaders() }
+    ).pipe(
+      catchError(err => {
+        console.error('[AgentMonitorService] Error al inyectar siniestro:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  /**
+   * Restaura los 3 siniestros estancados originales en MongoDB
+   */
+  resetStalledClaims(): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/reset-stalled-claims`,
+      {},
+      { headers: this.getHeaders() }
+    ).pipe(
+      catchError(err => {
+        console.error('[AgentMonitorService] Error al restaurar siniestros:', err);
+        return throwError(() => err);
+      })
+    );
   }
 
   /**
@@ -45,7 +289,7 @@ export class AgentMonitorService {
       timeout(5000),
       catchError(err => {
         console.warn('[AgentMonitorService] Aviso al conectar con backend MS4, activando cluster state canónico:', err);
-        return of(this.getFallbackClusterState());
+        return throwError(() => err);
       })
     );
   }
@@ -61,7 +305,7 @@ export class AgentMonitorService {
       timeout(5000),
       catchError(err => {
         console.warn('[AgentMonitorService] Aviso al obtener siniestros estancados:', err);
-        return of(this.getFallbackClusterState().siniestros_estancados);
+        return throwError(() => err);
       })
     );
   }
@@ -127,192 +371,8 @@ export class AgentMonitorService {
       timeout(5000),
       catchError(err => {
         console.warn('[AgentMonitorService] Aviso al obtener logs de ejecución:', err);
-        return of(this.getFallbackLogs());
+        return throwError(() => err);
       })
     );
-  }
-
-  /**
-   * Estado de respaldo canónico fiel a la arquitectura del CU14
-   */
-  public getFallbackClusterState(): AgentClusterState {
-    return {
-      cluster_estado: 'SYNCHRONIZED',
-      salud_cluster_pct: 99.98,
-      latencia_promedio_ms: 42,
-      kafka_broker: 'Kafka v3.6 (Topic: claims-core-v1)',
-      dag_estado: 'DAG ACTIVE',
-      nodos_grafo: [
-        {
-          nodo_id: 'fnol_ingestion',
-          nombre: 'FNOL Ingestion',
-          estado: 'SUCCESS',
-          latencia_ms: 12,
-          completado: true,
-          descripcion: 'Clasificación inicial y enrutamiento inteligente de primer aviso'
-        },
-        {
-          nodo_id: 'vision_perception',
-          nombre: 'Vision Perception',
-          estado: 'SUCCESS',
-          latencia_ms: 15,
-          completado: true,
-          descripcion: 'Auditoría convolucional CrashNet CNN de deformaciones y piezas'
-        },
-        {
-          nodo_id: 'policy_check',
-          nombre: 'Policy & Coverage',
-          estado: 'SUCCESS',
-          latencia_ms: 8,
-          completado: true,
-          descripcion: 'Verificación de vigencia contractual y límites de cobertura'
-        },
-        {
-          nodo_id: 'fraud_guard',
-          nombre: 'Fraud Sentinel',
-          estado: 'SUCCESS',
-          latencia_ms: 9,
-          completado: true,
-          descripcion: 'Aislamiento no supervisado con Isolation Forest y detección de sobreprecios'
-        },
-        {
-          nodo_id: 'settlement_saga',
-          nombre: 'Settlement Saga',
-          estado: 'SUCCESS',
-          latencia_ms: 11,
-          completado: true,
-          descripcion: 'Coordinación transversal de pagos y preservación de reservas técnicas'
-        }
-      ],
-      micro_agentes: [
-        {
-          agente_id: 'AGENT-FNOL-01',
-          nombre: 'Triage & FNOL Routing Agent',
-          rol: 'Triaje inicial y clasificación multicanal',
-          kafka_topic: 'claims-core-v1',
-          estado: 'ONLINE',
-          skill_primaria: 'Fast-Track Ingestion',
-          latencia_actual_ms: 42
-        },
-        {
-          agente_id: 'AGENT-VISION-02',
-          nombre: 'Damage Perception Agent',
-          rol: 'Inferencia visual con CrashNet CNN v2.1',
-          kafka_topic: 'claims-core-v1',
-          estado: 'ONLINE',
-          skill_primaria: 'Semantic Damage Segmentation',
-          latencia_actual_ms: 42
-        },
-        {
-          agente_id: 'AGENT-ACTUARIAL-03',
-          nombre: 'Actuarial Solvency Agent',
-          rol: 'Monitoreo de suficiencia de capital y reservas',
-          kafka_topic: 'claims-core-v1',
-          estado: 'ONLINE',
-          skill_primaria: 'Solvency II Capital Buffer',
-          latencia_actual_ms: 42
-        },
-        {
-          agente_id: 'AGENT-FRAUD-04',
-          nombre: 'Fraud Sentinel Agent',
-          rol: 'Detección de colusión de talleres y facturación anómala',
-          kafka_topic: 'claims-core-v1',
-          estado: 'ONLINE',
-          skill_primaria: 'Isolation Forest Anomaly Isolation',
-          latencia_actual_ms: 42
-        },
-        {
-          agente_id: 'AGENT-SETTLEMENT-05',
-          nombre: 'Autonomous Settlement Coordinator',
-          rol: 'Coordinación de la transacción Saga transversal',
-          kafka_topic: 'claims-core-v1',
-          estado: 'ONLINE',
-          skill_primaria: 'Atomic Saga Compensation',
-          latencia_actual_ms: 42
-        }
-      ],
-      siniestros_estancados: [
-        {
-          numero_reclamo: 'REC-2026-STALL-101',
-          numero_poliza: 'POL-2026-AUT-00101',
-          estado_actual: 'PERITAJE_PENDIENTE',
-          dias_estancado: 3,
-          cuello_botella: 'Perito asignado no asistió a inspección de campo (SLA excedido 72h)',
-          accion_sugerida: 'SKILL_REASIGNAR_PERITO_GPS',
-          modelo_vehiculo: 'Toyota Corolla 2022',
-          monto_estimado_usd: 1200.0,
-          score_fraude: 0.08
-        },
-        {
-          numero_reclamo: 'REC-2026-STALL-102',
-          numero_poliza: 'POL-2026-AUT-00102',
-          estado_actual: 'DOCUMENTACION_PENDIENTE',
-          dias_estancado: 4,
-          cuello_botella: 'Fotografías de WhatsApp borrosas. Falta fotografía de odómetro',
-          accion_sugerida: 'SKILL_SOLICITAR_SEGUNDA_EVIDENCIA',
-          modelo_vehiculo: 'Hyundai Tucson 2023',
-          monto_estimado_usd: 850.0,
-          score_fraude: 0.12
-        },
-        {
-          numero_reclamo: 'REC-2026-STALL-103',
-          numero_poliza: 'POL-2026-AUT-00103',
-          estado_actual: 'EN_REVISION',
-          dias_estancado: 2,
-          cuello_botella: 'Reclamo menor (< $1,500 USD) en cola de aprobación manual sin riesgo de fraude',
-          accion_sugerida: 'SKILL_FAST_TRACK_APROBACION',
-          modelo_vehiculo: 'Nissan Versa 2021',
-          monto_estimado_usd: 950.0,
-          score_fraude: 0.05
-        }
-      ],
-      metricas_liquidez: {
-        reserva_capital_total_usd: 25000000.0,
-        compromisos_activos_usd: 3814240.0,
-        reserva_remanente_usd: 21185760.0,
-        ratio_cobertura_pct: 84.7,
-        estado_solvencia: 'SOLVENTE',
-        umbral_minimo_pct: 80.0
-      },
-      ultima_reflexion: 'Cluster LangGraph sincronizado. 5 micro-agentes activos sin cuellos de botella críticos. Cobertura de reservas 84.8% (Solvencia II compliant).',
-      timestamp: new Date().toISOString()
-    };
-  }
-
-  public getFallbackLogs(): AgentLogEvent[] {
-    return [
-      {
-        evento_id: 'EVT-01',
-        timestamp: new Date().toISOString(),
-        nodo: 'FNOL_AGENT',
-        tipo_evento: 'TRANSICION_DAG',
-        detalle: 'Received Claim CLM-2026-V89412 from React Client Portal.',
-        impacto_expedientes: 1
-      },
-      {
-        evento_id: 'EVT-02',
-        timestamp: new Date().toISOString(),
-        nodo: 'VISION_AGENT',
-        tipo_evento: 'TRANSICION_DAG',
-        detalle: 'TensorFlow segmented bumper damage (Conf: 94.2%).',
-        impacto_expedientes: 1
-      },
-      {
-        evento_id: 'EVT-03',
-        timestamp: new Date().toISOString(),
-        nodo: 'FRAUD_AGENT',
-        tipo_evento: 'TRANSICION_DAG',
-        detalle: 'Isolation Forest check completed. Risk score: 0.12 (Passed).',
-        impacto_expedientes: 1
-      },
-      {
-        evento_id: 'EVT-04',
-        timestamp: new Date().toISOString(),
-        nodo: 'SAGA_AGENT',
-        tipo_evento: 'TRANSICION_DAG',
-        detalle: 'Initiated ISO 20022 wire transfer via ERP core.',
-        impacto_expedientes: 1
-      }
-    ];
   }
 }

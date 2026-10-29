@@ -13,6 +13,7 @@ from typing import List, Optional, Dict, Any
 import datetime
 import os
 import re
+import asyncio
 
 app = FastAPI(
     title="AegisCore AI - Machine Learning, Deep Learning & MCP Server",
@@ -129,6 +130,17 @@ app.include_router(dl_vision_router)
 from app.boundaries.agent_monitor_router import router as agent_monitor_router
 from app.controls.langgraph_autonomous_agent import langgraph_agent_control
 app.include_router(agent_monitor_router)
+
+@app.on_event("startup")
+async def startup_event():
+    """Inicializa tareas en segundo plano de MS4."""
+    # Inicia el Demonio Autónomo LangGraph (CU14) para monitoreo 24/7 y remediación de siniestros
+    asyncio.create_task(langgraph_agent_control.bucle_monitoreo_segundo_plano(intervalo_segundos=25))
+
+@app.on_event("shutdown")
+def shutdown_event():
+    """Detiene tareas en segundo plano al cerrar la aplicación."""
+    langgraph_agent_control.worker_activo = False
 
 @app.post("/api/agent/trigger-evaluation", tags=["CU14 - Agente Autónomo LangGraph (Metas, Re-planning & Skills)"])
 def trigger_agent_evaluation_legacy():

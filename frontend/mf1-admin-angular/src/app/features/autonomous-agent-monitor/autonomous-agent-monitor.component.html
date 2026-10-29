@@ -1,4 +1,115 @@
 <div class="agent-monitor-container">
+  <!-- Floating Push Notification Banners -->
+  <div class="push-notifications-container" *ngIf="pushNotifications.length > 0">
+    <div
+      *ngFor="let notif of pushNotifications"
+      class="push-toast animate-slide-in"
+      [ngClass]="{
+        'toast-critico': notif.nivel === 'CRITICO',
+        'toast-success': notif.nivel === 'SUCCESS',
+        'toast-info': notif.nivel === 'INFO'
+      }">
+      <div class="toast-icon-wrap">
+        <span class="material-symbols-outlined" *ngIf="notif.nivel === 'CRITICO'">warning</span>
+        <span class="material-symbols-outlined" *ngIf="notif.nivel === 'SUCCESS'">auto_fix_high</span>
+        <span class="material-symbols-outlined" *ngIf="notif.nivel === 'INFO'">info</span>
+      </div>
+      <div class="toast-body">
+        <div class="toast-header-row">
+          <span class="toast-title">{{ notif.titulo }}</span>
+          <span class="toast-time">{{ notif.timestamp | slice:11:19 }}</span>
+        </div>
+        <p class="toast-message">{{ notif.mensaje }}</p>
+        <div *ngIf="notif.nuevo_estado" class="toast-badge">
+          <span>Nuevo Estado: {{ notif.nuevo_estado }}</span>
+        </div>
+      </div>
+      <button class="toast-close" (click)="descartarNotificacion(notif.id)" title="Cerrar">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- HUD Drawer Backdrop -->
+  <div class="hud-backdrop" [class.open]="isHudOpen" (click)="cerrarHud()"></div>
+
+  <!-- HUD Lateral Drawer (Executive Sentinel) -->
+  <aside class="hud-drawer" [class.open]="isHudOpen" *ngIf="hudData">
+    <div class="hud-header">
+      <div class="hud-badge-critico">
+        <span class="pulse-dot-red"></span>
+        <span>CENTINELA DE FRAUDE & ANOMALÍAS</span>
+      </div>
+      <button class="btn-close-hud" (click)="cerrarHud()" title="Cerrar Panel HUD">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="hud-content">
+      <div class="hud-alert-title-group">
+        <h2 class="hud-alert-title">{{ hudData.titulo }}</h2>
+        <span class="hud-claim-pill">RECLAMO: {{ hudData.reclamo_id }}</span>
+      </div>
+
+      <div class="hud-card-critical">
+        <div class="hud-critical-header">
+          <span class="material-symbols-outlined text-red">security</span>
+          <strong>Anomalía Detectada por Isolation Forest v1.2</strong>
+        </div>
+        <p class="hud-motivo">{{ hudData.motivo }}</p>
+      </div>
+
+      <div class="hud-metrics-grid">
+        <div class="hud-metric-box">
+          <span class="hud-metric-label">Score de Aislamiento</span>
+          <span class="hud-metric-val text-red">{{ hudData.score_aislamiento || '-0.0248' }}</span>
+          <span class="hud-metric-sub">Umbral de sospecha &lt; -0.015</span>
+        </div>
+        <div class="hud-metric-box">
+          <span class="hud-metric-label">Divergencia de Monto</span>
+          <span class="hud-metric-val text-red">{{ hudData.divergencia_monto || '+142%' }}</span>
+          <span class="hud-metric-sub">Vs. Baremo regional taller</span>
+        </div>
+      </div>
+
+      <div class="hud-remediation-box">
+        <div class="hud-remediation-header">
+          <span class="material-symbols-outlined text-teal">shield</span>
+          <span>Acción Autónoma Aplicada:</span>
+        </div>
+        <div class="hud-skill-badge">
+          <span class="material-symbols-outlined">lock_clock</span>
+          <code>{{ hudData.skill_ejecutada || 'SKILL_CONGELAR_LIQUIDACION_SAGA' }}</code>
+        </div>
+        <p class="hud-remediation-desc">
+          El orquestador LangGraph ha retenido preventivamente el pago en MS3 (Spring Boot Saga) y notificado a la célula de auditoría forense para inspección de peritaje ocular.
+        </p>
+      </div>
+
+      <div class="hud-meta-list">
+        <div class="hud-meta-item">
+          <span class="meta-label">ID Alerta:</span>
+          <span class="meta-val font-mono">{{ hudData.id }}</span>
+        </div>
+        <div class="hud-meta-item">
+          <span class="meta-label">Timestamp Detección:</span>
+          <span class="meta-val font-mono">{{ hudData.timestamp }}</span>
+        </div>
+        <div class="hud-meta-item">
+          <span class="meta-label">Protocolo de Contención:</span>
+          <span class="meta-val">AegisCore Zero-Loss v3.4</span>
+        </div>
+      </div>
+
+      <div class="hud-actions-footer">
+        <button class="btn-hud-primary" (click)="cerrarHud()">
+          <span class="material-symbols-outlined">verified</span>
+          <span>Entendido / Mantener Monitoreo</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
   <!-- Feedback and Alerts -->
   <div *ngIf="feedbackMessage" class="alert alert-success animate-fade-in">
     <span class="material-symbols-outlined">check_circle</span>
@@ -28,18 +139,26 @@
     <section class="card header-card">
       <div class="header-top">
         <div class="header-title-group">
-          <div class="badge-cluster">
-            <span class="badge-icon">
-              <span class="material-symbols-outlined">hub</span>
-            </span>
-            <span class="badge-text">Estado del Cluster: {{ clusterState.cluster_estado }}</span>
+          <div class="header-badges-row">
+            <div class="badge-cluster">
+              <span class="badge-icon">
+                <span class="material-symbols-outlined">hub</span>
+              </span>
+              <span class="badge-text">Cluster: {{ clusterState.cluster_estado }}</span>
+            </div>
+            <div class="ws-badge" [class.ws-connected]="isWsConnected" [class.ws-disconnected]="!isWsConnected">
+              <span class="ws-dot"></span>
+              <span class="ws-label">{{ isWsConnected ? 'WS EN VIVO (25s)' : 'WS RECONECTANDO...' }}</span>
+            </div>
           </div>
           <h1 class="main-title">Orquestador Autónomo de Siniestros (LangGraph)</h1>
           <p class="subtitle">Cluster Multi-Agente LangGraph • 5 Micro-Agentes Activos • Malla de Eventos: {{ clusterState.kafka_broker }}</p>
         </div>
-        <button class="btn-refresh" (click)="cargarDatosCluster()" title="Resincronizar Estado">
-          <span class="material-symbols-outlined" [class.animate-spin]="isLoading">sync</span>
-        </button>
+        <div class="header-actions">
+          <button class="btn-refresh" (click)="cargarDatosCluster()" title="Resincronizar Estado">
+            <span class="material-symbols-outlined" [class.animate-spin]="isLoading">sync</span>
+          </button>
+        </div>
       </div>
 
       <!-- KPI Strip -->
@@ -302,34 +421,258 @@
       </div>
     </section>
 
-    <!-- 7. Kafka Event Stream Log & LangGraph Reflection -->
-    <section class="card terminal-card">
-      <div class="section-header">
-        <div class="title-with-icon">
-          <span class="material-symbols-outlined text-teal">terminal</span>
-          <h2 class="section-title">Kafka Stream Log &amp; Reflexión LangGraph</h2>
+    <!-- 7. Executive Audit Ledger & LangGraph Telemetry Stream -->
+    <section class="card executive-ledger-card">
+      <!-- Ledger Header -->
+      <div class="ledger-header">
+        <div class="ledger-header-left">
+          <div class="ledger-title-group">
+            <div class="ledger-icon-wrap">
+              <span class="material-symbols-outlined text-teal text-xl">verified_user</span>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="ledger-title">Bitácora Ejecutiva de Auditoría y Trazabilidad Transversal</h2>
+                <span class="ledger-tag-mesh font-mono">Kafka + LangGraph DAG</span>
+              </div>
+              <p class="ledger-subtitle">Registro transaccional inmutable de re-planning continuo, auto-remediación y salvaguardas actuariales</p>
+            </div>
+          </div>
         </div>
-        <div class="live-indicator">
-          <span class="pulse-dot"></span>
-          <span>EN VIVO</span>
+
+        <div class="ledger-header-right">
+          <!-- View Switcher (Ejecutiva vs Consola Raw) -->
+          <div class="view-switch-tabs">
+            <button 
+              type="button" 
+              class="tab-btn" 
+              [class.active]="vistaLog === 'ejecutiva'" 
+              (click)="vistaLog = 'ejecutiva'">
+              <span class="material-symbols-outlined text-sm">table_rows</span>
+              <span>Vista Ejecutiva</span>
+            </button>
+            <button 
+              type="button" 
+              class="tab-btn" 
+              [class.active]="vistaLog === 'raw'" 
+              (click)="vistaLog = 'raw'">
+              <span class="material-symbols-outlined text-sm">terminal</span>
+              <span>Stream Kafka</span>
+            </button>
+          </div>
+
+          <!-- Live Pulse -->
+          <div class="live-indicator">
+            <span class="pulse-dot"></span>
+            <span>EN VIVO</span>
+          </div>
         </div>
       </div>
 
-      <!-- Reflection Box -->
-      <div class="reflection-box">
-        <div class="reflection-header">
-          <span class="material-symbols-outlined">auto_awesome</span>
-          <strong>Última Reflexión del Agente Autónomo:</strong>
+      <!-- Quick Executive Summary Strip -->
+      <div class="ledger-summary-strip">
+        <div class="summary-metric">
+          <span class="metric-label">Eventos en Bitácora</span>
+          <span class="metric-value font-mono">{{ logs.length }}</span>
         </div>
-        <p class="reflection-text">{{ clusterState.ultima_reflexion }}</p>
+        <div class="summary-divider"></div>
+        <div class="summary-metric">
+          <span class="metric-label">Auto-Resoluciones</span>
+          <span class="metric-value text-teal font-mono">{{ totalRemediaciones }}</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-metric">
+          <span class="metric-label">Ciclos LangGraph</span>
+          <span class="metric-value text-indigo font-mono">{{ totalCiclos }}</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-metric">
+          <span class="metric-label">Malla de Eventos</span>
+          <span class="metric-value text-slate-300 font-mono">{{ clusterState.kafka_broker }}</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-metric">
+          <span class="metric-label">Persistencia Distribuida</span>
+          <span class="metric-value text-amber font-mono">MongoDB Atlas + Neon ACID</span>
+        </div>
       </div>
 
-      <!-- Monospace Terminal Log Container -->
-      <div class="terminal-container">
-        <div *ngFor="let log of logs" class="terminal-line">
-          <span class="log-time">[{{ log.timestamp | slice:11:19 }}]</span>
-          <span class="log-agent">[{{ log.nodo }}]</span>
-          <span class="log-msg">{{ log.detalle }}</span>
+      <!-- Executive Intelligence Briefing (Dictamen Actuarial) -->
+      <div class="executive-briefing-panel">
+        <div class="briefing-top">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-teal text-lg">psychology</span>
+            <span class="briefing-badge font-headline font-bold">DICTAMEN ACTUARIAL DE SUPERVISIÓN</span>
+          </div>
+          <span class="briefing-time font-mono text-xs text-slate-400">
+            Última Reflexión del Enjambre
+          </span>
+        </div>
+        <p class="briefing-body">
+          {{ clusterState.ultima_reflexion }}
+        </p>
+        <div class="briefing-tags">
+          <span class="briefing-tag tag-solvencia font-mono text-xs">
+            <span class="material-symbols-outlined text-xs">shield</span>
+            Solvencia II: {{ clusterState.metricas_liquidez.ratio_cobertura_pct }}% (Adecuada)
+          </span>
+          <span class="briefing-tag tag-health font-mono text-xs">
+            <span class="material-symbols-outlined text-xs">health_and_safety</span>
+            Salud Operativa: {{ clusterState.salud_cluster_pct }}%
+          </span>
+          <span class="briefing-tag tag-agents font-mono text-xs">
+            <span class="material-symbols-outlined text-xs">smart_toy</span>
+            5 Micro-Agentes Sincronizados
+          </span>
+        </div>
+      </div>
+
+      <!-- Ledger Filters & Search Toolbar -->
+      <div class="ledger-toolbar">
+        <div class="filter-chips">
+          <button 
+            type="button" 
+            class="chip-btn" 
+            [class.active]="filtroTipoLog === 'TODOS'" 
+            (click)="filtroTipoLog = 'TODOS'">
+            Todos ({{ logs.length }})
+          </button>
+          <button 
+            type="button" 
+            class="chip-btn" 
+            [class.active]="filtroTipoLog === 'AUTO_REMEDIACION'" 
+            (click)="filtroTipoLog = 'AUTO_REMEDIACION'">
+            Remediación Autónoma
+          </button>
+          <button 
+            type="button" 
+            class="chip-btn" 
+            [class.active]="filtroTipoLog === 'CICLO_AUTONOMO'" 
+            (click)="filtroTipoLog = 'CICLO_AUTONOMO'">
+            Ciclos LangGraph
+          </button>
+          <button 
+            type="button" 
+            class="chip-btn" 
+            [class.active]="filtroTipoLog === 'DISPARO_SKILL'" 
+            (click)="filtroTipoLog = 'DISPARO_SKILL'">
+            Skills Disparadas
+          </button>
+        </div>
+
+        <div class="search-box">
+          <span class="material-symbols-outlined text-sm search-icon">search</span>
+          <input 
+            type="text" 
+            [(ngModel)]="busquedaLog" 
+            placeholder="Buscar por reclamo, ciclo o perito..." 
+            class="search-input" />
+          <button *ngIf="busquedaLog" (click)="busquedaLog = ''" class="clear-search-btn">
+            <span class="material-symbols-outlined text-xs">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- VISTA 1: TABLA EJECUTIVA DE AUDITORÍA (Default) -->
+      <div *ngIf="vistaLog === 'ejecutiva'" class="executive-table-wrapper">
+        <div class="executive-audit-table">
+          <!-- Table Header -->
+          <div class="audit-row audit-header">
+            <div class="col-time">HORA / FECHA</div>
+            <div class="col-agent">AGENTE / ROL</div>
+            <div class="col-ref">EXPEDIENTE / CICLO</div>
+            <div class="col-action">DICTAMEN &amp; ACCIÓN EJECUTIVA</div>
+            <div class="col-status">ESTADO</div>
+          </div>
+
+          <!-- Table Body -->
+          <div class="audit-tbody">
+            <div 
+              *ngFor="let item of parsedLogsFiltrados" 
+              class="audit-row audit-item"
+              [class.row-remediation]="item.esRemediacion">
+              
+              <!-- Hora / Timestamp -->
+              <div class="col-time font-mono">
+                <span class="time-main">{{ item.hora }}</span>
+                <span class="time-sub">{{ item.fecha }}</span>
+              </div>
+
+              <!-- Agente / Rol -->
+              <div class="col-agent">
+                <span class="agent-badge" [ngClass]="item.nodoColorClass">
+                  <span class="material-symbols-outlined text-xs">{{ item.nodoIcon }}</span>
+                  <span>{{ item.nodoLabel }}</span>
+                </span>
+              </div>
+
+              <!-- Expediente / Ciclo -->
+              <div class="col-ref">
+                <span *ngIf="item.referenciaId" class="ref-pill font-mono" [class.ref-claim]="!item.esCiclo">
+                  {{ item.referenciaId }}
+                </span>
+                <span *ngIf="!item.referenciaId" class="text-xs text-slate-500 font-mono">
+                  GLOBAL
+                </span>
+              </div>
+
+              <!-- Dictamen & Acción -->
+              <div class="col-action">
+                <div class="action-headline">
+                  <span class="action-title">{{ item.tituloEjecutivo }}</span>
+                </div>
+                <p class="action-desc">
+                  {{ item.descripcionLimpia }}
+                </p>
+                <!-- Skill Pills if present -->
+                <div *ngIf="item.skills.length > 0" class="action-skills-wrap">
+                  <span *ngFor="let sk of item.skills" class="skill-tag">
+                    <span class="material-symbols-outlined text-[10px]">auto_fix_high</span>
+                    <span>{{ sk.nombre }}</span>
+                    <span *ngIf="sk.reclamo" class="skill-claim-sub font-mono">({{ sk.reclamo }})</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Estado / Impacto -->
+              <div class="col-status">
+                <span class="status-badge" [ngClass]="item.estadoBadge.cssClass">
+                  <span class="material-symbols-outlined text-xs">{{ item.estadoBadge.icon }}</span>
+                  <span>{{ item.estadoBadge.texto }}</span>
+                </span>
+                <span *ngIf="item.impacto > 0" class="impact-sub text-[10px] text-slate-400">
+                  {{ item.impacto }} exp. afectado{{ item.impacto > 1 ? 's' : '' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div *ngIf="parsedLogsFiltrados.length === 0" class="audit-empty-state">
+              <span class="material-symbols-outlined text-3xl text-slate-500">search_off</span>
+              <p class="text-xs text-slate-400">No se encontraron registros de auditoría con los filtros seleccionados.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA 2: RAW MONOSPACE TERMINAL (Técnica) -->
+      <div *ngIf="vistaLog === 'raw'" class="raw-terminal-view">
+        <div class="terminal-raw-header">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
+            <span class="ml-2 font-mono text-[11px] text-slate-400">kafka-telemetry://cluster-us-east/aegiscore.claims.stream</span>
+          </div>
+          <span class="font-mono text-[10px] text-teal-400">OFFSET: #189,420</span>
+        </div>
+        <div class="terminal-raw-container">
+          <div *ngFor="let log of logsFiltrados" class="terminal-raw-line">
+            <span class="log-time font-mono">[{{ log.timestamp | slice:11:19 }}]</span>
+            <span class="log-agent font-mono">[{{ log.nodo }}]</span>
+            <span class="log-type font-mono">[{{ log.tipo_evento }}]</span>
+            <span class="log-msg font-mono">{{ log.detalle }}</span>
+          </div>
         </div>
       </div>
     </section>
@@ -371,6 +714,28 @@
           (click)="exportTelemetry()">
           <span class="material-symbols-outlined">download</span>
           <span>Exportar Telemetría JSON</span>
+        </button>
+
+        <button
+          class="btn-ops btn-seed"
+          [disabled]="isSeedingClaim"
+          (click)="inyectarSiniestroPrueba()"
+          title="Inyecta un siniestro estancado de prueba en MongoDB para verificar la auto-remediación en vivo">
+          <span class="material-symbols-outlined" [class.animate-spin]="isSeedingClaim">
+            {{ isSeedingClaim ? 'sync' : 'notification_add' }}
+          </span>
+          <span>{{ isSeedingClaim ? 'Inyectando Siniestro...' : 'Inyectar Siniestro de Prueba' }}</span>
+        </button>
+
+        <button
+          class="btn-ops btn-reset-claims"
+          [disabled]="isResettingClaims"
+          (click)="restaurarSiniestrosCanonicos()"
+          title="Restaura los 3 siniestros estancados canónicos en MongoDB Atlas">
+          <span class="material-symbols-outlined" [class.animate-spin]="isResettingClaims">
+            {{ isResettingClaims ? 'sync' : 'settings_backup_restore' }}
+          </span>
+          <span>{{ isResettingClaims ? 'Restaurando...' : 'Restaurar Siniestros Canónicos' }}</span>
         </button>
       </div>
     </section>

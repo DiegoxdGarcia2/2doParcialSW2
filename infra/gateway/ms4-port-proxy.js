@@ -6,6 +6,7 @@
  */
 
 const http = require('http');
+const net = require('net');
 
 const TARGET_HOST = '127.0.0.1';
 const TARGET_PORT = 8004;
@@ -41,6 +42,35 @@ const server = http.createServer((req, res) => {
   });
 
   req.pipe(proxyReq, { end: true });
+});
+
+// Soporte de actualización para WebSockets (ws://)
+server.on('upgrade', (req, socket, head) => {
+  const proxySocket = net.connect(TARGET_PORT, TARGET_HOST, () => {
+    proxySocket.write(`${req.method} ${req.url} HTTP/${req.httpVersion}\r\n`);
+    for (let i = 0; i < req.rawHeaders.length; i += 2) {
+      const key = req.rawHeaders[i];
+      let val = req.rawHeaders[i + 1];
+      if (key.toLowerCase() === 'host') {
+        val = `${TARGET_HOST}:${TARGET_PORT}`;
+      }
+      proxySocket.write(`${key}: ${val}\r\n`);
+    }
+    proxySocket.write('\r\n');
+    if (head && head.length > 0) {
+      proxySocket.write(head);
+    }
+    proxySocket.pipe(socket);
+    socket.pipe(proxySocket);
+  });
+
+  proxySocket.on('error', (err) => {
+    console.error('[MS4-Bridge] WebSocket proxy error:', err.message);
+    socket.destroy();
+  });
+  socket.on('error', () => {
+    proxySocket.destroy();
+  });
 });
 
 server.listen(LISTEN_PORT, '0.0.0.0', () => {

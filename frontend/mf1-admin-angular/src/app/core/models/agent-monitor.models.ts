@@ -62,14 +62,16 @@ export interface AgentClusterState {
 
 export interface RunCycleResponse {
   ciclo_id: string;
-  estado_ejecucion: string;
   duracion_total_ms: number;
-  nodos_visitados: string[];
-  siniestros_evaluados: number;
-  skills_sugeridas: number;
+  /** Total de expedientes evaluados en el ciclo LangGraph */
+  siniestros_analizados: number;
+  /** Expedientes desbloqueados con skills automáticas */
+  siniestros_resueltos: number;
+  /** Lista de nombres de skills ejecutadas */
+  skills_disparadas: string[];
   reflexion_final: string;
-  bitacora_id: string;
-  timestamp: string;
+  cluster_state: AgentClusterState;
+  persistencia_bitacora_id: string;
 }
 
 export interface ExecuteSkillRequest {
@@ -95,4 +97,16 @@ export interface AgentLogEvent {
   tipo_evento: string;
   detalle: string;
   impacto_expedientes: number;
+}
+
+export interface SystemNotification {
+  id: string;
+  titulo: string;
+  mensaje: string;
+  nivel: 'SUCCESS' | 'CRITICO' | 'INFO';
+  timestamp: string;
+  leido: boolean;
+  nuevo_estado?: string;
+  reclamo_id?: string;
+  skill_ejecutada?: string;
 }
