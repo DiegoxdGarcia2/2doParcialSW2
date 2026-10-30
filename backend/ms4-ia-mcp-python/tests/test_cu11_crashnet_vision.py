@@ -110,3 +110,65 @@ def test_api_confirm_assessment_and_liquidate(client):
     assert data["numero_reclamo"] == "REC-2026-00492"
     assert data["nuevo_estado"] == "EN_PROCESO_LIQUIDACION"
     assert "transferido a la saga" in data["mensaje"].lower()
+
+
+def test_vehiculo_intacto_cero_danos():
+    """Valida que una fotografia de vehiculo intacto (sin colision) retorne 0 piezas y $0 USD."""
+    from PIL import Image
+    import io, base64
+
+    # Crear imagen plana / uniforme simulando vehiculo impecable sin danos
+    img_clean = Image.new('RGB', (224, 224), color=(225, 230, 235))
+    buf = io.BytesIO()
+    img_clean.save(buf, format='JPEG')
+    b64_clean = base64.b64encode(buf.getvalue()).decode('utf-8')
+
+    input_dto = DamageAnalysisInputDTO(
+        numero_reclamo='REC-FOTO-CLEAN-01',
+        numero_poliza='POL-2026-AUT-99999',
+        imagen_base64=f'data:image/jpeg;base64,{b64_clean}',
+        modelo_vehiculo='Toyota Prius 2024 (Vehiculo Intacto)'
+    )
+    assessment = crashnet_vision_control.analizar_fotografia_siniestro(input_dto)
+    assert assessment is not None
+    assert assessment.vehiculo_intacto is True
+    assert len(assessment.piezas_averiadas) == 0
+    assert assessment.score_danos_global == 0.0
+    assert assessment.gravedad_global == 'LEVE'
+    assert assessment.liquidacion_financiera.costo_total_reparacion_usd == 0.0
+    assert assessment.liquidacion_financiera.monto_indemnizable_neto_usd == 0.0
+
+
+def test_imagen_personalizada_dinamica_base64():
+    """Valida la segmentacion adaptativa y calculo dinamico de poligonos SVG ante impacto."""
+    from PIL import Image
+    import io, base64
+
+    # Crear imagen con dano marcado en el parachoques inferior
+    img_crash = Image.new('RGB', (224, 224), color=(220, 220, 220))
+    arr = np.array(img_crash)
+    # Inyectar textura de impacto caotico en el tercio inferior
+    rng = np.random.RandomState(42)
+    arr[120:200, 30:160] = rng.randint(10, 240, size=(80, 130, 3), dtype=np.uint8)
+    img_crash = Image.fromarray(arr)
+
+    buf = io.BytesIO()
+    img_crash.save(buf, format='JPEG')
+    b64_crash = base64.b64encode(buf.getvalue()).decode('utf-8')
+
+    input_dto = DamageAnalysisInputDTO(
+        numero_reclamo='REC-FOTO-CRASH-02',
+        numero_poliza='POL-2026-AUT-88888',
+        imagen_base64=b64_crash,
+        modelo_vehiculo='Honda Civic 2023 (Impacto Frontal)'
+    )
+    assessment = crashnet_vision_control.analizar_fotografia_siniestro(input_dto)
+    assert assessment is not None
+    assert assessment.vehiculo_intacto is False
+    assert len(assessment.piezas_averiadas) >= 1
+    # Verificar que el parachoques tenga coordenadas dinamicas de poligono SVG
+    bumper = next((p for p in assessment.piezas_averiadas if p.parte_id == 'bumper'), None)
+    assert bumper is not None
+    assert bumper.bounding_box is not None
+    assert bumper.bounding_box.polygon_points is not None
+    assert len(bumper.bounding_box.polygon_points.split()) == 4

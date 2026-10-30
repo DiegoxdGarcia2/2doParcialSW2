@@ -65,7 +65,7 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
   // Galería de casos preconfigurados oficiales
   casosDisponibles = [
     { id: 'REC-2026-00492', label: 'REC-2026-00492 • Tesla Model Y (Impacto Frontal)', vehiculo: '2024 Tesla Model Y Long Range', poliza: 'POL-2026-AUT-00892', esVideo: false },
-    { id: 'REC-2026-00493', label: 'REC-2026-00493 • Toyota RAV4 (Colisión Lateral)', vehiculo: 'Toyota RAV4 Hybrid / SUV', poliza: 'POL-2026-AUT-00331', esVideo: false },
+    { id: 'REC-2026-00493', label: 'REC-2026-00493 • Toyota RAV4 (Colisión Lateral)', vehiculo: 'Toyota RAV4 Hybrid / SUV', poliza: 'POL-2026-AUT-00892', esVideo: false },
     { id: 'REC-2026-00494', label: 'REC-2026-00494 • BMW Serie 3 (Capó & Radiador)', vehiculo: 'BMW Serie 3 Sedán Ejecutivo', poliza: 'POL-2026-AUT-00552', esVideo: false },
     { id: 'REC-2026-VIDEO-01', label: 'REC-2026-VIDEO-01 • Ford Mustang Mach-E (Video Choque Cruce)', vehiculo: 'Ford Mustang Mach-E (Video Colisión)', poliza: 'POL-2026-AUT-88120', esVideo: true }
   ];
@@ -76,6 +76,33 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
     modelo_vehiculo: '2024 Tesla Model Y Long Range',
     angulo_toma: 'FRONTAL_CUARTO_DERECHO'
   };
+
+  // Galería de Evidencias In-Situ Multi-Ángulo
+  galeriaEvidencias: Array<{ id: string; url: string; label: string; ratio_dano?: number; orientacion?: string }> = [
+    {
+      id: 'EV-01',
+      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx3fyi2LFOE3hDw3Sb6G8eHgn_hLSk3e7xQXTIWEd9BHQw9lVi_s5wz_M5NWDh0T9QCeRoH2TL4EyTMLMv2iBYUrO80grJz545-U3kxPc3UD3WVzixxcpOswoD6j-xqb-xjZ1iRANvcxJZk0atX1tZn1GM6_ZHEV5B65eFNgBrEywi2Qf8QrNY46M3A6genM8PMO_WwLiJFuf2G-9-8Dq7dkRLf4fsOW0hTOC_k8s',
+      label: 'Toma Frontal-Principal',
+      ratio_dano: 24.5,
+      orientacion: 'FRONTAL'
+    },
+    {
+      id: 'EV-02',
+      url: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80',
+      label: 'Lateral Derecho (3/4)',
+      ratio_dano: 56.8,
+      orientacion: 'TRES_CUARTOS_DERECHO'
+    },
+    {
+      id: 'EV-03',
+      url: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
+      label: 'Detalle Chasis & Suspensión',
+      ratio_dano: 18.2,
+      orientacion: 'DETALLE_MECANICO'
+    }
+  ];
+  selectedEvidenciaId: string = 'EV-01';
+  Math = Math;
 
   // Variables para la animación de LiDAR en Canvas
   private lidarAnimId: number | null = null;
@@ -162,6 +189,13 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
         if (data.piezas_averiadas && data.piezas_averiadas.length > 0) {
           this.selectedPartId = data.piezas_averiadas[0].parte_id;
         }
+        if (data.orientacion_detectada) {
+          const currentEv = this.galeriaEvidencias.find(e => e.id === this.selectedEvidenciaId);
+          if (currentEv) {
+            currentEv.orientacion = data.orientacion_detectada;
+            currentEv.ratio_dano = data.ratio_dano_valor_comercial_pct || Math.round(data.score_danos_global * 100);
+          }
+        }
         this.showToast('Peritaje visual procesado por TensorFlow CrashNet con 99.4% de validez.', 'success');
         this.cdr.detectChanges();
         setTimeout(() => this.actualizarLienzosVisuales(), 100);
@@ -205,6 +239,37 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
     }
   }
 
+  /**
+   * Conmuta entre las tomas fotográficas registradas in-situ
+   */
+  selectEvidencia(ev: { id: string; url: string; label: string; ratio_dano?: number; orientacion?: string }): void {
+    this.selectedEvidenciaId = ev.id;
+    if (this.assessment) {
+      this.assessment.imagen_analizada = ev.url;
+    }
+    if (ev.url.startsWith('data:')) {
+      this.inputClaim.imagen_base64 = ev.url;
+      this.inputClaim.imagen_url = undefined;
+    } else {
+      this.inputClaim.imagen_url = ev.url;
+      this.inputClaim.imagen_base64 = undefined;
+    }
+    this.analyzeNewEvidence();
+  }
+
+  formatOrientacion(orientacion?: string): string {
+    if (!orientacion) return 'Frontal Detectada';
+    const map: { [k: string]: string } = {
+      'FRONTAL': 'Frontal Directa',
+      'TRES_CUARTOS_DERECHO': '3/4 Frontal-Derecho (Parrilla a la derecha)',
+      'TRES_CUARTOS_IZQUIERDO': '3/4 Frontal-Izquierdo (Parrilla a la izquierda)',
+      'LATERAL_IZQUIERDO': 'Lateral Izquierdo (Perfil)',
+      'LATERAL_DERECHO': 'Lateral Derecho (Perfil)',
+      'POSTERIOR': 'Posterior / Trasero'
+    };
+    return map[orientacion] || orientacion.replace(/_/g, ' ');
+  }
+
   private handleFile(file: File): void {
     const isVideo = file.type.startsWith('video/') || file.name.endsWith('.mp4');
     const reader = new FileReader();
@@ -214,20 +279,30 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
 
     reader.onload = () => {
       const dataUrl = reader.result as string;
-      const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
 
       if (isVideo) {
         this.inputClaim.es_video = true;
-        this.inputClaim.video_base64 = rawBase64;
+        this.inputClaim.video_base64 = dataUrl;
         this.inputClaim.imagen_base64 = undefined;
         this.inputClaim.numero_reclamo = `REC-VIDEO-${Date.now().toString().slice(-5)}`;
         this.inputClaim.modelo_vehiculo = `Evidencia en Video (${file.name})`;
       } else {
         this.inputClaim.es_video = false;
-        this.inputClaim.imagen_base64 = rawBase64;
+        this.inputClaim.imagen_base64 = dataUrl;
         this.inputClaim.video_base64 = undefined;
         this.inputClaim.numero_reclamo = `REC-FOTO-${Date.now().toString().slice(-5)}`;
         this.inputClaim.modelo_vehiculo = `Evidencia Fotográfica (${file.name})`;
+
+        // Incorporar a la galería de evidencias in-situ
+        const newEvId = `EV-${Date.now().toString().slice(-4)}`;
+        this.galeriaEvidencias.unshift({
+          id: newEvId,
+          url: dataUrl,
+          label: `In-Situ (${file.name.substring(0, 14)})`,
+          ratio_dano: 0,
+          orientacion: 'INSPECCIONANDO...'
+        });
+        this.selectedEvidenciaId = newEvId;
       }
       this.inputClaim.imagen_url = undefined;
 

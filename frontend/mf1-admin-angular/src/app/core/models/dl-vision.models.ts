@@ -47,6 +47,8 @@ export interface DamageAnalysisInput {
   es_video?: boolean;
   angulo_toma?: string;
   modelo_vehiculo?: string;
+  valor_comercial_usd?: number;
+  evidencias_galeria?: string[];
 }
 
 export interface FinancialSettlement {
@@ -79,6 +81,13 @@ export interface DamageAssessmentOutput {
   };
   keyframes?: Keyframe[];
   es_video?: boolean;
+  vehiculo_intacto?: boolean;
+  orientacion_detectada?: string;
+  valor_comercial_vehiculo_usd?: number;
+  ratio_dano_valor_comercial_pct?: number;
+  es_perdida_total_50?: boolean;
+  mensaje_dictamen_actuarial?: string;
+  evidencias_galeria?: Array<{ id: string; url: string; label: string; ratio_dano?: number }>;
   estado_peritaje: string;
   timestamp: string;
 }

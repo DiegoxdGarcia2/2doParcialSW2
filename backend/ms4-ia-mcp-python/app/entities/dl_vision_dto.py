@@ -56,8 +56,10 @@ class DamageAnalysisInputDTO(BaseModel):
     imagen_base64: Optional[str] = Field(None, description="Contenido de la imagen codificado en Base64")
     video_base64: Optional[str] = Field(None, description="Contenido del video codificado en Base64")
     es_video: bool = Field(default=False, description="True si la evidencia corresponde a un video .mp4")
-    angulo_toma: Optional[str] = Field("FRONTAL_CUARTO_DERECHO", description="Perspectiva de la captura fotográfica")
+    angulo_toma: Optional[str] = Field("AUTO", description="Perspectiva de la captura: AUTO (inferida por IA), FRONTAL, TRES_CUARTOS_DERECHO, LATERAL, etc.")
     modelo_vehiculo: Optional[str] = Field("Tesla Model Y / SUV", description="Marca y modelo del vehículo asegurado")
+    valor_comercial_usd: Optional[float] = Field(None, description="Valor comercial declarado del vehículo si se ingresa manualmente")
+    evidencias_galeria: Optional[List[str]] = Field(default=None, description="Lista opcional de imágenes Base64/URLs multi-ángulo")
 
     def get_numero_reclamo(self) -> str:
         return self.reclamo_id or self.numero_reclamo
@@ -101,6 +103,13 @@ class DamageAssessmentOutputDTO(BaseModel):
     estres_termico: Dict[str, Any] = Field(default_factory=dict)
     keyframes: Optional[List[KeyframeDTO]] = Field(default=None, description="Fotogramas clave extraídos si la evidencia es un video")
     es_video: bool = Field(default=False, description="True si la inspección proviene de un video")
+    vehiculo_intacto: bool = Field(default=False, description="True si el peritaje no detectó colisión ni daños")
+    orientacion_detectada: str = Field(default="FRONTAL", description="Orientación inferida por IA: FRONTAL, TRES_CUARTOS_DERECHO, TRES_CUARTOS_IZQUIERDO, LATERAL, POSTERIOR")
+    valor_comercial_vehiculo_usd: float = Field(default=28000.0, description="Valor comercial obtenido de la póliza PostgreSQL")
+    ratio_dano_valor_comercial_pct: float = Field(default=0.0, description="Porcentaje del costo de reparación frente al valor comercial")
+    es_perdida_total_50: bool = Field(default=False, description="True si el daño excede el 50% del valor comercial")
+    mensaje_dictamen_actuarial: Optional[str] = Field(default=None, description="Dictamen técnico sobre reparabilidad vs pérdida total")
+    evidencias_galeria: Optional[List[Dict[str, Any]]] = Field(default=None, description="Galería de tomas in-situ analizadas")
     estado_peritaje: str = Field(default="PERITAJE_COMPLETADO")
     timestamp: str
 

@@ -16,9 +16,15 @@
           <span class="pulsing-dot-teal"></span>
           TELEMETRÍA EN TIEMPO REAL
         </span>
-        <span *ngIf="assessment?.es_video" class="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-xs font-mono font-bold border border-tertiary/20 flex items-center gap-1">
+        <span *ngIf="assessment?.es_video"
+          class="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-xs font-mono font-bold border border-tertiary/20 flex items-center gap-1">
           <span class="material-symbols-outlined text-[14px]">videocam</span>
           MODO VIDEO (3 KEYFRAMES)
+        </span>
+        <span *ngIf="assessment?.orientacion_detectada"
+          class="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 text-xs font-mono font-bold border border-teal-300/60 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px] text-teal-700">view_in_ar</span>
+          {{ formatOrientacion(assessment?.orientacion_detectada) }}
         </span>
         <span class="verified-icon material-symbols-outlined">verified</span>
       </div>
@@ -27,11 +33,8 @@
         <!-- Selector de Galería Multicaso (Casos Reales de Demostración) -->
         <div class="flex items-center gap-1.5 bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-300">
           <span class="material-symbols-outlined text-slate-500 text-[18px]">folder_open</span>
-          <select
-            [(ngModel)]="inputClaim.numero_reclamo"
-            (change)="onClaimChange(inputClaim.numero_reclamo)"
-            class="bg-transparent text-xs font-mono font-bold text-slate-800 outline-none cursor-pointer"
-          >
+          <select [(ngModel)]="inputClaim.numero_reclamo" (change)="onClaimChange(inputClaim.numero_reclamo)"
+            class="bg-transparent text-xs font-mono font-bold text-slate-800 outline-none cursor-pointer">
             <option *ngFor="let c of casosDisponibles" [value]="c.id">{{ c.label }}</option>
           </select>
         </div>
@@ -43,11 +46,13 @@
           <input type="file" (change)="onFileSelected($event)" accept="image/*,video/mp4,video/webm" class="hidden" />
         </label>
 
-        <button class="btn-action-secondary" (click)="loadAssessment()" [disabled]="loading" title="Recargar Expediente">
+        <button class="btn-action-secondary" (click)="loadAssessment()" [disabled]="loading"
+          title="Recargar Expediente">
           <span class="material-symbols-outlined text-[18px]" [class.spin]="loading">sync</span>
           <span>Actualizar</span>
         </button>
-        <button class="btn-action-primary" (click)="analyzeNewEvidence()" [disabled]="loading" title="Re-analizar Evidencia con CrashNet">
+        <button class="btn-action-primary" (click)="analyzeNewEvidence()" [disabled]="loading"
+          title="Re-analizar Evidencia con CrashNet">
           <span class="material-symbols-outlined text-[18px]" [class.spin]="loading">document_scanner</span>
           <span>Re-analizar</span>
         </button>
@@ -59,8 +64,10 @@
       <p class="vehicle-subtitle">
         Póliza: <span class="font-code">{{ assessment?.numero_poliza || inputClaim.numero_poliza }}</span>
         • VIN: <span class="font-code">5YJYGDEE3RF89104</span>
-        • Gravedad: <span class="gravedad-chip" [ngClass]="assessment?.gravedad_global || 'MEDIA'">{{ assessment?.gravedad_global || 'MEDIA' }}</span>
-        • Score Impacto: <span class="font-mono font-bold text-primary">{{ ((assessment?.score_danos_global || 0.74) * 100) | number:'1.1-1' }}%</span>
+        • Valor Comercial (PostgreSQL): <span class="font-mono font-bold text-slate-900">${{ (assessment?.valor_comercial_vehiculo_usd || 34500) | number:'1.2-2' }} USD</span>
+        • Gravedad: <span class="gravedad-chip" [ngClass]="assessment?.gravedad_global || 'LEVE'">{{
+          assessment?.gravedad_global || 'LEVE' }}</span>
+        • Daño vs. Valor: <span class="font-mono font-bold" [ngClass]="(assessment?.ratio_dano_valor_comercial_pct || 0) > 50 ? 'text-red-600' : 'text-teal-700'">{{ (assessment?.ratio_dano_valor_comercial_pct || 0) | number:'1.1-1' }}%</span>
       </p>
     </div>
 
@@ -75,7 +82,8 @@
             <span class="engine-name">{{ assessment?.modelo_deep_learning || 'TensorFlow CrashNet-CNN-v2.1' }}</span>
             <span class="pulsing-dot-indigo"></span>
           </div>
-          <span class="engine-subtext">Segmentación Semántica Multi-Ángulo • Recon LiDAR 100-FPS • Sensor ID: FL-04</span>
+          <span class="engine-subtext">Segmentación Semántica Multi-Ángulo • Recon LiDAR 100-FPS • Sensor ID:
+            FL-04</span>
         </div>
       </div>
       <span class="engine-valid-pill">99.4% VÁLIDO</span>
@@ -95,9 +103,37 @@
       </div>
     </div>
 
+    <!-- Tira de Evidencias In-Situ Multi-Ángulo -->
+    <div class="evidence-gallery-strip" *ngIf="galeriaEvidencias && galeriaEvidencias.length > 0">
+      <div class="evidence-strip-title">
+        <span class="material-symbols-outlined text-teal-700 text-[16px]">collections</span>
+        <span>EVIDENCIAS FOTOGRÁFICAS IN-SITU ({{ galeriaEvidencias.length }} TOMAS DISPONIBLES):</span>
+      </div>
+      <div class="evidence-thumbnails-row">
+        <button *ngFor="let ev of galeriaEvidencias" type="button"
+          (click)="selectEvidencia(ev)"
+          class="evidence-thumb-btn"
+          [class.active]="selectedEvidenciaId === ev.id">
+          <img [src]="ev.url" [alt]="ev.label" class="thumb-img" />
+          <div class="thumb-meta">
+            <span class="thumb-label">{{ ev.label }}</span>
+            <span class="thumb-ratio" [class.danger]="(ev.ratio_dano || 0) > 50">
+              {{ (ev.ratio_dano || 0) | number:'1.0-0' }}% Daño
+            </span>
+          </div>
+        </button>
+
+        <label class="evidence-add-btn" title="Añadir otra toma in-situ (frontal, lateral o posterior)">
+          <span class="material-symbols-outlined text-[20px] text-teal-700">add_a_photo</span>
+          <span class="text-[10px] font-mono font-bold text-slate-700">Añadir Toma</span>
+          <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden" />
+        </label>
+      </div>
+    </div>
+
     <!-- Barra de Selección de Keyframes si es Video -->
-    <div *ngIf="assessment?.es_video && assessment?.keyframes && assessment?.keyframes?.length! > 0" 
-         class="px-6 py-2.5 bg-slate-900 border-y border-slate-800 flex items-center justify-between flex-wrap gap-2">
+    <div *ngIf="assessment?.es_video && assessment?.keyframes && assessment?.keyframes?.length! > 0"
+      class="px-6 py-2.5 bg-slate-900 border-y border-slate-800 flex items-center justify-between flex-wrap gap-2">
       <div class="flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
         <span class="text-xs font-mono font-bold text-white flex items-center gap-1.5">
@@ -106,10 +142,7 @@
         </span>
       </div>
       <div class="flex items-center gap-2">
-        <button
-          *ngFor="let kf of assessment?.keyframes"
-          type="button"
-          (click)="selectKeyframe(kf)"
+        <button *ngFor="let kf of assessment?.keyframes" type="button" (click)="selectKeyframe(kf)"
           [class.bg-primary]="selectedKeyframeId === kf.keyframe_id"
           [class.text-white]="selectedKeyframeId === kf.keyframe_id"
           [class.bg-slate-800]="selectedKeyframeId !== kf.keyframe_id"
@@ -123,76 +156,49 @@
 
     <!-- Mode Selector Pills (Las 3 Capas de Inspección) -->
     <div class="mode-selector-row">
-      <button
-        class="mode-btn"
-        [class.active]="activeMode === 'boxes'"
-        (click)="switchMode('boxes')"
-      >
+      <button class="mode-btn" [class.active]="activeMode === 'boxes'" (click)="switchMode('boxes')">
         Superposiciones de IA (Bounding Boxes)
       </button>
-      <button
-        class="mode-btn"
-        [class.active]="activeMode === 'lidar'"
-        (click)="switchMode('lidar')"
-      >
+      <button class="mode-btn" [class.active]="activeMode === 'lidar'" (click)="switchMode('lidar')">
         Telemetría Bruta (LiDAR 3D)
       </button>
-      <button
-        class="mode-btn"
-        [class.active]="activeMode === 'thermal'"
-        (click)="switchMode('thermal')"
-      >
+      <button class="mode-btn" [class.active]="activeMode === 'thermal'" (click)="switchMode('thermal')">
         Esfuerzo Térmico y Deformación (Grad-CAM)
       </button>
     </div>
 
     <!-- Visualizer Canvas Container con Soporte Drag & Drop Directo -->
-    <div
-      class="canvas-viewport"
-      (dragover)="onDragOver($event)"
-      (dragleave)="onDragLeave($event)"
-      (drop)="onDrop($event)"
-      [class.ring-4]="isDragging"
-      [class.ring-primary]="isDragging"
-    >
+    <div class="canvas-viewport" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)" [class.ring-4]="isDragging" [class.ring-primary]="isDragging">
       <!-- Indicador de Arrastre Drag & Drop Activo -->
-      <div *ngIf="isDragging" class="absolute inset-0 bg-primary/20 backdrop-blur-sm z-40 flex flex-col items-center justify-center pointer-events-none border-2 border-dashed border-white">
+      <div *ngIf="isDragging"
+        class="absolute inset-0 bg-primary/20 backdrop-blur-sm z-40 flex flex-col items-center justify-center pointer-events-none border-2 border-dashed border-white">
         <span class="material-symbols-outlined text-white text-[48px] animate-bounce">cloud_upload</span>
         <span class="text-white font-headline-sm font-bold mt-2">Suelte la foto o video de colisión aquí</span>
         <span class="text-white/80 text-xs font-mono">Inferencia instantánea con TensorFlow CrashNet-CNN</span>
       </div>
 
       <!-- Underlying Collision Photo -->
-      <img
-        class="damage-photo"
+      <img class="damage-photo"
         [src]="assessment?.imagen_analizada || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx3fyi2LFOE3hDw3Sb6G8eHgn_hLSk3e7xQXTIWEd9BHQw9lVi_s5wz_M5NWDh0T9QCeRoH2TL4EyTMLMv2iBYUrO80grJz545-U3kxPc3UD3WVzixxcpOswoD6j-xqb-xjZ1iRANvcxJZk0atX1tZn1GM6_ZHEV5B65eFNgBrEywi2Qf8QrNY46M3A6genM8PMO_WwLiJFuf2G-9-8Dq7dkRLf4fsOW0hTOC_k8s'"
-        alt="Evidencia fotográfica del siniestro automotriz"
-      />
+        alt="Evidencia fotográfica del siniestro automotriz" />
 
       <!-- Mode 1: AI Overlays & Bounding Polygons (Activo por defecto) -->
       <div class="layer-overlay" *ngIf="activeMode === 'boxes'">
         <!-- SVG Interactive Damage Polygons -->
         <svg class="svg-polygons" viewBox="0 0 400 300" preserveAspectRatio="none">
-          <polygon
-            *ngFor="let part of assessment?.piezas_averiadas"
-            [attr.points]="part.bounding_box?.polygon_points"
+          <polygon *ngFor="let part of assessment?.piezas_averiadas" [attr.points]="part.bounding_box?.polygon_points"
             [attr.fill]="getPolygonFill(part.porcentaje_severidad)"
             [attr.stroke]="getPolygonColor(part.porcentaje_severidad)"
             [attr.stroke-width]="selectedPartId === part.parte_id ? '3' : '2'"
             [attr.stroke-dasharray]="part.accion_recomendada === 'REPARACION' ? '4 2' : 'none'"
-            (click)="selectZone(part.parte_id)"
-            class="cursor-pointer transition-all hover:opacity-90"
-          ></polygon>
+            (click)="selectZone(part.parte_id)" class="cursor-pointer transition-all hover:opacity-90"></polygon>
         </svg>
 
         <!-- Tarjetas Flotantes de Daño Dinámicas vinculadas a la Inferencia IA -->
-        <div
-          *ngFor="let part of assessment?.piezas_averiadas; let i = index"
-          class="bounding-tag"
-          [ngStyle]="getTagPosition(part, i)"
-          [class.selected]="selectedPartId === part.parte_id"
-          (click)="selectZone(part.parte_id)"
-        >
+        <div *ngFor="let part of assessment?.piezas_averiadas; let i = index" class="bounding-tag"
+          [ngStyle]="getTagPosition(part, i)" [class.selected]="selectedPartId === part.parte_id"
+          (click)="selectZone(part.parte_id)">
           <div class="tag-header">
             <span [ngClass]="getTagDotClass(part.porcentaje_severidad)"></span>
             <span class="tag-title" [ngClass]="getTagTitleClass(part.porcentaje_severidad)">
@@ -200,26 +206,31 @@
             </span>
           </div>
           <span class="tag-meta">
-            {{ getTagActionLabel(part) }} {{ part.porcentaje_severidad | number:'1.1-1' }}% • Est. ${{ part.costo_total_usd | number:'1.0-0' }}
+            {{ getTagActionLabel(part) }} {{ part.porcentaje_severidad | number:'1.1-1' }}% • Est. ${{
+            part.costo_total_usd | number:'1.0-0' }}
           </span>
         </div>
       </div>
 
       <!-- Mode 2: Dynamic LiDAR Point-Cloud Grid Mode (Lienzo Canvas HTML5) -->
       <div class="layer-lidar-view" [class.hidden]="activeMode !== 'lidar'">
-        <canvas #lidarCanvas class="absolute inset-0 w-full h-full block pointer-events-none" width="800" height="450"></canvas>
+        <canvas #lidarCanvas class="absolute inset-0 w-full h-full block pointer-events-none" width="800"
+          height="450"></canvas>
         <div class="lidar-hud-pill">
           <span class="material-symbols-outlined text-xs text-primary animate-pulse">radar</span>
-          <span>{{ assessment?.lidar_telemetria?.['puntos_voxel_retorno'] || 'Retorno 1.28M Vóxeles' }} • Delta Profundidad {{ assessment?.lidar_telemetria?.['delta_profundidad_mm'] || '+42mm' }}</span>
+          <span>{{ assessment?.lidar_telemetria?.['puntos_voxel_retorno'] || 'Retorno 1.28M Vóxeles' }} • Delta
+            Profundidad {{ assessment?.lidar_telemetria?.['delta_profundidad_mm'] || '+42mm' }}</span>
         </div>
       </div>
 
       <!-- Mode 3: Thermal Stress Heatmap Mode (Lienzo Canvas Grad-CAM) -->
       <div class="layer-thermal-view" [class.hidden]="activeMode !== 'thermal'">
-        <canvas #thermalCanvas class="absolute inset-0 w-full h-full block pointer-events-none" width="800" height="450"></canvas>
+        <canvas #thermalCanvas class="absolute inset-0 w-full h-full block pointer-events-none" width="800"
+          height="450"></canvas>
         <div class="thermal-hud-card">
           <span class="material-symbols-outlined text-error text-[18px]">local_fire_department</span>
-          <span>Deformación Torsional del Chasis: {{ assessment?.estres_termico?.['estres_chasis_torsional_mpa'] || 780 }} MPa (Grad-CAM Activo)</span>
+          <span>Deformación Torsional del Chasis: {{ assessment?.estres_termico?.['estres_chasis_torsional_mpa'] || 780
+            }} MPa (Grad-CAM Activo)</span>
         </div>
       </div>
 
@@ -237,30 +248,43 @@
     <div class="damage-hotspots-container">
       <div class="hotspots-header">
         <span class="hotspots-title">Puntos Críticos de Daño Validados por la Red Convolucional</span>
-        <span class="hotspots-count">{{ assessment?.piezas_averiadas?.length || 3 }} Detectadas</span>
+        <span class="hotspots-count">{{ assessment?.piezas_averiadas?.length ?? 0 }} Detectadas</span>
       </div>
 
-      <div class="hotspots-grid">
-        <div
-          *ngFor="let part of assessment?.piezas_averiadas"
-          class="hotspot-item"
-          [class.active]="selectedPartId === part.parte_id"
-          (click)="selectZone(part.parte_id)"
-        >
+      <!-- Banner de Vehículo Intacto (Sin Daños Estructurales) -->
+      <div *ngIf="assessment?.vehiculo_intacto || assessment?.piezas_averiadas?.length === 0"
+        class="clean-vehicle-banner">
+        <div class="clean-icon-wrap">
+          <span class="material-symbols-outlined text-primary text-3xl">verified</span>
+        </div>
+        <div class="clean-info">
+          <div class="clean-badge">
+            <span class="pulse-dot-green"></span>
+            <span class="font-mono text-xs font-bold text-primary">INSPECCIÓN CONFORME • SIN SINIESTRO</span>
+          </div>
+          <h4 class="clean-title">Vehículo Intacto • Sin Deformaciones Estructurales Detectadas</h4>
+          <p class="clean-desc">
+            El procesamiento convolucional y análisis morfológico de tensores determinó 0% de alteración física.
+            No se evidencian fracturas en parachoques, fisuras ópticas ni desalineación de capó. Liquidación por
+            siniestro: $0.00 USD.
+          </p>
+        </div>
+      </div>
+
+      <div class="hotspots-grid" *ngIf="assessment?.piezas_averiadas && assessment?.piezas_averiadas!.length > 0">
+        <div *ngFor="let part of assessment?.piezas_averiadas" class="hotspot-item"
+          [class.active]="selectedPartId === part.parte_id" (click)="selectZone(part.parte_id)">
           <div class="hotspot-left">
-            <span
-              class="part-dot"
-              [ngClass]="{
+            <span class="part-dot" [ngClass]="{
                 'dot-red': part.porcentaje_severidad >= 80,
                 'dot-amber': part.porcentaje_severidad >= 50 && part.porcentaje_severidad < 80,
                 'dot-indigo': part.porcentaje_severidad < 50
-              }"
-            ></span>
+              }"></span>
             <div class="part-text">
               <div class="flex items-center gap-2">
                 <span class="part-name">{{ part.nombre_pieza }}</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold"
-                      [ngClass]="part.accion_recomendada === 'REEMPLAZO' ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'">
+                  [ngClass]="part.accion_recomendada === 'REEMPLAZO' ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'">
                   {{ part.accion_recomendada }}
                 </span>
               </div>
@@ -271,13 +295,99 @@
             <span class="part-cost">${{ part.costo_total_usd | number:'1.2-2' }}</span>
             <span class="part-conf">{{ (part.confianza_deteccion * 100) | number:'1.1-1' }}% Conf. IA</span>
             <!-- Botón interactivo para alternar REEMPLAZO / REPARACION con recálculo financiero -->
-            <button
-              type="button"
-              (click)="toggleAccionRecomendada(part, $event)"
+            <button type="button" (click)="toggleAccionRecomendada(part, $event)"
               class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-100 hover:bg-primary hover:text-white text-slate-700 transition-colors border border-slate-300">
               {{ part.accion_recomendada === 'REEMPLAZO' ? 'Cambiar a REPARACIÓN' : 'Cambiar a REEMPLAZO' }}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dictamen Actuarial y Regla de Pérdida Total (> 50% Valor Comercial) -->
+  <section class="actuarial-ruling-card" [class.total-loss]="assessment?.es_perdida_total_50">
+    <div class="actuarial-header">
+      <div class="flex items-center gap-2.5">
+        <div class="actuarial-icon-box" [ngClass]="assessment?.es_perdida_total_50 ? 'icon-danger' : 'icon-teal'">
+          <span class="material-symbols-outlined text-[24px]">
+            {{ assessment?.es_perdida_total_50 ? 'warning' : 'verified_user' }}
+          </span>
+        </div>
+        <div>
+          <h3 class="actuarial-title">
+            {{ assessment?.es_perdida_total_50 ? 'Dictamen Actuarial: PÉRDIDA TOTAL (SINIESTRADO)' : 'Dictamen Actuarial: REPARACIÓN TÉCNICA VIABLE' }}
+          </h3>
+          <p class="actuarial-subtitle">
+            Salvaguarda Actuarial Oficial: Si el presupuesto de reparación supera el 50% del Valor Comercial del Vehículo, se declara Siniestro Total / Pérdida Económica.
+          </p>
+        </div>
+      </div>
+      <div class="actuarial-badge" [class.badge-loss]="assessment?.es_perdida_total_50" [class.badge-repair]="!assessment?.es_perdida_total_50">
+        <span class="pulse-dot" [class.pulse-red]="assessment?.es_perdida_total_50" [class.pulse-green]="!assessment?.es_perdida_total_50"></span>
+        <span>{{ assessment?.es_perdida_total_50 ? 'PÉRDIDA TOTAL (>50%)' : 'REPARACIÓN PARCIAL (<=50%)' }}</span>
+      </div>
+    </div>
+
+    <!-- Comparativa Numérica y Métricas -->
+    <div class="actuarial-body">
+      <div class="actuarial-metrics-grid">
+        <div class="metric-box">
+          <span class="metric-label">Valor Comercial Vehículo (PostgreSQL)</span>
+          <span class="metric-value font-mono">${{ (assessment?.valor_comercial_vehiculo_usd || 34500) | number:'1.2-2' }} USD</span>
+          <span class="metric-hint">Póliza {{ assessment?.numero_poliza || inputClaim.numero_poliza }}</span>
+        </div>
+
+        <div class="metric-box">
+          <span class="metric-label">Costo Bruto de Reparación (CrashNet)</span>
+          <span class="metric-value font-mono" [ngClass]="assessment?.es_perdida_total_50 ? 'text-red-600' : 'text-slate-900'">
+            ${{ (assessment?.liquidacion_financiera?.costo_total_reparacion_usd ?? 0) | number:'1.2-2' }} USD
+          </span>
+          <span class="metric-hint">{{ assessment?.piezas_averiadas?.length ?? 0 }} pieza(s) con daño verificado</span>
+        </div>
+
+        <div class="metric-box">
+          <span class="metric-label">Ratio Daño / Valor Comercial</span>
+          <span class="metric-value font-mono" [ngClass]="assessment?.es_perdida_total_50 ? 'text-red-600' : 'text-teal-700'">
+            {{ (assessment?.ratio_dano_valor_comercial_pct ?? 0) | number:'1.1-1' }}%
+          </span>
+          <span class="metric-hint">Umbral crítico de rescisión: 50.0%</span>
+        </div>
+
+        <div class="metric-box">
+          <span class="metric-label">Orientación Morfológica</span>
+          <span class="metric-value font-mono text-sm text-slate-800">
+            {{ formatOrientacion(assessment?.orientacion_detectada) }}
+          </span>
+          <span class="metric-hint">Supresión activa de paredes y fondos</span>
+        </div>
+      </div>
+
+      <!-- Barra de Progreso del Ratio Actuarial con Marcador del 50% -->
+      <div class="ratio-progress-container">
+        <div class="progress-labels">
+          <span>0% (Sin Daño)</span>
+          <span class="threshold-marker-label">▲ UMBRAL PÉRDIDA TOTAL (50%)</span>
+          <span>100% (Destrucción Total)</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar-fill"
+            [style.width.%]="Math.min(assessment?.ratio_dano_valor_comercial_pct ?? 0, 100)"
+            [ngClass]="assessment?.es_perdida_total_50 ? 'fill-danger' : 'fill-safe'">
+          </div>
+          <!-- Línea vertical del 50% -->
+          <div class="threshold-line-50"></div>
+        </div>
+      </div>
+
+      <!-- Mensaje Explicativo Oficial del Dictamen -->
+      <div class="ruling-explanation" [class.alert-danger]="assessment?.es_perdida_total_50" [class.alert-safe]="!assessment?.es_perdida_total_50">
+        <span class="material-symbols-outlined text-[22px]">
+          {{ assessment?.es_perdida_total_50 ? 'report' : 'check_circle' }}
+        </span>
+        <div class="explanation-text">
+          <strong>{{ assessment?.es_perdida_total_50 ? 'Dictamen de Siniestrado / Pérdida Total Ejecutado:' : 'Autorización de Reparación en Red de Talleres:' }}</strong>
+          <span>{{ assessment?.mensaje_dictamen_actuarial || (assessment?.es_perdida_total_50 ? 'El costo proyectado de repuestos OEM y mano de obra supera el 50% del valor comercial del vehículo. Se inhabilita la orden de reparación en taller y se activa la indemnización directa del valor comercial acordado.' : 'El costo de reparación es técnica y financieramente viable. Se autoriza el despacho inmediato de repuestos OEM y derivación a taller oficial.') }}</span>
         </div>
       </div>
     </div>
@@ -296,15 +406,18 @@
       </div>
 
       <div class="oem-items-list">
+        <div *ngIf="assessment?.vehiculo_intacto || assessment?.piezas_averiadas?.length === 0"
+          class="p-6 text-center text-slate-500 font-mono text-xs bg-slate-50 rounded-lg border border-slate-200">
+          <span class="material-symbols-outlined text-primary text-2xl block mb-1">verified_user</span>
+          No se requieren repuestos OEM ni despacho de taller (Vehículo sin daños).
+        </div>
         <div *ngFor="let part of assessment?.piezas_averiadas" class="oem-item">
           <div class="oem-top">
             <div>
               <div class="oem-name-row">
                 <span class="oem-name">{{ part.nombre_pieza }}</span>
-                <span
-                  class="action-pill"
-                  [ngClass]="part.accion_recomendada === 'REEMPLAZO' ? 'pill-replace' : 'pill-repair'"
-                >
+                <span class="action-pill"
+                  [ngClass]="part.accion_recomendada === 'REEMPLAZO' ? 'pill-replace' : 'pill-repair'">
                   {{ part.accion_recomendada }}
                 </span>
               </div>
@@ -346,27 +459,38 @@
         </div>
         <div class="settlement-row highlight">
           <span class="s-label">Costo Bruto de Reparación</span>
-          <span class="s-val price-total">${{ assessment?.liquidacion_financiera?.costo_total_reparacion_usd | number:'1.2-2' }} USD</span>
+          <span class="s-val price-total">${{ assessment?.liquidacion_financiera?.costo_total_reparacion_usd |
+            number:'1.2-2' }} USD</span>
         </div>
         <div class="settlement-row deduct">
           <span class="s-label">Deducible Contratado</span>
-          <span class="s-val">-${{ assessment?.liquidacion_financiera?.deducible_calculado_usd | number:'1.2-2' }} USD</span>
+          <span class="s-val">-${{ assessment?.liquidacion_financiera?.deducible_calculado_usd | number:'1.2-2' }}
+            USD</span>
         </div>
         <div class="settlement-total-banner">
           <span class="total-label">Monto Neto Indemnizable:</span>
-          <span class="total-value">${{ assessment?.liquidacion_financiera?.monto_indemnizable_neto_usd | number:'1.2-2' }} USD</span>
+          <span class="total-value">${{ assessment?.liquidacion_financiera?.monto_indemnizable_neto_usd | number:'1.2-2'
+            }} USD</span>
         </div>
       </div>
 
       <div class="settlement-actions">
-        <button
-          class="btn-confirm-saga"
+        <button class="btn-confirm-saga"
+          [class.btn-total-loss]="assessment?.es_perdida_total_50"
           [disabled]="confirming || assessment?.estado_peritaje === 'EN_PROCESO_LIQUIDACION'"
-          (click)="confirmAndSendToSaga()"
-        >
-          <span class="material-symbols-outlined text-[18px]">gavel</span>
+          (click)="confirmAndSendToSaga()">
+          <span class="material-symbols-outlined text-[18px]">
+            {{ assessment?.es_perdida_total_50 ? 'warning' : 'gavel' }}
+          </span>
           <span>
-            {{ assessment?.estado_peritaje === 'EN_PROCESO_LIQUIDACION' ? 'Expediente Transferido a Saga (CU09)' : 'Confirmar Peritaje y Enviar a Liquidación Saga' }}
+            <ng-container *ngIf="assessment?.estado_peritaje === 'EN_PROCESO_LIQUIDACION'">
+              Expediente Transferido a Saga (CU09)
+            </ng-container>
+            <ng-container *ngIf="assessment?.estado_peritaje !== 'EN_PROCESO_LIQUIDACION'">
+              {{ assessment?.es_perdida_total_50 ?
+                ('Dictaminar Pérdida Total / Indemnización Directa ($' + ((assessment?.valor_comercial_vehiculo_usd || 34500) | number:'1.0-0') + ' USD)') :
+                'Confirmar Peritaje y Enviar a Liquidación Saga' }}
+            </ng-container>
           </span>
         </button>
       </div>
@@ -374,7 +498,8 @@
   </div>
 
   <!-- Modal / Dialogo de Éxito: Trazabilidad Saga (CU09 & Apache Kafka) -->
-  <div *ngIf="showSagaModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div *ngIf="showSagaModal"
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-slate-200 overflow-hidden animate-fadeIn">
       <!-- Modal Header -->
       <div class="bg-gradient-to-r from-teal-800 to-teal-950 p-6 text-white flex items-center justify-between">
@@ -387,7 +512,8 @@
             <p class="text-xs text-teal-200/80 font-mono">Evento Kafka SiniestroPeritadoEvent distribuido</p>
           </div>
         </div>
-        <button (click)="closeSagaModal()" class="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-colors">
+        <button (click)="closeSagaModal()"
+          class="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-colors">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
       </div>
@@ -404,7 +530,8 @@
           <div class="text-right">
             <span class="text-xs text-slate-500 font-mono uppercase block">Indemnización Neta Aprobada</span>
             <span class="font-mono font-bold text-teal-700 text-xl">
-              ${{ (sagaConfirmedResp?.monto_aprobado_usd || assessment?.liquidacion_financiera?.monto_indemnizable_neto_usd || 0) | number:'1.2-2' }} USD
+              ${{ (sagaConfirmedResp?.monto_aprobado_usd ||
+              assessment?.liquidacion_financiera?.monto_indemnizable_neto_usd || 0) | number:'1.2-2' }} USD
             </span>
           </div>
         </div>
@@ -430,31 +557,26 @@
         </div>
 
         <p class="text-xs text-slate-500 leading-relaxed">
-          El informe pericial ha sido registrado en MongoDB Atlas y transmitido al orquestador Saga en 
-          <span class="font-semibold text-slate-700">MS3 Spring Boot</span> para reservar fondos contables y emitir la orden de pago bancario.
+          El informe pericial ha sido registrado en MongoDB Atlas y transmitido al orquestador Saga en
+          <span class="font-semibold text-slate-700">MS3 Spring Boot</span> para reservar fondos contables y emitir la
+          orden de pago bancario.
         </p>
       </div>
 
       <!-- Modal Footer Actions -->
       <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          (click)="exportarExpedientePdf()"
+        <button type="button" (click)="exportarExpedientePdf()"
           class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-mono font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 transition-colors">
           <span class="material-symbols-outlined text-[16px] text-teal-700">print</span>
           <span>Imprimir / Exportar PDF</span>
         </button>
 
         <div class="flex items-center gap-2">
-          <button
-            type="button"
-            (click)="closeSagaModal()"
+          <button type="button" (click)="closeSagaModal()"
             class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors">
             Cerrar
           </button>
-          <button
-            type="button"
-            (click)="nextClaim()"
+          <button type="button" (click)="nextClaim()"
             class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-sm">
             <span>Siguiente Siniestro</span>
             <span class="material-symbols-outlined text-[16px]">arrow_forward</span>

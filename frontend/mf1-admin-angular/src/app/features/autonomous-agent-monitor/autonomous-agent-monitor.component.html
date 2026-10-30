@@ -488,7 +488,7 @@
         <div class="summary-divider"></div>
         <div class="summary-metric">
           <span class="metric-label">Malla de Eventos</span>
-          <span class="metric-value text-slate-300 font-mono">{{ clusterState.kafka_broker }}</span>
+          <span class="metric-value font-mono text-navy">{{ clusterState.kafka_broker }}</span>
         </div>
         <div class="summary-divider"></div>
         <div class="summary-metric">
@@ -504,7 +504,7 @@
             <span class="material-symbols-outlined text-teal text-lg">psychology</span>
             <span class="briefing-badge font-headline font-bold">DICTAMEN ACTUARIAL DE SUPERVISIÓN</span>
           </div>
-          <span class="briefing-time font-mono text-xs text-slate-400">
+          <span class="briefing-time font-mono text-xs text-slate-500">
             Última Reflexión del Enjambre
           </span>
         </div>
@@ -576,13 +576,28 @@
       <!-- VISTA 1: TABLA EJECUTIVA DE AUDITORÍA (Default) -->
       <div *ngIf="vistaLog === 'ejecutiva'" class="executive-table-wrapper">
         <div class="executive-audit-table">
-          <!-- Table Header -->
+          <!-- Table Header (Executive Precision Teal Contrast) -->
           <div class="audit-row audit-header">
-            <div class="col-time">HORA / FECHA</div>
-            <div class="col-agent">AGENTE / ROL</div>
-            <div class="col-ref">EXPEDIENTE / CICLO</div>
-            <div class="col-action">DICTAMEN &amp; ACCIÓN EJECUTIVA</div>
-            <div class="col-status">ESTADO</div>
+            <div class="col-time">
+              <span class="material-symbols-outlined header-col-icon">schedule</span>
+              <span>HORA / FECHA</span>
+            </div>
+            <div class="col-agent">
+              <span class="material-symbols-outlined header-col-icon">smart_toy</span>
+              <span>AGENTE / ROL</span>
+            </div>
+            <div class="col-ref">
+              <span class="material-symbols-outlined header-col-icon">folder_open</span>
+              <span>EXPEDIENTE / CICLO</span>
+            </div>
+            <div class="col-action">
+              <span class="material-symbols-outlined header-col-icon">auto_fix_high</span>
+              <span>DICTAMEN &amp; ACCIÓN / SKILLS</span>
+            </div>
+            <div class="col-status">
+              <span class="material-symbols-outlined header-col-icon">verified</span>
+              <span>ESTADO / IMPACTO</span>
+            </div>
           </div>
 
           <!-- Table Body -->
@@ -640,7 +655,7 @@
                   <span class="material-symbols-outlined text-xs">{{ item.estadoBadge.icon }}</span>
                   <span>{{ item.estadoBadge.texto }}</span>
                 </span>
-                <span *ngIf="item.impacto > 0" class="impact-sub text-[10px] text-slate-400">
+                <span *ngIf="item.impacto > 0" class="impact-sub text-[10px] text-slate-500">
                   {{ item.impacto }} exp. afectado{{ item.impacto > 1 ? 's' : '' }}
                 </span>
               </div>
@@ -649,7 +664,7 @@
             <!-- Empty State -->
             <div *ngIf="parsedLogsFiltrados.length === 0" class="audit-empty-state">
               <span class="material-symbols-outlined text-3xl text-slate-500">search_off</span>
-              <p class="text-xs text-slate-400">No se encontraron registros de auditoría con los filtros seleccionados.</p>
+              <p class="text-xs text-slate-500">No se encontraron registros de auditoría con los filtros seleccionados.</p>
             </div>
           </div>
         </div>
@@ -662,7 +677,7 @@
             <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
             <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
             <span class="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
-            <span class="ml-2 font-mono text-[11px] text-slate-400">kafka-telemetry://cluster-us-east/aegiscore.claims.stream</span>
+            <span class="ml-2 font-mono text-[11px] text-slate-500">kafka-telemetry://cluster-us-east/aegiscore.claims.stream</span>
           </div>
           <span class="font-mono text-[10px] text-teal-400">OFFSET: #189,420</span>
         </div>
