@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { VoiceMcpResponse, McpToolDefinition } from '../models/voice-mcp.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class VoiceMcpService {
-  private baseUrl = 'http://127.0.0.1:8000/api/v1/mcp';
+  private baseUrl = environment.ms4.endpoints.voiceMcp;
 
   constructor(private http: HttpClient) {}
 

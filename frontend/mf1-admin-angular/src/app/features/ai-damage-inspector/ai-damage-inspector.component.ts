@@ -57,7 +57,6 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
   sagaTxId = '';
   sagaAuditHash = '';
   sagaConfirmedResp: ConfirmAssessmentResponse | null = null;
-  isDragging = false;
 
   assessment: DamageAssessmentOutput | null = null;
   selectedKeyframe: Keyframe | null = null;
@@ -77,31 +76,79 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
     angulo_toma: 'FRONTAL_CUARTO_DERECHO'
   };
 
-  // Galería de Evidencias In-Situ Multi-Ángulo
+  // Catálogo oficial de evidencias in-situ reportadas desde MS2/MS3
+  readonly catalogoEvidenciasPorReclamo: Record<string, Array<{ id: string; url: string; label: string; ratio_dano?: number; orientacion?: string }>> = {
+    'REC-2026-00492': [
+      {
+        id: 'EV-492-01',
+        url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx3fyi2LFOE3hDw3Sb6G8eHgn_hLSk3e7xQXTIWEd9BHQw9lVi_s5wz_M5NWDh0T9QCeRoH2TL4EyTMLMv2iBYUrO80grJz545-U3kxPc3UD3WVzixxcpOswoD6j-xqb-xjZ1iRANvcxJZk0atX1tZn1GM6_ZHEV5B65eFNgBrEywi2Qf8QrNY46M3A6genM8PMO_WwLiJFuf2G-9-8Dq7dkRLf4fsOW0hTOC_k8s',
+        label: 'Toma Frontal-Principal',
+        ratio_dano: 24.5,
+        orientacion: 'FRONTAL'
+      },
+      {
+        id: 'EV-492-02',
+        url: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80',
+        label: 'Lateral Derecho (3/4)',
+        ratio_dano: 56.8,
+        orientacion: 'TRES_CUARTOS_DERECHO'
+      },
+      {
+        id: 'EV-492-03',
+        url: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
+        label: 'Detalle Chasis & Suspensión',
+        ratio_dano: 18.2,
+        orientacion: 'DETALLE_MECANICO'
+      }
+    ],
+    'REC-2026-00493': [
+      {
+        id: 'EV-493-01',
+        url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCOtOijrIJcDyaEgrsXodAwoTNDDVqgszmLUqFdypN23RCWUmXo5JE4m9LtDyQp95tHr5kCpG9VE-eEGe0jAUUij4mfnyG8l3oSFFYRkCB2ao0ddJIjX-KKkYNiUpYRDBLRaFqYFQM27v1_iz0q03WEK6_-xM9fSPyszJho9g8ATsBD3waGlta8oJ90HHptTlxp6vtFev2F4Zv5vYQzsv8y-K8VHLWijuIxD98cMEWZ4Isc3f-83Aci',
+        label: 'Lateral Derecho (Puertas)',
+        ratio_dano: 48.0,
+        orientacion: 'LATERAL_DERECHO'
+      },
+      {
+        id: 'EV-493-02',
+        url: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80',
+        label: 'Detalle Umbral & Pilar B',
+        ratio_dano: 32.5,
+        orientacion: 'LATERAL_DERECHO'
+      }
+    ],
+    'REC-2026-00494': [
+      {
+        id: 'EV-494-01',
+        url: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
+        label: 'Frontal Superior (Capó)',
+        ratio_dano: 62.0,
+        orientacion: 'FRONTAL'
+      },
+      {
+        id: 'EV-494-02',
+        url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx3fyi2LFOE3hDw3Sb6G8eHgn_hLSk3e7xQXTIWEd9BHQw9lVi_s5wz_M5NWDh0T9QCeRoH2TL4EyTMLMv2iBYUrO80grJz545-U3kxPc3UD3WVzixxcpOswoD6j-xqb-xjZ1iRANvcxJZk0atX1tZn1GM6_ZHEV5B65eFNgBrEywi2Qf8QrNY46M3A6genM8PMO_WwLiJFuf2G-9-8Dq7dkRLf4fsOW0hTOC_k8s',
+        label: 'Detalle Radiador & Farol',
+        ratio_dano: 41.0,
+        orientacion: 'FRONTAL'
+      }
+    ],
+    'REC-2026-VIDEO-01': [
+      {
+        id: 'EV-VID-01',
+        url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx3fyi2LFOE3hDw3Sb6G8eHgn_hLSk3e7xQXTIWEd9BHQw9lVi_s5wz_M5NWDh0T9QCeRoH2TL4EyTMLMv2iBYUrO80grJz545-U3kxPc3UD3WVzixxcpOswoD6j-xqb-xjZ1iRANvcxJZk0atX1tZn1GM6_ZHEV5B65eFNgBrEywi2Qf8QrNY46M3A6genM8PMO_WwLiJFuf2G-9-8Dq7dkRLf4fsOW0hTOC_k8s',
+        label: 'Fotograma de Impacto (Video)',
+        ratio_dano: 68.0,
+        orientacion: 'FRONTAL'
+      }
+    ]
+  };
+
+  // Galería activa de evidencias
   galeriaEvidencias: Array<{ id: string; url: string; label: string; ratio_dano?: number; orientacion?: string }> = [
-    {
-      id: 'EV-01',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx3fyi2LFOE3hDw3Sb6G8eHgn_hLSk3e7xQXTIWEd9BHQw9lVi_s5wz_M5NWDh0T9QCeRoH2TL4EyTMLMv2iBYUrO80grJz545-U3kxPc3UD3WVzixxcpOswoD6j-xqb-xjZ1iRANvcxJZk0atX1tZn1GM6_ZHEV5B65eFNgBrEywi2Qf8QrNY46M3A6genM8PMO_WwLiJFuf2G-9-8Dq7dkRLf4fsOW0hTOC_k8s',
-      label: 'Toma Frontal-Principal',
-      ratio_dano: 24.5,
-      orientacion: 'FRONTAL'
-    },
-    {
-      id: 'EV-02',
-      url: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80',
-      label: 'Lateral Derecho (3/4)',
-      ratio_dano: 56.8,
-      orientacion: 'TRES_CUARTOS_DERECHO'
-    },
-    {
-      id: 'EV-03',
-      url: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
-      label: 'Detalle Chasis & Suspensión',
-      ratio_dano: 18.2,
-      orientacion: 'DETALLE_MECANICO'
-    }
+    ...this.catalogoEvidenciasPorReclamo['REC-2026-00492']
   ];
-  selectedEvidenciaId: string = 'EV-01';
+  selectedEvidenciaId: string = 'EV-492-01';
   Math = Math;
 
   // Variables para la animación de LiDAR en Canvas
@@ -137,6 +184,12 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
       this.inputClaim.es_video = caso.esVideo;
       this.inputClaim.imagen_base64 = undefined;
       this.inputClaim.video_base64 = undefined;
+
+      // Sincronizar galería de evidencias correspondientes al siniestro seleccionado
+      const evidencias = this.catalogoEvidenciasPorReclamo[caso.id] || this.catalogoEvidenciasPorReclamo['REC-2026-00492'];
+      this.galeriaEvidencias = [...evidencias];
+      this.selectedEvidenciaId = this.galeriaEvidencias[0]?.id || '';
+      this.inputClaim.imagen_url = this.galeriaEvidencias[0]?.url;
     }
     this.loadAssessment();
   }
@@ -150,6 +203,21 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
       next: (data) => {
         this.assessment = data;
         this.loading = false;
+
+        // Si el microservicio devuelve evidencias reportadas en el expediente, sincronizarlas
+        if (data.evidencias_galeria && data.evidencias_galeria.length > 0) {
+          this.galeriaEvidencias = data.evidencias_galeria.map((e, idx) => ({
+            id: e.id || `EV-SRV-0${idx + 1}`,
+            url: e.url,
+            label: e.label || `Toma In-Situ #${idx + 1}`,
+            ratio_dano: e.ratio_dano,
+            orientacion: (e as any).orientacion
+          }));
+          if (!this.galeriaEvidencias.some(e => e.id === this.selectedEvidenciaId)) {
+            this.selectedEvidenciaId = this.galeriaEvidencias[0]?.id || '';
+          }
+        }
+
         if (data.keyframes && data.keyframes.length > 0) {
           this.selectedKeyframe = data.keyframes.find(k => k.keyframe_id === 'frame_02') || data.keyframes[0];
           this.selectedKeyframeId = this.selectedKeyframe.keyframe_id;
@@ -209,51 +277,16 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
   }
 
   /**
-   * Permite al usuario cargar cualquier fotografía o video de colisión desde su máquina
-   */
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-    this.handleFile(input.files[0]);
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging = true;
-  }
-
-  onDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging = false;
-  }
-
-  onDrop(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging = false;
-
-    if (event.dataTransfer && event.dataTransfer.files.length > 0) {
-      this.handleFile(event.dataTransfer.files[0]);
-    }
-  }
-
-  /**
-   * Conmuta entre las tomas fotográficas registradas in-situ
+   * Conmuta entre las tomas fotográficas registradas in-situ (Modo Visor Exclusivo)
    */
   selectEvidencia(ev: { id: string; url: string; label: string; ratio_dano?: number; orientacion?: string }): void {
     this.selectedEvidenciaId = ev.id;
     if (this.assessment) {
       this.assessment.imagen_analizada = ev.url;
     }
-    if (ev.url.startsWith('data:')) {
-      this.inputClaim.imagen_base64 = ev.url;
-      this.inputClaim.imagen_url = undefined;
-    } else {
-      this.inputClaim.imagen_url = ev.url;
-      this.inputClaim.imagen_base64 = undefined;
-    }
+    this.inputClaim.imagen_url = ev.url;
+    this.inputClaim.imagen_base64 = undefined;
+    this.inputClaim.video_base64 = undefined;
     this.analyzeNewEvidence();
   }
 
@@ -268,54 +301,6 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
       'POSTERIOR': 'Posterior / Trasero'
     };
     return map[orientacion] || orientacion.replace(/_/g, ' ');
-  }
-
-  private handleFile(file: File): void {
-    const isVideo = file.type.startsWith('video/') || file.name.endsWith('.mp4');
-    const reader = new FileReader();
-
-    this.loading = true;
-    this.showToast(`Procesando archivo local (${file.name})...`, 'info');
-
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-
-      if (isVideo) {
-        this.inputClaim.es_video = true;
-        this.inputClaim.video_base64 = dataUrl;
-        this.inputClaim.imagen_base64 = undefined;
-        this.inputClaim.numero_reclamo = `REC-VIDEO-${Date.now().toString().slice(-5)}`;
-        this.inputClaim.modelo_vehiculo = `Evidencia en Video (${file.name})`;
-      } else {
-        this.inputClaim.es_video = false;
-        this.inputClaim.imagen_base64 = dataUrl;
-        this.inputClaim.video_base64 = undefined;
-        this.inputClaim.numero_reclamo = `REC-FOTO-${Date.now().toString().slice(-5)}`;
-        this.inputClaim.modelo_vehiculo = `Evidencia Fotográfica (${file.name})`;
-
-        // Incorporar a la galería de evidencias in-situ
-        const newEvId = `EV-${Date.now().toString().slice(-4)}`;
-        this.galeriaEvidencias.unshift({
-          id: newEvId,
-          url: dataUrl,
-          label: `In-Situ (${file.name.substring(0, 14)})`,
-          ratio_dano: 0,
-          orientacion: 'INSPECCIONANDO...'
-        });
-        this.selectedEvidenciaId = newEvId;
-      }
-      this.inputClaim.imagen_url = undefined;
-
-      this.analyzeNewEvidence();
-    };
-
-    reader.onerror = (err) => {
-      console.error('[AiDamageInspector] Error leyendo archivo:', err);
-      this.loading = false;
-      this.showToast('No se pudo leer el archivo seleccionado.', 'error');
-    };
-
-    reader.readAsDataURL(file);
   }
 
   /**

@@ -19,13 +19,14 @@ import {
   AgentLogEvent,
   SystemNotification
 } from '../models/agent-monitor.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AgentMonitorService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://127.0.0.1:8000/api/agent';
+  private readonly baseUrl = environment.ms4.endpoints.agent;
   private wsSubject: Subject<any> | null = null;
   private wsConnection: WebSocket | null = null;
 
@@ -119,7 +120,7 @@ export class AgentMonitorService {
 
   private iniciarConexionWs(): void {
     try {
-      this.wsConnection = new WebSocket('ws://127.0.0.1:8000/api/agent/ws');
+      this.wsConnection = new WebSocket(environment.ms4.endpoints.agentWs);
       this.wsConnection.onopen = () => {
         console.log('[AgentMonitorService] WebSocket conectado exitosamente a MS4');
       };

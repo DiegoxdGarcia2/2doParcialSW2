@@ -15,13 +15,14 @@ import {
   ModelMetrics,
   RetrainResponse
 } from '../models/ml-actuarial.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MlActuarialService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8000/api/ml';
+  private readonly baseUrl = environment.ms4.endpoints.mlActuarial;
 
   /**
    * Genera los headers con token Keycloak SSO / Mock para desarrollo

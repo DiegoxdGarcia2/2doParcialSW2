@@ -14,13 +14,14 @@ import {
   DamageAssessmentOutput,
   ConfirmAssessmentResponse
 } from '../models/dl-vision.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DlVisionService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8000/api/dl';
+  private readonly baseUrl = environment.ms4.endpoints.dlVision;
 
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({

@@ -12,7 +12,10 @@
 """
 
 import time
+from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
+
+from app.services.s3_storage_service import s3_storage_service
 
 from app.entities.voice_mcp_dto import (
     OwaspSecurityAuditDTO,
@@ -27,6 +30,10 @@ from app.mcp_voice_reports.server.mcp_protocol_server import McpProtocolServer
 from app.mcp_voice_reports.exporters.excel_exporter import ExcelDocumentExporter
 from app.mcp_voice_reports.exporters.pdf_exporter import PdfDocumentExporter
 from app.mcp_voice_reports.exporters.word_exporter import WordDocumentExporter
+
+
+REPORTS_DIR = Path(__file__).resolve().parent.parent.parent / "artifacts" / "reports"
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class VoiceMcpControl:
@@ -78,19 +85,77 @@ class VoiceMcpControl:
         columnas: List[str],
         filas: List[Dict[str, Any]],
         formato: str = "pdf",
-        nombre_base: str = "reporte_mcp"
+        nombre_base: str = "reporte_mcp",
+        params: Optional[Dict[str, Any]] = None
     ) -> GeneratedDocumentDTO:
         """
         Operación UML 2.5+: exportarReporteDocumento()
         Compila el archivo descargable según el formato solicitado (.xlsx, .pdf o .docx).
+        Aplica persistencia dual: guarda copia local en disco y sube a Amazon S3 con Pre-signed URL.
         """
         fmt = formato.lower().strip()
         if fmt == "xlsx":
-            return ExcelDocumentExporter.generar_reporte(titulo, kpis, columnas, filas, nombre_base)
+            documento = ExcelDocumentExporter.generar_reporte(titulo, kpis, columnas, filas, nombre_base)
         elif fmt == "docx":
-            return WordDocumentExporter.generar_reporte(titulo, kpis, columnas, filas, nombre_base)
+            documento = WordDocumentExporter.generar_reporte(titulo, kpis, columnas, filas, nombre_base)
         else:
-            return PdfDocumentExporter.generar_reporte(titulo, kpis, columnas, filas, nombre_base)
+            documento = PdfDocumentExporter.generar_reporte(titulo, kpis, columnas, filas, nombre_base)
+
+        # Asignar ruta de descarga directa del microservicio local
+        documento.local_download_url = f"/api/v1/mcp/download-report/{documento.filename}"
+
+        # Subida dual a Amazon S3 si el servicio está configurado
+        if s3_storage_service.is_configured:
+            try:
+                filepath = REPORTS_DIR / documento.filename
+                if filepath.is_file():
+                    with open(filepath, "rb") as f:
+                        file_bytes = f.read()
+
+                    content_types = {
+                        "pdf": "application/pdf",
+                        "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    }
+                    c_type = content_types.get(fmt, "application/octet-stream")
+
+                    reclamo_id = (params or {}).get("numero_reclamo") or (params or {}).get("reclamo_id")
+                    if reclamo_id:
+                        # Reporte asociado a un siniestro/vehículo específico
+                        from app.controls.crashnet_vision_control import crashnet_vision_control
+                        poliza_id = (params or {}).get("numero_poliza") or (params or {}).get("poliza_id")
+                        cli_doc, veh_placa = crashnet_vision_control.resolver_jerarquia_cliente_vehiculo(poliza_id, reclamo_id)
+                        s3_key = s3_storage_service.construir_s3_key_incidente(
+                            cliente_id=cli_doc,
+                            vehiculo_id=veh_placa,
+                            reclamo_id=str(reclamo_id),
+                            categoria="reportes",
+                            nombre_archivo=documento.filename
+                        )
+                    else:
+                        # Reporte gerencial global (Solvencia, Ventas, Fraude SIU)
+                        s3_key = s3_storage_service.construir_s3_key_global(
+                            categoria="reportes-globales",
+                            nombre_archivo=documento.filename
+                        )
+
+                    s3_url = s3_storage_service.subir_bytes(
+                        datos_bytes=file_bytes,
+                        s3_key=s3_key,
+                        content_type=c_type,
+                        metadata={"titulo": titulo[:80]}
+                    )
+
+                    if s3_url:
+                        presigned = s3_storage_service.generar_presigned_download_url(s3_key, expiracion_segundos=900)
+                        documento.download_url = presigned or s3_url
+                        documento.s3_bucket = s3_storage_service.bucket
+                        documento.s3_key = s3_key
+                        documento.s3_storage_enabled = True
+            except Exception as e_s3:
+                print(f"[VoiceMcpControl] Advertencia al subir reporte dual a S3: {e_s3}")
+
+        return documento
 
     def procesarComandoVozCompleto(
         self,
@@ -166,17 +231,34 @@ class VoiceMcpControl:
                 mensaje=f"🚨 Alerta de Seguridad OWASP: Intento de Inyección SQL neutralizado [{auditoria.rule_triggered}]. Consulta bloqueada."
             )
 
+        # Archivo pericial de audio en Amazon S3 (para trazabilidad y auditoría legal)
+        if audio_bytes and s3_storage_service.is_configured:
+            try:
+                audio_key = s3_storage_service.construir_s3_key_global(
+                    categoria="audios-voz",
+                    nombre_archivo=f"audio_declaracion_{int(time.time())}.wav"
+                )
+                s3_storage_service.subir_bytes(
+                    datos_bytes=audio_bytes,
+                    s3_key=audio_key,
+                    content_type="audio/wav",
+                    metadata={"threat_score": str(auditoria.threat_score)}
+                )
+            except Exception as e_audio:
+                print(f"[VoiceMcpControl] Advertencia al archivar audio en S3: {e_audio}")
+
         # Paso 4: Ejecución segura de herramienta MCP
         titulo, kpis, cols, filas, traza = self.ejecutarHerramientaMCP(herramienta, params)
 
-        # Paso 5: Generación física del documento (.xlsx, .pdf, .docx)
+        # Paso 5: Generación física del documento (.xlsx, .pdf, .docx) con persistencia dual
         documento = self.exportarReporteDocumento(
             titulo=titulo,
             kpis=kpis,
             columnas=cols,
             filas=filas,
             formato=formato_final,
-            nombre_base=herramienta.replace("tool_", "reporte_")
+            nombre_base=herramienta.replace("tool_", "reporte_"),
+            params=params
         )
 
         return VoiceMcpExecutionResponse(

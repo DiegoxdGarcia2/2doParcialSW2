@@ -67,13 +67,17 @@ class McpToolInvocationTraceDTO(BaseModel):
 
 
 class GeneratedDocumentDTO(BaseModel):
-    """Metadatos del archivo físico compilado listo para descarga por HTTP streaming."""
+    """Metadatos del archivo físico compilado listo para descarga por HTTP streaming y Amazon S3."""
     filename: str = Field(description="Nombre físico del archivo en el servidor")
     format: str = Field(description="xlsx, pdf o docx")
     file_size_bytes: int = Field(description="Tamaño en bytes")
     file_size_kb: float = Field(description="Tamaño en kilobytes")
     sha256_hash: str = Field(description="Firma criptográfica SHA-256 para validación de integridad")
-    download_url: str = Field(description="URL directa para descarga por HTTP streaming")
+    download_url: str = Field(description="URL directa para descarga (Pre-signed URL de S3 o fallback local)")
+    local_download_url: Optional[str] = Field(default=None, description="URL directa relativa al servidor local (/api/v1/mcp/download-report/{filename})")
+    s3_bucket: Optional[str] = Field(default=None, description="Nombre del bucket S3 donde fue archivado")
+    s3_key: Optional[str] = Field(default=None, description="Ruta de clave jerárquica en S3")
+    s3_storage_enabled: bool = Field(default=False, description="True si el documento fue subido exitosamente a S3")
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 

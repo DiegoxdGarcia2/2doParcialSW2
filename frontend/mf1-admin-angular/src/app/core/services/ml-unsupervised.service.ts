@@ -15,13 +15,14 @@ import {
   EvaluateClaimInput,
   FreezeClaimResponse
 } from '../models/ml-unsupervised.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MlUnsupervisedService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8000/api/ml/unsupervised';
+  private readonly baseUrl = environment.ms4.endpoints.mlUnsupervised;
 
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({

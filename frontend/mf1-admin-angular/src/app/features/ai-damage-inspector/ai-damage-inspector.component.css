@@ -166,26 +166,6 @@
   background: #E2E8F0;
 }
 
-.btn-action-upload {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #3F33D6;
-  color: #FFFFFF;
-  border: none;
-  padding: 0.55rem 0.95rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-action-upload:hover {
-  background: #5951EF;
-  transform: translateY(-1px);
-}
-
 .vehicle-title-box {
   margin-top: 1rem;
 }
@@ -1176,27 +1156,6 @@
 
 .thumb-ratio.danger {
   color: #ba1a1a;
-}
-
-.evidence-add-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.15rem;
-  background: #ffffff;
-  border: 1px dashed #94a3b8;
-  border-radius: 0.5rem;
-  padding: 0.35rem 0.75rem;
-  cursor: pointer;
-  height: 42px;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-.evidence-add-btn:hover {
-  border-color: #005c55;
-  background: #f0fdfa;
 }
 
 /* Dictamen Actuarial y Regla de Perdida Total (>50%) */

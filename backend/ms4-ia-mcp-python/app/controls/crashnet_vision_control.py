@@ -21,6 +21,7 @@ from bson import ObjectId
 
 from app.core.config import settings
 from app.db.connections import get_mongo_db, get_postgres_connection
+from app.services.s3_storage_service import s3_storage_service
 from app.entities.dl_vision_dto import (
     BoundingBoxDTO,
     DetectedPartDTO,
@@ -172,6 +173,61 @@ class CrashNetVisionControl:
             orientacion = "FRONTAL"
 
         return orientacion, (roi_ymin, roi_xmin, roi_ymax, roi_xmax)
+
+    # -----------------------------------------------------------------------
+    # Método Operacional UML: resolverJerarquiaClienteVehiculo()
+    # -----------------------------------------------------------------------
+    def resolver_jerarquia_cliente_vehiculo(
+        self,
+        numero_poliza: Optional[str] = None,
+        numero_reclamo: Optional[str] = None
+    ) -> Tuple[str, str]:
+        """
+        Resuelve la jerarquía del dominio asegurador para Amazon S3:
+        1 Cliente -> 1 a N Vehículos Asegurados (Pólizas) -> 0 a N Incidentes.
+        Retorna (cliente_identificador, vehiculo_identificador) resolviendo
+        la relación relacional en PostgreSQL y MongoDB Atlas.
+        """
+        poliza_clean = (numero_poliza or "").strip()
+        reclamo_clean = (numero_reclamo or "").strip()
+
+        # Si no se pasó póliza explícita, consultar en MongoDB por numero_reclamo
+        if not poliza_clean and reclamo_clean:
+            try:
+                db = get_mongo_db()
+                exp = db.expedientes_siniestros.find_one({"numero_reclamo": reclamo_clean})
+                if exp and exp.get("numero_poliza"):
+                    poliza_clean = str(exp["numero_poliza"]).strip()
+            except Exception as e_mongo:
+                print(f"[CrashNetControl] Info Mongo resolviendo poliza: {e_mongo}")
+
+        # Consultar en PostgreSQL: Cliente -> Póliza -> Bien Asegurado (Vehículo)
+        if poliza_clean:
+            try:
+                conn = get_postgres_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    SELECT c.numero_documento, p.datos_bien_asegurado
+                    FROM poliza p
+                    JOIN cliente c ON p.cliente_id = c.id
+                    WHERE p.numero_poliza = %s
+                    """,
+                    (poliza_clean,)
+                )
+                row = cur.fetchone()
+                cur.close()
+                conn.close()
+
+                if row:
+                    cliente_doc = str(row[0]).strip() if row[0] else "CLI-GENERAL"
+                    datos_bien = row[1] if isinstance(row[1], dict) else {}
+                    placa = datos_bien.get("placa") or datos_bien.get("vin") or "VEH-GENERAL"
+                    return cliente_doc, str(placa).strip()
+            except Exception as e_pg:
+                print(f"[CrashNetControl] Advertencia resolviendo jerarquia en PostgreSQL: {e_pg}")
+
+        return "CLI-GENERAL", "VEH-GENERAL"
 
     # -----------------------------------------------------------------------
     # Método Operacional UML: obtenerValorComercialVehiculo()
@@ -665,6 +721,18 @@ class CrashNetVisionControl:
                 "updated_at": datetime.datetime.now(datetime.timezone.utc)
             }
 
+            # Si la imagen analizada es una URL persistente (ej: Amazon S3), persistirla en fotosEvidencia
+            if assessment.imagen_analizada and not assessment.imagen_analizada.startswith("data:"):
+                update_data["fotosEvidencia"] = [
+                    {
+                        "url": assessment.imagen_analizada,
+                        "categoria": assessment.orientacion_detectada,
+                        "nitidezScore": round(float(assessment.score_danos_global), 2) if not assessment.vehiculo_intacto else 0.95,
+                        "esValidoTfJs": True,
+                        "timestamp": datetime.datetime.now(datetime.timezone.utc)
+                    }
+                ]
+
             res = db.expedientes_siniestros.find_one_and_update(
                 {"numero_reclamo": numero_reclamo},
                 {"$set": update_data},
@@ -743,8 +811,43 @@ class CrashNetVisionControl:
             "zona_fatiga_critica": "Longerón Delantero" if not vehiculo_intacto else "Sin Fatiga Térmica"
         }
 
-        # Manejo de la URL de visualización en la interfaz
+        # 8. Jerarquía de Dominio para Amazon S3: Cliente -> Vehículo -> Incidente
+        cliente_id, vehiculo_id = self.resolver_jerarquia_cliente_vehiculo(num_poliza, num_reclamo)
+        s3_url_original = None
+
+        # Si se envió imagen personalizada en Base64, subirla al bucket S3 bajo la ruta jerárquica
         if input_dto.imagen_base64:
+            try:
+                raw_b64 = input_dto.imagen_base64.strip()
+                if raw_b64.startswith("data:image"):
+                    raw_b64 = raw_b64.split(",")[1]
+                img_bytes = base64.b64decode(raw_b64)
+
+                s3_key_original = s3_storage_service.construir_s3_key_incidente(
+                    cliente_id=cliente_id,
+                    vehiculo_id=vehiculo_id,
+                    reclamo_id=num_reclamo,
+                    categoria="evidencias",
+                    nombre_archivo=f"foto_evidencia_{int(time.time())}.jpg"
+                )
+                s3_url_original = s3_storage_service.subir_bytes(
+                    datos_bytes=img_bytes,
+                    s3_key=s3_key_original,
+                    content_type="image/jpeg",
+                    metadata={
+                        "numero_reclamo": num_reclamo,
+                        "numero_poliza": num_poliza or "",
+                        "cliente_id": cliente_id,
+                        "vehiculo_id": vehiculo_id
+                    }
+                )
+            except Exception as e_s3:
+                print(f"[CrashNetControl] Info/Advertencia al subir foto a S3: {e_s3}")
+
+        # Manejo de la URL de visualización en la interfaz (prioriza S3 si se subió)
+        if s3_url_original:
+            imagen_final = s3_url_original
+        elif input_dto.imagen_base64:
             if input_dto.imagen_base64.startswith("data:"):
                 imagen_final = input_dto.imagen_base64
             else:

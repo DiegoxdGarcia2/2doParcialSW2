@@ -33,10 +33,18 @@ class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     MONGODB_URI: str = os.getenv("MONGODB_URI", "")
     MONGO_INITDB_DATABASE: str = os.getenv("MONGO_INITDB_DATABASE", "aegiscore_siniestros_db")
+    # Amazon DynamoDB
     AWS_REGION: str = os.getenv("AWS_REGION", "us-east-2")
     AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "")
     AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY", "")
     DYNAMODB_TABLE_IDEMPOTENCY: str = os.getenv("DYNAMODB_TABLE_IDEMPOTENCY", "AegisCore_IdempotencyRecords")
+
+    # Amazon S3 (Multimedia, Evidencias Jerárquicas y Reportes Duales)
+    S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "empresa-seguros-s3")
+    AWS_S3_REGION: str = os.getenv("AWS_S3_REGION", os.getenv("AWS_REGION", "us-east-2"))
+    AWS_S3_ACCESS_KEY_ID: str = os.getenv("AWS_S3_ACCESS_KEY_ID", os.getenv("AWS_ACCESS_KEY_ID", ""))
+    AWS_S3_SECRET_ACCESS_KEY: str = os.getenv("AWS_S3_SECRET_ACCESS_KEY", os.getenv("AWS_SECRET_ACCESS_KEY", ""))
+    S3_PRESIGNED_EXPIRATION_SECONDS: int = int(os.getenv("S3_PRESIGNED_EXPIRATION_SECONDS", "900"))
 
     # Keycloak SSO
     KEYCLOAK_URL: str = os.getenv("KEYCLOAK_URL", "http://localhost:8080")

@@ -39,13 +39,6 @@
           </select>
         </div>
 
-        <!-- Botón para Subir Fotografía o Video Propio de Colisión -->
-        <label class="btn-action-upload" title="Subir fotografía o video de colisión propia para inferencia inmediata">
-          <span class="material-symbols-outlined text-[18px]">add_photo_alternate</span>
-          <span>Subir Evidencia (Foto/Video)</span>
-          <input type="file" (change)="onFileSelected($event)" accept="image/*,video/mp4,video/webm" class="hidden" />
-        </label>
-
         <button class="btn-action-secondary" (click)="loadAssessment()" [disabled]="loading"
           title="Recargar Expediente">
           <span class="material-symbols-outlined text-[18px]" [class.spin]="loading">sync</span>
@@ -122,12 +115,6 @@
             </span>
           </div>
         </button>
-
-        <label class="evidence-add-btn" title="Añadir otra toma in-situ (frontal, lateral o posterior)">
-          <span class="material-symbols-outlined text-[20px] text-teal-700">add_a_photo</span>
-          <span class="text-[10px] font-mono font-bold text-slate-700">Añadir Toma</span>
-          <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden" />
-        </label>
       </div>
     </div>
 
@@ -167,17 +154,8 @@
       </button>
     </div>
 
-    <!-- Visualizer Canvas Container con Soporte Drag & Drop Directo -->
-    <div class="canvas-viewport" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
-      (drop)="onDrop($event)" [class.ring-4]="isDragging" [class.ring-primary]="isDragging">
-      <!-- Indicador de Arrastre Drag & Drop Activo -->
-      <div *ngIf="isDragging"
-        class="absolute inset-0 bg-primary/20 backdrop-blur-sm z-40 flex flex-col items-center justify-center pointer-events-none border-2 border-dashed border-white">
-        <span class="material-symbols-outlined text-white text-[48px] animate-bounce">cloud_upload</span>
-        <span class="text-white font-headline-sm font-bold mt-2">Suelte la foto o video de colisión aquí</span>
-        <span class="text-white/80 text-xs font-mono">Inferencia instantánea con TensorFlow CrashNet-CNN</span>
-      </div>
-
+    <!-- Visualizer Canvas Container (Visor Estricto de Evidencias) -->
+    <div class="canvas-viewport">
       <!-- Underlying Collision Photo -->
       <img class="damage-photo"
         [src]="assessment?.imagen_analizada || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx3fyi2LFOE3hDw3Sb6G8eHgn_hLSk3e7xQXTIWEd9BHQw9lVi_s5wz_M5NWDh0T9QCeRoH2TL4EyTMLMv2iBYUrO80grJz545-U3kxPc3UD3WVzixxcpOswoD6j-xqb-xjZ1iRANvcxJZk0atX1tZn1GM6_ZHEV5B65eFNgBrEywi2Qf8QrNY46M3A6genM8PMO_WwLiJFuf2G-9-8Dq7dkRLf4fsOW0hTOC_k8s'"
