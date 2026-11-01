@@ -23,6 +23,8 @@ router = APIRouter(
 )
 
 
+@router.post("/predict-sales", response_model=PredictionOutputDTO, include_in_schema=True)
+@router.post("/predict-risk-premium", response_model=PredictionOutputDTO, include_in_schema=True)
 @router.post(
     "/predict-sales-and-premium",
     response_model=PredictionOutputDTO,
@@ -48,6 +50,7 @@ def predict_sales_and_premium(
         )
 
 
+@router.get("/metrics", response_model=ModelMetricsDTO, include_in_schema=True)
 @router.get(
     "/model-metrics",
     response_model=ModelMetricsDTO,
@@ -70,6 +73,7 @@ def get_model_metrics(
         )
 
 
+@router.post("/train", response_model=RetrainResponseDTO, include_in_schema=True)
 @router.post(
     "/retrain",
     response_model=RetrainResponseDTO,

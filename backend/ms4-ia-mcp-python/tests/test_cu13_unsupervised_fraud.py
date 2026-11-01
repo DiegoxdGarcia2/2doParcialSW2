@@ -156,3 +156,53 @@ def test_endpoint_evaluate_and_freeze(client):
     freeze_data = freeze_resp.json()
     assert freeze_data["reclamo_id"] == "REC-API-TEST-888"
     assert freeze_data["nuevo_estado"] == "CONGELADO_PREVENTIVO_SAGA"
+    assert freeze_data["score_anomalia"] == alerta_data["score_anomalia"], (
+        f"El score dinámico en freeze ({freeze_data['score_anomalia']}) debe coincidir con el score evaluado ({alerta_data['score_anomalia']})"
+    )
+
+
+def test_vehicular_category_validation_cu13_security(client):
+    """
+    Seguridad Pydantic v2: Rechazo de categorías vehiculares arbitrarias (HTTP 422).
+    """
+    payload_invalido = {
+        "reclamo_id": "REC-TEST-INVALID-001",
+        "poliza_id": "POL-2026-AUT-00000",
+        "edad_conductor": 30,
+        "tipo_vehiculo": "OVNI_INTERGALACTICO",
+        "valor_comercial_usd": 20000.0,
+        "monto_solicitado_usd": 5000.0,
+        "dias_desde_emision": 30,
+        "historial_siniestros": 0
+    }
+    response = client.post("/api/ml/unsupervised/evaluate-claim", json=payload_invalido)
+    assert response.status_code == 422, f"Se esperaba 422 pero se obtuvo {response.status_code}"
+
+
+def test_endpoint_aliases_and_dynamic_headers_cu13(client):
+    """
+    Verifica alias /detect-fraud y dinamismo en cabeceras de /clusters-and-anomalies.
+    """
+    payload = {
+        "reclamo_id": "REC-API-ALIAS-007",
+        "poliza_id": "POL-2026-AUT-77777",
+        "edad_conductor": 22,
+        "tipo_vehiculo": "HATCHBACK",
+        "valor_comercial_usd": 14000.0,
+        "monto_solicitado_usd": 11000.0,
+        "dias_desde_emision": 2,
+        "historial_siniestros": 2,
+        "taller_mecanico": "Taller Express"
+    }
+    res_detect = client.post("/api/ml/unsupervised/detect-fraud", json=payload)
+    assert res_detect.status_code == 200
+    assert "score_anomalia" in res_detect.json()
+
+    # Verificar cabeceras dinámicas
+    dash_resp = client.get("/api/ml/unsupervised/clusters-and-anomalies")
+    assert dash_resp.status_code == 200
+    dash_data = dash_resp.json()
+    assert dash_data["threat_level_label"] in ["BAJO", "MODERADO", "ALTO", "CRÍTICO"]
+    assert dash_data["total_siniestros_auditados"] >= 1200
+    assert isinstance(dash_data["threat_index_percentage"], (int, float))
+    assert isinstance(dash_data["perdidas_prevenidas_usd"], (int, float))

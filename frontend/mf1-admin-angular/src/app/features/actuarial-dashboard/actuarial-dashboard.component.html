@@ -338,7 +338,7 @@
             min="18" 
             max="80" 
             [(ngModel)]="input.edad_asegurado" 
-            (input)="ejecutarInferencia()"
+            (input)="onSliderChange()"
             class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
           <div class="flex justify-between text-[10px] text-secondary font-mono mt-1">
             <span>18 años</span>
@@ -358,7 +358,7 @@
             min="0" 
             max="60" 
             [(ngModel)]="input.antiguedad_licencia_anios" 
-            (input)="ejecutarInferencia()"
+            (input)="onSliderChange()"
             class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
         </div>
 
@@ -374,7 +374,7 @@
             max="120000" 
             step="1000"
             [(ngModel)]="input.valor_comercial_usd" 
-            (input)="ejecutarInferencia()"
+            (input)="onSliderChange()"
             class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
           <div class="flex justify-between text-[10px] text-secondary font-mono mt-1">
             <span>$5,000</span>
@@ -392,7 +392,7 @@
             <button 
               *ngFor="let n of [0, 1, 2, 3, 4]"
               type="button"
-              (click)="input.historial_siniestros_previos = n; ejecutarInferencia()"
+              (click)="input.historial_siniestros_previos = n; onSliderChange()"
               [class.bg-primary]="input.historial_siniestros_previos === n"
               [class.text-on-primary]="input.historial_siniestros_previos === n"
               [class.bg-surface-container-low]="input.historial_siniestros_previos !== n"
@@ -413,7 +413,7 @@
             min="0" 
             max="100" 
             [(ngModel)]="input.perfil_riesgo_score" 
-            (input)="ejecutarInferencia()"
+            (input)="onSliderChange()"
             class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
         </div>
 
@@ -428,7 +428,7 @@
             min="1" 
             max="12" 
             [(ngModel)]="input.meses_a_proyectar" 
-            (input)="ejecutarInferencia()"
+            (input)="onSliderChange()"
             class="w-full accent-primary h-1.5 bg-surface-container-high rounded-lg cursor-pointer">
         </div>
 

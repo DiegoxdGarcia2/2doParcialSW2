@@ -9,6 +9,7 @@
 import os
 import time
 import datetime
+import threading
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 import pandas as pd
@@ -51,6 +52,7 @@ class RandomForestActuarialControl:
 
     def __init__(self):
         self.artifacts_dir = settings.ML_ARTIFACTS_DIR
+        self._lock = threading.Lock()
         self.pipeline_premium: Optional[Pipeline] = None
         self.pipeline_claim: Optional[Pipeline] = None
         self.pipeline_sales: Optional[Pipeline] = None
@@ -132,116 +134,117 @@ class RandomForestActuarialControl:
           3. RandomForestClassifier (100 estimadores) para Probabilidad de Siniestro
           4. RandomForestRegressor (100 estimadores) para Demanda de Ventas
         """
-        start_time = time.time()
-        df = self.cargar_dataset_historico()
+        with self._lock:
+            start_time = time.time()
+            df = self.cargar_dataset_historico()
 
-        X = df[self.NUMERIC_FEATURES + self.CATEGORICAL_FEATURES]
-        y_premium = df["prima_anual_calculada"]
-        y_claim = df["tuvo_siniestro_en_anio"]
-        y_sales = df["polizas_vendidas_en_mes"]
+            X = df[self.NUMERIC_FEATURES + self.CATEGORICAL_FEATURES]
+            y_premium = df["prima_anual_calculada"]
+            y_claim = df["tuvo_siniestro_en_anio"]
+            y_sales = df["polizas_vendidas_en_mes"]
 
-        # Preprocesador
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ("num", StandardScaler(), self.NUMERIC_FEATURES),
-                ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), self.CATEGORICAL_FEATURES)
-            ]
-        )
-
-        # Split 80/20
-        X_train, X_test, y_p_train, y_p_test, y_c_train, y_c_test = train_test_split(
-            X, y_premium, y_claim, test_size=0.2, random_state=42
-        )
-
-        # 1. Pipeline Regresor de Primas
-        regressor = RandomForestRegressor(
-            n_estimators=150,
-            max_depth=14,
-            min_samples_split=4,
-            min_samples_leaf=2,
-            random_state=42,
-            n_jobs=-1
-        )
-        self.pipeline_premium = Pipeline(steps=[
-            ("preprocessor", preprocessor),
-            ("model", regressor)
-        ])
-        self.pipeline_premium.fit(X_train, y_p_train)
-
-        # Evaluación Regresor
-        y_p_pred = self.pipeline_premium.predict(X_test)
-        r2 = float(r2_score(y_p_test, y_p_pred))
-        mae = float(mean_absolute_error(y_p_test, y_p_pred))
-        rmse = float(np.sqrt(mean_squared_error(y_p_test, y_p_pred)))
-
-        # 2. Pipeline Clasificador de Siniestralidad
-        classifier = RandomForestClassifier(
-            n_estimators=100,
-            max_depth=10,
-            random_state=42,
-            n_jobs=-1
-        )
-        self.pipeline_claim = Pipeline(steps=[
-            ("preprocessor", preprocessor),
-            ("model", classifier)
-        ])
-        self.pipeline_claim.fit(X_train, y_c_train)
-        y_c_pred = self.pipeline_claim.predict(X_test)
-        acc_claim = float(accuracy_score(y_c_test, y_c_pred))
-
-        # 3. Pipeline Demanda de Ventas
-        sales_regressor = RandomForestRegressor(
-            n_estimators=100,
-            max_depth=8,
-            random_state=42,
-            n_jobs=-1
-        )
-        self.pipeline_sales = Pipeline(steps=[
-            ("preprocessor", preprocessor),
-            ("model", sales_regressor)
-        ])
-        self.pipeline_sales.fit(X, y_sales)
-
-        # Extraer Feature Importances explicables (XAI)
-        rf_model: RandomForestRegressor = self.pipeline_premium.named_steps["model"]
-        ohe = self.pipeline_premium.named_steps["preprocessor"].named_transformers_["cat"]
-        cat_feature_names = list(ohe.get_feature_names_out(self.CATEGORICAL_FEATURES))
-        all_feature_names = self.NUMERIC_FEATURES + cat_feature_names
-        importances = rf_model.feature_importances_
-
-        feature_dtos = []
-        for name, imp in sorted(zip(all_feature_names, importances), key=lambda x: x[1], reverse=True):
-            clean_name = name.replace("tipo_vehiculo_", "Tipo Vehículo: ").replace("_", " ").title()
-            feature_dtos.append(
-                FeatureImportanceDTO(
-                    variable=clean_name,
-                    importancia_porcentaje=round(float(imp) * 100, 2)
-                )
+            # Preprocesador
+            preprocessor = ColumnTransformer(
+                transformers=[
+                    ("num", StandardScaler(), self.NUMERIC_FEATURES),
+                    ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), self.CATEGORICAL_FEATURES)
+                ]
             )
 
-        self.metrics = ModelMetricsDTO(
-            r2_score=round(r2, 4),
-            mae_usd=round(mae, 2),
-            rmse_usd=round(rmse, 2),
-            accuracy_siniestros=round(acc_claim, 4),
-            total_registros_entrenamiento=len(df),
-            n_estimadores=150,
-            feature_importances=feature_dtos,
-            fecha_ultimo_entrenamiento=datetime.datetime.utcnow().isoformat()
-        )
+            # Split 80/20
+            X_train, X_test, y_p_train, y_p_test, y_c_train, y_c_test = train_test_split(
+                X, y_premium, y_claim, test_size=0.2, random_state=42
+            )
 
-        # Serializar artefactos
-        self.serializar_artefactos()
+            # 1. Pipeline Regresor de Primas
+            regressor = RandomForestRegressor(
+                n_estimators=150,
+                max_depth=14,
+                min_samples_split=4,
+                min_samples_leaf=2,
+                random_state=42,
+                n_jobs=-1
+            )
+            self.pipeline_premium = Pipeline(steps=[
+                ("preprocessor", preprocessor),
+                ("model", regressor)
+            ])
+            self.pipeline_premium.fit(X_train, y_p_train)
 
-        elapsed = round(time.time() - start_time, 2)
-        return RetrainResponseDTO(
-            mensaje="Modelos Random Forest reentrenados y serializados exitosamente.",
-            registros_cargados=len(df),
-            r2_score_nuevo=round(r2, 4),
-            mae_usd_nuevo=round(mae, 2),
-            tiempo_ejecucion_segundos=elapsed,
-            fecha_entrenamiento=self.metrics.fecha_ultimo_entrenamiento
-        )
+            # Evaluación Regresor
+            y_p_pred = self.pipeline_premium.predict(X_test)
+            r2 = float(r2_score(y_p_test, y_p_pred))
+            mae = float(mean_absolute_error(y_p_test, y_p_pred))
+            rmse = float(np.sqrt(mean_squared_error(y_p_test, y_p_pred)))
+
+            # 2. Pipeline Clasificador de Siniestralidad
+            classifier = RandomForestClassifier(
+                n_estimators=100,
+                max_depth=10,
+                random_state=42,
+                n_jobs=-1
+            )
+            self.pipeline_claim = Pipeline(steps=[
+                ("preprocessor", preprocessor),
+                ("model", classifier)
+            ])
+            self.pipeline_claim.fit(X_train, y_c_train)
+            y_c_pred = self.pipeline_claim.predict(X_test)
+            acc_claim = float(accuracy_score(y_c_test, y_c_pred))
+
+            # 3. Pipeline Demanda de Ventas
+            sales_regressor = RandomForestRegressor(
+                n_estimators=100,
+                max_depth=8,
+                random_state=42,
+                n_jobs=-1
+            )
+            self.pipeline_sales = Pipeline(steps=[
+                ("preprocessor", preprocessor),
+                ("model", sales_regressor)
+            ])
+            self.pipeline_sales.fit(X, y_sales)
+
+            # Extraer Feature Importances explicables (XAI)
+            rf_model: RandomForestRegressor = self.pipeline_premium.named_steps["model"]
+            ohe = self.pipeline_premium.named_steps["preprocessor"].named_transformers_["cat"]
+            cat_feature_names = list(ohe.get_feature_names_out(self.CATEGORICAL_FEATURES))
+            all_feature_names = self.NUMERIC_FEATURES + cat_feature_names
+            importances = rf_model.feature_importances_
+
+            feature_dtos = []
+            for name, imp in sorted(zip(all_feature_names, importances), key=lambda x: x[1], reverse=True):
+                clean_name = name.replace("tipo_vehiculo_", "Tipo Vehículo: ").replace("_", " ").title()
+                feature_dtos.append(
+                    FeatureImportanceDTO(
+                        variable=clean_name,
+                        importancia_porcentaje=round(float(imp) * 100, 2)
+                    )
+                )
+
+            self.metrics = ModelMetricsDTO(
+                r2_score=round(r2, 4),
+                mae_usd=round(mae, 2),
+                rmse_usd=round(rmse, 2),
+                accuracy_siniestros=round(acc_claim, 4),
+                total_registros_entrenamiento=len(df),
+                n_estimadores=150,
+                feature_importances=feature_dtos,
+                fecha_ultimo_entrenamiento=datetime.datetime.now(datetime.timezone.utc).isoformat()
+            )
+
+            # Serializar artefactos
+            self.serializar_artefactos()
+
+            elapsed = round(time.time() - start_time, 2)
+            return RetrainResponseDTO(
+                mensaje="Modelos Random Forest reentrenados y serializados exitosamente.",
+                registros_cargados=len(df),
+                r2_score_nuevo=round(r2, 4),
+                mae_usd_nuevo=round(mae, 2),
+                tiempo_ejecucion_segundos=elapsed,
+                fecha_entrenamiento=self.metrics.fecha_ultimo_entrenamiento
+            )
 
     # -----------------------------------------------------------------------
     # Método Operacional UML: predecirPrimaOptimaYDemanda()
@@ -346,12 +349,18 @@ class RandomForestActuarialControl:
         return self.metrics
 
     def serializar_artefactos(self):
-        """Guarda pipelines y métricas a disco usando joblib."""
+        """Guarda pipelines y métricas a disco atómicamente usando joblib y archivos temporales."""
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self.pipeline_premium, self.artifacts_dir / "rf_pipeline_premium.joblib")
-        joblib.dump(self.pipeline_claim, self.artifacts_dir / "rf_pipeline_claim.joblib")
-        joblib.dump(self.pipeline_sales, self.artifacts_dir / "rf_pipeline_sales.joblib")
-        joblib.dump(self.metrics, self.artifacts_dir / "rf_metrics.joblib")
+        for filename, obj in [
+            ("rf_pipeline_premium.joblib", self.pipeline_premium),
+            ("rf_pipeline_claim.joblib", self.pipeline_claim),
+            ("rf_pipeline_sales.joblib", self.pipeline_sales),
+            ("rf_metrics.joblib", self.metrics)
+        ]:
+            if obj is not None:
+                tmp_path = self.artifacts_dir / f"{filename}.tmp"
+                joblib.dump(obj, tmp_path)
+                os.replace(tmp_path, self.artifacts_dir / filename)
 
     def deserializar_artefactos(self):
         """Carga pipelines y métricas desde disco usando joblib."""

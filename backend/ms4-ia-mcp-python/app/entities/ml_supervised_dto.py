@@ -5,8 +5,11 @@
 =============================================================================
 """
 
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Literal
 from pydantic import BaseModel, Field
+
+# Categorías vehiculares oficiales según dataset y contratos
+TipoVehiculoLiteral = Literal["SUV", "CAMIONETA", "HATCHBACK", "SEDAN", "MOTOCICLETA"]
 
 
 class PredictionInputDTO(BaseModel):
@@ -15,7 +18,7 @@ class PredictionInputDTO(BaseModel):
     """
     edad_asegurado: int = Field(default=35, ge=18, le=95, description="Edad del asegurado en años")
     antiguedad_licencia_anios: int = Field(default=10, ge=0, le=75, description="Años de vigencia de licencia de conducir")
-    tipo_vehiculo: str = Field(default="SUV", description="Categoría vehicular: SUV, CAMIONETA, HATCHBACK, SEDAN, MOTOCICLETA")
+    tipo_vehiculo: TipoVehiculoLiteral = Field(default="SUV", description="Categoría vehicular permitida: SUV, CAMIONETA, HATCHBACK, SEDAN, MOTOCICLETA")
     anio_vehiculo: int = Field(default=2020, ge=1990, le=2027, description="Año de fabricación del vehículo")
     valor_comercial_usd: float = Field(default=25000.0, ge=1000.0, le=250000.0, description="Valor comercial declarado del vehículo")
     historial_siniestros_previos: int = Field(default=0, ge=0, le=10, description="Número de siniestros reportados en los últimos 3 años")

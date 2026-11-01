@@ -33,6 +33,11 @@ export const routes: Routes = [
     component: ActuarialDashboardComponent
   },
   {
+    path: 'actuarial-sales',
+    redirectTo: 'actuarial-dashboard',
+    pathMatch: 'full'
+  },
+  {
     path: 'voice-mcp-reports',
     component: VoiceMcpReportsComponent
   },

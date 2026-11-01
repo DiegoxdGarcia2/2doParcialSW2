@@ -8,6 +8,8 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { Chart, registerables } from 'chart.js';
 import { MlActuarialService } from '../../core/services/ml-actuarial.service';
 import {
@@ -66,12 +68,27 @@ export class ActuarialDashboardComponent implements OnInit, OnDestroy {
     { id: 'MOTOCICLETA', label: 'Moto', icon: 'two_wheeler' }
   ];
 
+  private readonly sliderSubject = new Subject<void>();
+  private sliderSubscription?: Subscription;
+
   ngOnInit(): void {
     this.cargarMetricasEInferenciaInicial();
+    this.sliderSubscription = this.sliderSubject
+      .pipe(debounceTime(250))
+      .subscribe(() => {
+        this.ejecutarInferencia();
+      });
+  }
+
+  onSliderChange(): void {
+    this.sliderSubject.next();
   }
 
   ngOnDestroy(): void {
     this.destroyCharts();
+    if (this.sliderSubscription) {
+      this.sliderSubscription.unsubscribe();
+    }
   }
 
   private destroyCharts(): void {

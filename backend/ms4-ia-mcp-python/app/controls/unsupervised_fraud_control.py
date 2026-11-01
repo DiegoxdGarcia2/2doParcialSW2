@@ -10,6 +10,7 @@
 import os
 import time
 import datetime
+import threading
 from typing import Dict, List, Tuple, Optional, Any
 # pyrefly: ignore[missing-import]
 import numpy as np
@@ -61,6 +62,7 @@ class UnsupervisedFraudControl:
     ]
 
     def __init__(self):
+        self._lock = threading.Lock()
         self.artifacts_dir = settings.ML_ARTIFACTS_DIR
         self.kmeans_model: Optional[KMeans] = None
         self.kmeans_scaler: Optional[StandardScaler] = None
@@ -132,106 +134,108 @@ class UnsupervisedFraudControl:
         """
         Ajusta K-Means (K=3) para segmentar asegurados y calcula el Silhouette Score.
         Ajusta Isolation Forest para modelar densidades y aislar siniestros atípicos.
+        Protegido por threading.Lock para evitar carreras de hilos.
         """
-        df = self.cargar_datos_asegurados_y_siniestros()
+        with self._lock:
+            df = self.cargar_datos_asegurados_y_siniestros()
 
-        # 1. K-MEANS CLUSTERING (K=3)
-        X_km = df[self.KMEANS_FEATURES].copy()
-        self.kmeans_scaler = StandardScaler()
-        X_km_scaled = self.kmeans_scaler.fit_transform(X_km)
+            # 1. K-MEANS CLUSTERING (K=3)
+            X_km = df[self.KMEANS_FEATURES].copy()
+            self.kmeans_scaler = StandardScaler()
+            X_km_scaled = self.kmeans_scaler.fit_transform(X_km)
 
-        self.kmeans_model = KMeans(n_clusters=3, random_state=42, n_init=10)
-        clusters = self.kmeans_model.fit_predict(X_km_scaled)
-        df["cluster"] = clusters
+            self.kmeans_model = KMeans(n_clusters=3, random_state=42, n_init=10)
+            clusters = self.kmeans_model.fit_predict(X_km_scaled)
+            df["cluster"] = clusters
 
-        try:
-            self.silhouette_score_val = round(float(silhouette_score(X_km_scaled, clusters)), 4)
-        except Exception:
-            self.silhouette_score_val = 0.4215
+            try:
+                self.silhouette_score_val = round(float(silhouette_score(X_km_scaled, clusters)), 4)
+            except Exception:
+                self.silhouette_score_val = 0.4215
 
-        # Analizar características de los centroides para asignar nombres de negocio
-        profiles = []
-        cluster_summaries = []
-        for c_id in range(3):
-            sub = df[df["cluster"] == c_id]
-            cnt = len(sub)
-            pct = round((cnt / len(df)) * 100, 1)
-            mean_age = round(float(sub["edad_asegurado"].mean()), 1)
-            mean_val = round(float(sub["valor_comercial_usd"].mean()), 2)
-            mean_claims = round(float(sub["historial_siniestros_previos"].mean()), 2)
-            mean_risk = round(float(sub["perfil_riesgo_score"].mean()), 1)
-            mean_siniestralidad = round(float(sub["tuvo_siniestro_en_anio"].mean()), 2)
+            # Analizar características de los centroides para asignar nombres de negocio
+            profiles = []
+            cluster_summaries = []
+            for c_id in range(3):
+                sub = df[df["cluster"] == c_id]
+                cnt = len(sub)
+                pct = round((cnt / len(df)) * 100, 1)
+                mean_age = round(float(sub["edad_asegurado"].mean()), 1)
+                mean_val = round(float(sub["valor_comercial_usd"].mean()), 2)
+                mean_claims = round(float(sub["historial_siniestros_previos"].mean()), 2)
+                mean_risk = round(float(sub["perfil_riesgo_score"].mean()), 1)
+                mean_siniestralidad = round(float(sub["tuvo_siniestro_en_anio"].mean()), 2)
 
-            cluster_summaries.append({
-                "cluster_id": c_id,
-                "total": cnt,
-                "pct": pct,
-                "mean_age": mean_age,
-                "mean_val": mean_val,
-                "mean_claims": mean_claims,
-                "mean_risk": mean_risk,
-                "mean_siniestralidad": mean_siniestralidad
-            })
+                cluster_summaries.append({
+                    "cluster_id": c_id,
+                    "total": cnt,
+                    "pct": pct,
+                    "mean_age": mean_age,
+                    "mean_val": mean_val,
+                    "mean_claims": mean_claims,
+                    "mean_risk": mean_risk,
+                    "mean_siniestralidad": mean_siniestralidad
+                })
 
-        # Ordenar por score de riesgo para nombrar lógicamente: Bajo, Moderado, Alto
-        sorted_clusters = sorted(cluster_summaries, key=lambda x: x["mean_risk"])
+            # Ordenar por score de riesgo para nombrar lógicamente: Bajo, Moderado, Alto
+            sorted_clusters = sorted(cluster_summaries, key=lambda x: x["mean_risk"])
 
-        # Asignar etiquetas semánticas
-        labels = [
-            ("Conductores Prudentes VIP (Bajo Riesgo)", "-15% (Bonificación No Siniestro)"),
-            ("Riesgo Moderado Estándar (Flota Urbana)", "0% (Tarifa Base de Mercado)"),
-            ("Alta Siniestralidad / Conductores Jóvenes", "+25% (Recargo Actuarial por Frecuencia)")
-        ]
+            # Asignar etiquetas semánticas
+            labels = [
+                ("Conductores Prudentes VIP (Bajo Riesgo)", "-15% (Bonificación No Siniestro)"),
+                ("Riesgo Moderado Estándar (Flota Urbana)", "0% (Tarifa Base de Mercado)"),
+                ("Alta Siniestralidad / Conductores Jóvenes", "+25% (Recargo Actuarial por Frecuencia)")
+            ]
 
-        self.cluster_profiles = []
-        for rank, c_dict in enumerate(sorted_clusters):
-            nombre, descuento = labels[rank]
-            self.cluster_profiles.append(
-                ClusterProfileDTO(
-                    cluster_id=c_dict["cluster_id"],
-                    nombre=nombre,
-                    total_asegurados=c_dict["total"],
-                    porcentaje_flota=c_dict["pct"],
-                    edad_media=c_dict["mean_age"],
-                    valor_vehiculo_medio_usd=c_dict["mean_val"],
-                    frecuencia_siniestros_anual=c_dict["mean_siniestralidad"],
-                    score_riesgo_medio=c_dict["mean_risk"],
-                    prima_recomendada_descuento=descuento
+            self.cluster_profiles = []
+            for rank, c_dict in enumerate(sorted_clusters):
+                nombre, descuento = labels[rank]
+                self.cluster_profiles.append(
+                    ClusterProfileDTO(
+                        cluster_id=c_dict["cluster_id"],
+                        nombre=nombre,
+                        total_asegurados=c_dict["total"],
+                        porcentaje_flota=c_dict["pct"],
+                        edad_media=c_dict["mean_age"],
+                        valor_vehiculo_medio_usd=c_dict["mean_val"],
+                        frecuencia_siniestros_anual=c_dict["mean_siniestralidad"],
+                        score_riesgo_medio=c_dict["mean_risk"],
+                        prima_recomendada_descuento=descuento
+                    )
                 )
+
+            # 2. ISOLATION FOREST (DETECCIÓN DE FRAUDE)
+            # Construir dataset representativo de siniestros para entrenar el bosque de aislamiento
+            df_claims = df.copy()
+            # Sintetizar features para siniestros:
+            df_claims["edad_conductor"] = df_claims["edad_asegurado"]
+            df_claims["monto_solicitado_usd"] = df_claims["costo_siniestro_usd"].replace(0, 1850.0)
+            df_claims["ratio_reclamo_valor"] = df_claims["monto_solicitado_usd"] / df_claims["valor_comercial_usd"]
+            df_claims["dias_desde_emision"] = np.random.RandomState(42).randint(1, 365, size=len(df_claims))
+            df_claims["historial_siniestros"] = df_claims["historial_siniestros_previos"]
+
+            # Inyectar una pequeña proporción de anomalías sintéticas para calibrar el umbral (4%)
+            n_anomalies = int(len(df_claims) * 0.04)
+            anomaly_idx = np.random.RandomState(42).choice(df_claims.index, size=n_anomalies, replace=False)
+            df_claims.loc[anomaly_idx, "monto_solicitado_usd"] = df_claims.loc[anomaly_idx, "valor_comercial_usd"] * 0.85
+            df_claims.loc[anomaly_idx, "ratio_reclamo_valor"] = 0.85
+            df_claims.loc[anomaly_idx, "dias_desde_emision"] = np.random.RandomState(42).randint(1, 7, size=n_anomalies)
+
+            X_iso = df_claims[self.ISOLATION_FEATURES].copy()
+            self.isolation_scaler = StandardScaler()
+            X_iso_scaled = self.isolation_scaler.fit_transform(X_iso)
+
+            self.isolation_model = IsolationForest(
+                n_estimators=150,
+                contamination=0.04,
+                max_samples="auto",
+                random_state=42,
+                n_jobs=-1
             )
+            self.isolation_model.fit(X_iso_scaled)
 
-        # 2. ISOLATION FOREST (DETECCIÓN DE FRAUDE)
-        # Construir dataset representativo de siniestros para entrenar el bosque de aislamiento
-        df_claims = df.copy()
-        # Sintetizar features para siniestros:
-        df_claims["edad_conductor"] = df_claims["edad_asegurado"]
-        df_claims["monto_solicitado_usd"] = df_claims["costo_siniestro_usd"].replace(0, 1850.0)
-        df_claims["ratio_reclamo_valor"] = df_claims["monto_solicitado_usd"] / df_claims["valor_comercial_usd"]
-        df_claims["dias_desde_emision"] = np.random.RandomState(42).randint(1, 365, size=len(df_claims))
-        df_claims["historial_siniestros"] = df_claims["historial_siniestros_previos"]
-
-        # Inyectar una pequeña proporción de anomalías sintéticas para calibrar el umbral (4%)
-        n_anomalies = int(len(df_claims) * 0.04)
-        anomaly_idx = np.random.RandomState(42).choice(df_claims.index, size=n_anomalies, replace=False)
-        df_claims.loc[anomaly_idx, "monto_solicitado_usd"] = df_claims.loc[anomaly_idx, "valor_comercial_usd"] * 0.85
-        df_claims.loc[anomaly_idx, "ratio_reclamo_valor"] = 0.85
-        df_claims.loc[anomaly_idx, "dias_desde_emision"] = np.random.RandomState(42).randint(1, 7, size=n_anomalies)
-
-        X_iso = df_claims[self.ISOLATION_FEATURES].copy()
-        self.isolation_scaler = StandardScaler()
-        X_iso_scaled = self.isolation_scaler.fit_transform(X_iso)
-
-        self.isolation_model = IsolationForest(
-            n_estimators=150,
-            contamination=0.04,
-            max_samples="auto",
-            random_state=42,
-            n_jobs=-1
-        )
-        self.isolation_model.fit(X_iso_scaled)
-
-        # Serializar artefactos
-        self.serializar_artefactos()
+            # Serializar artefactos
+            self.serializar_artefactos()
 
     # -----------------------------------------------------------------------
     # Método Operacional UML: evaluarAnomaliaReclamo()
@@ -251,17 +255,17 @@ class UnsupervisedFraudControl:
 
         ratio_reclamo_valor = input_dto.monto_solicitado_usd / input_dto.valor_comercial_usd
 
-        # Vector de inferencia
-        features = np.array([[
-            input_dto.edad_conductor,
-            input_dto.valor_comercial_usd,
-            input_dto.monto_solicitado_usd,
-            ratio_reclamo_valor,
-            input_dto.dias_desde_emision,
-            input_dto.historial_siniestros
-        ]])
+        # Vector de inferencia tipado como DataFrame para silenciar UserWarning de Scikit-Learn
+        df_features = pd.DataFrame([{
+            "edad_conductor": input_dto.edad_conductor,
+            "valor_comercial_usd": input_dto.valor_comercial_usd,
+            "monto_solicitado_usd": input_dto.monto_solicitado_usd,
+            "ratio_reclamo_valor": ratio_reclamo_valor,
+            "dias_desde_emision": input_dto.dias_desde_emision,
+            "historial_siniestros": input_dto.historial_siniestros
+        }], columns=self.ISOLATION_FEATURES)
 
-        features_scaled = self.isolation_scaler.transform(features)
+        features_scaled = self.isolation_scaler.transform(df_features)
         raw_score = float(self.isolation_model.decision_function(features_scaled)[0])
         pred_label = int(self.isolation_model.predict(features_scaled)[0])  # -1 = anómalo, 1 = normal
 
@@ -297,7 +301,7 @@ class UnsupervisedFraudControl:
             taller_mecanico=input_dto.taller_mecanico or "Taller Independiente",
             motivo_sospecha=motivo,
             estado_pago=estado_pago,
-            fecha_alerta=datetime.datetime.utcnow().isoformat()
+            fecha_alerta=datetime.datetime.now(datetime.timezone.utc).isoformat()
         )
 
         # Si es anómalo, registrar de inmediato en MongoDB Atlas
@@ -316,7 +320,7 @@ class UnsupervisedFraudControl:
         try:
             db = get_mongo_db()
             doc = alerta.model_dump()
-            doc["created_at"] = datetime.datetime.utcnow()
+            doc["created_at"] = datetime.datetime.now(datetime.timezone.utc)
             res = db.alertas_fraude_anomalias.update_one(
                 {"reclamo_id": alerta.reclamo_id},
                 {"$set": doc},
@@ -334,9 +338,10 @@ class UnsupervisedFraudControl:
         """
         Bloquea preventivamente el desembolso en expedientes_siniestros y
         actualiza la alerta en alertas_fraude_anomalias dentro de MongoDB Atlas.
+        Obtiene el score_anomalia dinámico real de la alerta en base de datos.
         """
         db = get_mongo_db()
-        now_str = datetime.datetime.utcnow().isoformat()
+        now_str = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
         # 1. Actualizar expediente de siniestro en MongoDB
         exp_res = db.expedientes_siniestros.find_one_and_update(
@@ -344,7 +349,7 @@ class UnsupervisedFraudControl:
             {"$set": {
                 "estado": "CONGELADO_PREVENTIVO_SAGA",
                 "motivo_bloqueo": "Alerta de Fraude emitida por Isolation Forest (CU13)",
-                "updated_at": datetime.datetime.utcnow()
+                "updated_at": datetime.datetime.now(datetime.timezone.utc)
             }}
         )
 
@@ -354,16 +359,25 @@ class UnsupervisedFraudControl:
             {"$set": {
                 "estado_pago": "CONGELADO_PREVENTIVO_SAGA",
                 "nivel_criticidad": "CRÍTICO",
-                "updated_at": datetime.datetime.utcnow()
+                "updated_at": datetime.datetime.now(datetime.timezone.utc)
             }},
             upsert=True
         )
+
+        # 3. Buscar el score_anomalia real registrado
+        score_real = -0.8420
+        alerta_existente = db.alertas_fraude_anomalias.find_one({"reclamo_id": reclamo_id})
+        if alerta_existente and "score_anomalia" in alerta_existente:
+            try:
+                score_real = float(alerta_existente["score_anomalia"])
+            except (ValueError, TypeError):
+                pass
 
         return FreezeClaimResponseDTO(
             reclamo_id=reclamo_id,
             estado_anterior=exp_res.get("estado", "PENDIENTE_REVISION") if exp_res else "PENDIENTE_REVISION",
             nuevo_estado="CONGELADO_PREVENTIVO_SAGA",
-            score_anomalia=-0.8420,
+            score_anomalia=score_real,
             mensaje=f"Liquidación del reclamo {reclamo_id} congelada preventivamente. Alerta elevada a la Unidad Especial de Investigaciones (SIU).",
             persistencia_mongo_id=str(exp_res.get("_id")) if exp_res else "REGISTRADO_MONGO",
             timestamp=now_str
@@ -375,9 +389,9 @@ class UnsupervisedFraudControl:
     def obtener_resumen_dashboard(self) -> FraudDashboardSummaryDTO:
         """
         Genera el payload consolidado para el componente "Risk & Fraud Sentinel" en Angular:
-          - Threat Index Gauge SVG (12.4%)
-          - Pérdidas prevenidas ($18.6M YTD)
-          - Clusters K-Means
+          - Threat Index dinámico calculado contra siniestros auditados
+          - Pérdidas prevenidas reales leídas de MongoDB Atlas
+          - Clusters K-Means (K=3)
           - Alertas vivas leídas de MongoDB Atlas
         """
         if not self.cluster_profiles:
@@ -392,7 +406,7 @@ class UnsupervisedFraudControl:
                 doc.pop("created_at", None)
                 doc.pop("updated_at", None)
                 if "fecha_alerta" not in doc:
-                    doc["fecha_alerta"] = datetime.datetime.utcnow().isoformat()
+                    doc["fecha_alerta"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                 alertas_dto.append(FraudAlertDTO(**doc))
         except Exception as e:
             print(f"[UnsupervisedControl] No se pudieron leer alertas de MongoDB Atlas: {e}")
@@ -412,7 +426,7 @@ class UnsupervisedFraudControl:
                     taller_mecanico="Taller Mecánico Los Álamos",
                     motivo_sospecha="Colisión múltiple simulada (#R-402). 4 siniestros consecutivos en 48 horas.",
                     estado_pago="CONGELADO_PREVENTIVO_SAGA",
-                    fecha_alerta=datetime.datetime.utcnow().isoformat()
+                    fecha_alerta=datetime.datetime.now(datetime.timezone.utc).isoformat()
                 ),
                 FraudAlertDTO(
                     reclamo_id="REC-2026-00388",
@@ -426,7 +440,7 @@ class UnsupervisedFraudControl:
                     taller_mecanico="Apex Orthopedics & Rehab",
                     motivo_sospecha="Sobreprecio sistemático en código ICD10-M25 (+240% de divergencia regional).",
                     estado_pago="PENDIENTE_REVISION",
-                    fecha_alerta=datetime.datetime.utcnow().isoformat()
+                    fecha_alerta=datetime.datetime.now(datetime.timezone.utc).isoformat()
                 ),
                 FraudAlertDTO(
                     reclamo_id="REC-2026-00492",
@@ -440,24 +454,65 @@ class UnsupervisedFraudControl:
                     taller_mecanico="Taller Autorizado Toyota Equipetrol",
                     motivo_sospecha="Peritaje coincidente con inferencia de visión artificial TensorFlow (Severidad Media).",
                     estado_pago="APROBADO_FAST_TRACK",
-                    fecha_alerta=datetime.datetime.utcnow().isoformat()
+                    fecha_alerta=datetime.datetime.now(datetime.timezone.utc).isoformat()
                 )
             ]
 
-        # Calcular métricas globales
+        # Calcular métricas dinámicas
         total_alertas = len([a for a in alertas_dto if a.es_anomalo])
-        perdidas_prevenidas = sum(a.monto_solicitado_usd for a in alertas_dto if a.estado_pago == "CONGELADO_PREVENTIVO_SAGA")
+
+        # 1. Pérdidas prevenidas reales acumuladas en MongoDB
+        perdidas_prevenidas = 0.0
+        try:
+            db = get_mongo_db()
+            pipeline = [
+                {"$match": {"$or": [{"estado_pago": "CONGELADO_PREVENTIVO_SAGA"}, {"estado": "CONGELADO_PREVENTIVO_SAGA"}]}},
+                {"$group": {"_id": None, "total": {"$sum": "$monto_solicitado_usd"}}}
+            ]
+            agg_alertas = list(db.alertas_fraude_anomalias.aggregate(pipeline))
+            if agg_alertas and agg_alertas[0].get("total"):
+                perdidas_prevenidas = float(agg_alertas[0]["total"])
+            else:
+                perdidas_prevenidas = sum(a.monto_solicitado_usd for a in alertas_dto if a.estado_pago == "CONGELADO_PREVENTIVO_SAGA")
+        except Exception:
+            perdidas_prevenidas = sum(a.monto_solicitado_usd for a in alertas_dto if a.estado_pago == "CONGELADO_PREVENTIVO_SAGA")
+
+        # 2. Total siniestros auditados dinámico (universo histórico + reclamos registrados)
+        total_siniestros_auditados = 1200
+        try:
+            db = get_mongo_db()
+            mongo_siniestros = db.expedientes_siniestros.count_documents({})
+            mongo_alertas = db.alertas_fraude_anomalias.count_documents({})
+            total_siniestros_auditados += (mongo_siniestros + mongo_alertas)
+        except Exception:
+            total_siniestros_auditados = max(1200, len(self.cluster_profiles) * 400)
+
+        # 3. Índice de Amenaza Dinámico (Threat Index %)
+        # Ratio de alertas anómalas sobre el universo de siniestros auditados
+        threat_index_percentage = round((total_alertas / max(1, total_siniestros_auditados)) * 100.0, 2)
+        if threat_index_percentage == 0.0 and total_alertas > 0:
+            threat_index_percentage = round((total_alertas / len(alertas_dto)) * 100.0, 1)
+
+        # 4. Etiqueta Semántica de Nivel de Amenaza
+        if threat_index_percentage < 5.0:
+            threat_level_label = "BAJO"
+        elif threat_index_percentage < 15.0:
+            threat_level_label = "MODERADO"
+        elif threat_index_percentage < 30.0:
+            threat_level_label = "ALTO"
+        else:
+            threat_level_label = "CRÍTICO"
 
         return FraudDashboardSummaryDTO(
-            threat_index_percentage=12.4,
-            threat_level_label="LOW-MODERATE",
-            perdidas_prevenidas_usd=round(18600000.0 + perdidas_prevenidas, 2),  # Base YTD de $18.6M
-            total_siniestros_auditados=len(self.cluster_profiles) * 400,
+            threat_index_percentage=threat_index_percentage,
+            threat_level_label=threat_level_label,
+            perdidas_prevenidas_usd=round(perdidas_prevenidas, 2),
+            total_siniestros_auditados=total_siniestros_auditados,
             total_alertas_activas=total_alertas,
             silhouette_score_kmeans=self.silhouette_score_val,
             clusters_kmeans=self.cluster_profiles,
             alertas_recientes=alertas_dto,
-            timestamp=datetime.datetime.utcnow().isoformat()
+            timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat()
         )
 
     def listar_alertas_fraude(self, limite: int = 50) -> List[FraudAlertDTO]:
@@ -473,7 +528,7 @@ class UnsupervisedFraudControl:
                 doc.pop("created_at", None)
                 doc.pop("updated_at", None)
                 if "fecha_alerta" not in doc:
-                    doc["fecha_alerta"] = datetime.datetime.utcnow().isoformat()
+                    doc["fecha_alerta"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                 alertas.append(FraudAlertDTO(**doc))
         except Exception as e:
             print(f"[UnsupervisedControl] Error listando alertas de MongoDB: {e}")
@@ -485,18 +540,24 @@ class UnsupervisedFraudControl:
         return alertas
 
     def serializar_artefactos(self):
-        """Persiste modelos a disco en ml_artifacts."""
+        """Persiste modelos a disco atómicamente en ml_artifacts usando .tmp y os.replace."""
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self.kmeans_model, self.artifacts_dir / "kmeans_model.joblib")
-        joblib.dump(self.kmeans_scaler, self.artifacts_dir / "kmeans_scaler.joblib")
-        joblib.dump(self.isolation_model, self.artifacts_dir / "isolation_forest.joblib")
-        joblib.dump(self.isolation_scaler, self.artifacts_dir / "isolation_scaler.joblib")
         metadata = {
             "cluster_profiles": self.cluster_profiles,
             "silhouette_score": self.silhouette_score_val,
-            "trained_at": datetime.datetime.utcnow().isoformat()
+            "trained_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
         }
-        joblib.dump(metadata, self.artifacts_dir / "unsupervised_metadata.joblib")
+        for filename, obj in [
+            ("kmeans_model.joblib", self.kmeans_model),
+            ("kmeans_scaler.joblib", self.kmeans_scaler),
+            ("isolation_forest.joblib", self.isolation_model),
+            ("isolation_scaler.joblib", self.isolation_scaler),
+            ("unsupervised_metadata.joblib", metadata)
+        ]:
+            if obj is not None:
+                tmp_path = self.artifacts_dir / f"{filename}.tmp"
+                joblib.dump(obj, tmp_path)
+                os.replace(tmp_path, self.artifacts_dir / filename)
 
     def deserializar_artefactos(self):
         """Recupera modelos serializados desde disco."""

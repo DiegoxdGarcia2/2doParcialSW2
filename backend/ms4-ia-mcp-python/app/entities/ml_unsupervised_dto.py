@@ -6,9 +6,12 @@
 =============================================================================
 """
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 # pyrefly: ignore[missing-import]
 from pydantic import BaseModel, Field
+
+# Categorías vehiculares oficiales según dataset y contratos
+TipoVehiculoLiteral = Literal["SUV", "CAMIONETA", "HATCHBACK", "SEDAN", "MOTOCICLETA"]
 
 
 class ClusterProfileDTO(BaseModel):
@@ -52,7 +55,7 @@ class EvaluateClaimInputDTO(BaseModel):
     reclamo_id: str = Field(default="REC-2026-00501", description="Identificador único del siniestro")
     poliza_id: Optional[str] = Field("POL-2026-AUT-00100", description="Código de póliza vinculada")
     edad_conductor: int = Field(default=32, ge=18, le=90, description="Edad del conductor al momento del choque")
-    tipo_vehiculo: str = Field(default="SUV", description="SUV, CAMIONETA, HATCHBACK, SEDAN, MOTOCICLETA")
+    tipo_vehiculo: TipoVehiculoLiteral = Field(default="SUV", description="Categoría permitida: SUV, CAMIONETA, HATCHBACK, SEDAN, MOTOCICLETA")
     valor_comercial_usd: float = Field(default=25000.0, ge=1000.0, description="Valor comercial del vehículo")
     monto_solicitado_usd: float = Field(default=6800.0, ge=50.0, description="Monto de presupuesto o indemnización solicitado")
     dias_desde_emision: int = Field(default=18, ge=0, description="Días transcurridos entre la emisión de póliza y el choque")

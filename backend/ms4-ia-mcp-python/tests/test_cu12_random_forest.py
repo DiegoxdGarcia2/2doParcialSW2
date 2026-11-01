@@ -106,3 +106,49 @@ def test_endpoint_dataset_sample(client):
     data = response.json()
     assert len(data) == 5
     assert "prima_anual_calculada" in data[0]
+
+
+def test_vehicular_category_validation_pydantic_security(client):
+    """
+    Seguridad Pydantic v2: Rechazo de categorías vehiculares arbitrarias (HTTP 422).
+    Solo se permite Literal['SUV', 'CAMIONETA', 'HATCHBACK', 'SEDAN', 'MOTOCICLETA'].
+    """
+    payload_invalido = {
+        "edad_asegurado": 35,
+        "antiguedad_licencia_anios": 10,
+        "tipo_vehiculo": "SUBMARINO_NUCLEAR",
+        "anio_vehiculo": 2020,
+        "valor_comercial_usd": 25000.0,
+        "historial_siniestros_previos": 0,
+        "perfil_riesgo_score": 40.0,
+        "meses_a_proyectar": 3
+    }
+    response = client.post("/api/ml/predict-sales-and-premium", json=payload_invalido)
+    assert response.status_code == 422, f"Se esperaba 422 pero se obtuvo {response.status_code}"
+    error_detail = response.json()
+    assert "tipo_vehiculo" in str(error_detail)
+
+
+def test_endpoint_aliases_cu12(client):
+    """Verifica paridad de rutas con alias /predict-sales, /predict-risk-premium y /metrics."""
+    payload = {
+        "edad_asegurado": 35,
+        "antiguedad_licencia_anios": 10,
+        "tipo_vehiculo": "SUV",
+        "anio_vehiculo": 2020,
+        "valor_comercial_usd": 25000.0,
+        "historial_siniestros_previos": 0,
+        "perfil_riesgo_score": 40.0,
+        "meses_a_proyectar": 3
+    }
+    res_sales = client.post("/api/ml/predict-sales", json=payload)
+    assert res_sales.status_code == 200
+    assert "prima_anual_optima_usd" in res_sales.json()
+
+    res_risk = client.post("/api/ml/predict-risk-premium", json=payload)
+    assert res_risk.status_code == 200
+    assert "prima_anual_optima_usd" in res_risk.json()
+
+    res_metrics = client.get("/api/ml/metrics")
+    assert res_metrics.status_code == 200
+    assert "r2_score" in res_metrics.json()

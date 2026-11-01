@@ -47,6 +47,7 @@ def get_clusters_and_anomalies(
         )
 
 
+@router.post("/detect-fraud", response_model=FraudAlertDTO, include_in_schema=True)
 @router.post(
     "/evaluate-claim",
     response_model=FraudAlertDTO,
@@ -116,6 +117,8 @@ def list_fraud_alerts(
         )
 
 
+@router.post("/train-kmeans", summary="Alias para Reentrenar K-Means", include_in_schema=True)
+@router.post("/train-isolation-forest", summary="Alias para Reentrenar Isolation Forest", include_in_schema=True)
 @router.post(
     "/retrain",
     summary="Reentrenar K-Means (K=3) e Isolation Forest",
