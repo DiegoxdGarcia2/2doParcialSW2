@@ -11,315 +11,583 @@
     <span>{{ notificationMessage }}</span>
   </div>
 
-  <!-- Encabezado Ejecutivo: Solvencia & Pulso de Riesgo -->
-  <section class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline/20">
-    <div>
-      <div class="flex items-center gap-2">
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-xs font-mono shadow-sm">
-          <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
-          <span class="uppercase tracking-wider text-primary font-bold">Telemetría de Solvencia en Vivo</span>
-        </div>
-        <span class="text-xs font-mono text-outline-variant">Pilar I & II Solvencia II</span>
-      </div>
-      <h1 class="text-2xl font-bold font-headline text-on-surface mt-1 tracking-tight">
-        Panel Ejecutivo de KPIs &amp; Pulso de Riesgo
-      </h1>
-      <p class="text-xs text-on-surface-variant font-body">
-        Consolidado gerencial de índices de capital técnico, siniestralidad neta, primas brutas emitidas y automatización con IA.
-      </p>
-    </div>
-
-    <!-- Filtro de Periodos Trimestrales -->
-    <div class="flex items-center bg-surface-container-high rounded-full p-1 shadow-sm self-start md:self-auto">
+  <!-- Selector de Pestañas de Alto Nivel -->
+  <div class="flex items-center justify-between border-b border-surface-container-high pb-0 gap-4">
+    <div class="flex space-x-2">
       <button 
-        type="button"
-        (click)="setPeriod('Q3')"
-        [class.bg-surface]="activePeriod === 'Q3'"
-        [class.text-primary]="activePeriod === 'Q3'"
-        [class.shadow-sm]="activePeriod === 'Q3'"
-        [class.font-bold]="activePeriod === 'Q3'"
-        [class.text-secondary]="activePeriod !== 'Q3'"
-        class="px-3 py-1 rounded-full text-xs font-mono transition-all">
-        Q3 2026
+        type="button" 
+        (click)="switchTab('solvency')"
+        [class.border-primary]="activeTab === 'solvency'"
+        [class.text-primary]="activeTab === 'solvency'"
+        [class.font-bold]="activeTab === 'solvency'"
+        [class.border-transparent]="activeTab !== 'solvency'"
+        [class.text-secondary]="activeTab !== 'solvency'"
+        class="pb-3 px-4 text-sm font-headline border-b-2 flex items-center gap-2 transition-all hover:text-on-surface">
+        <span class="material-symbols-outlined text-base">verified_user</span>
+        <span>Solvencia Técnica &amp; Siniestralidad</span>
       </button>
+
       <button 
-        type="button"
-        (click)="setPeriod('YTD')"
-        [class.bg-surface]="activePeriod === 'YTD'"
-        [class.text-primary]="activePeriod === 'YTD'"
-        [class.shadow-sm]="activePeriod === 'YTD'"
-        [class.font-bold]="activePeriod === 'YTD'"
-        [class.text-secondary]="activePeriod !== 'YTD'"
-        class="px-3 py-1 rounded-full text-xs font-mono transition-all">
-        Acumulado (YTD)
+        type="button" 
+        (click)="switchTab('loss_analytics')"
+        [class.border-primary]="activeTab === 'loss_analytics'"
+        [class.text-primary]="activeTab === 'loss_analytics'"
+        [class.font-bold]="activeTab === 'loss_analytics'"
+        [class.border-transparent]="activeTab !== 'loss_analytics'"
+        [class.text-secondary]="activeTab !== 'loss_analytics'"
+        class="pb-3 px-4 text-sm font-headline border-b-2 flex items-center gap-2 transition-all hover:text-on-surface">
+        <span class="material-symbols-outlined text-base">analytics</span>
+        <span>Siniestralidad &amp; Riesgo Demográfico 360°</span>
+        <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-primary/10 text-primary font-bold uppercase">SQL 100% Real</span>
       </button>
     </div>
-  </section>
 
-  <!-- Bento Grid de 4 KPIs Ejecutivos Principales -->
-  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-    <!-- KPI 1: Ratio de Solvencia II -->
-    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
-      <div>
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-mono text-secondary uppercase tracking-tight">Solvencia II</span>
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
-            <span class="material-symbols-outlined text-[12px] mr-0.5">verified</span>
-            Óptimo
-          </span>
-        </div>
-        <div class="mt-2">
-          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">{{ solvencyRatio | number:'1.1-1' }}%</div>
-          <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
-            <span class="material-symbols-outlined text-sm">trending_up</span>
-            <span class="font-mono font-bold">+4.2% Anual</span>
-          </div>
-        </div>
-      </div>
-      <div class="mt-4">
-        <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
-          <div class="bg-primary h-full rounded-full" [style.width.%]="solvencyRatio / 3"></div>
-        </div>
-        <span class="text-[10px] text-secondary font-mono mt-1 block">Umbral regulatorio mínimo: 160%</span>
-      </div>
+    <!-- Acciones Rápidas -->
+    <div class="pb-2 hidden sm:flex items-center gap-2">
+      <button 
+        type="button" 
+        (click)="descargarAuditoria()"
+        class="px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-semibold text-secondary hover:text-on-surface flex items-center gap-1.5 hover:bg-surface-container transition-all">
+        <span class="material-symbols-outlined text-sm">download</span>
+        <span>Exportar Auditoría</span>
+      </button>
     </div>
+  </div>
 
-    <!-- KPI 2: Ratio Neto de Siniestralidad (Net Loss Ratio) -->
-    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+  <!-- ========================================================================= -->
+  <!-- PESTAÑA 1: SOLVENCIA TÉCNICA & SINIESTRALIDAD (VISTA REGULATORIA SOLVENCIA II) -->
+  <!-- ========================================================================= -->
+  <ng-container *ngIf="activeTab === 'solvency'">
+
+    <!-- Encabezado Ejecutivo: Solvencia & Pulso de Riesgo -->
+    <section class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline/20">
       <div>
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-mono text-secondary uppercase tracking-tight">Siniestralidad Neta</span>
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container text-on-surface text-[10px] font-bold font-mono">
-            Meta &lt;85%
-          </span>
-        </div>
-        <div class="mt-2">
-          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">{{ netLossRatio | number:'1.1-1' }}%</div>
-          <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
-            <span class="material-symbols-outlined text-sm">trending_down</span>
-            <span class="font-mono font-bold">-2.6% vs Mercado</span>
+        <div class="flex items-center gap-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-xs font-mono shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+            <span class="uppercase tracking-wider text-primary font-bold">Telemetría de Solvencia en Vivo</span>
           </div>
+          <span class="text-xs font-mono text-outline-variant">Pilar I &amp; II Solvencia II</span>
         </div>
-      </div>
-      <div class="mt-4">
-        <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
-          <div class="bg-primary-container h-full rounded-full" style="width: 71%"></div>
-        </div>
-        <span class="text-[10px] text-secondary font-mono mt-1 block">Vehicular: 78% • Otros: 84%</span>
-      </div>
-    </div>
-
-    <!-- KPI 3: Primas Brutas Emitidas (GWP) -->
-    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
-      <div>
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-mono text-secondary uppercase tracking-tight">Primas Emitidas</span>
-          <span class="text-xs font-mono text-tertiary font-bold">+14.1%</span>
-        </div>
-        <div class="mt-2">
-          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">${{ gwpTotal | number:'1.1-1' }}M</div>
-          <div class="flex items-center gap-1 mt-1 text-secondary text-xs">
-            <span class="material-symbols-outlined text-sm text-tertiary">pie_chart</span>
-            <span class="font-mono text-[11px]">Auto 62% • Salud 38%</span>
-          </div>
-        </div>
-      </div>
-      <div class="mt-4">
-        <div class="flex gap-1 w-full">
-          <div class="bg-primary h-1.5 rounded-l-full" style="width: 62%" title="Flotas Vehiculares"></div>
-          <div class="bg-tertiary h-1.5 rounded-r-full" style="width: 38%" title="Salud y Especiales"></div>
-        </div>
-        <span class="text-[10px] text-secondary font-mono mt-1 block">Ritmo Proyectado: $1.12B</span>
-      </div>
-    </div>
-
-    <!-- KPI 4: Automatización STP con IA -->
-    <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
-      <div>
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-mono text-secondary uppercase tracking-tight">Liquidación STP (IA)</span>
-          <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
-        </div>
-        <div class="mt-2">
-          <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">{{ stpAutomationPct | number:'1.1-1' }}%</div>
-          <div class="flex items-center gap-1 mt-1 text-primary text-xs font-bold">
-            <span class="material-symbols-outlined text-sm">bolt</span>
-            <span class="font-mono">&lt;45s Auto-Liquidado</span>
-          </div>
-        </div>
-      </div>
-      <div class="mt-4">
-        <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
-          <div class="bg-tertiary h-full rounded-full" [style.width.%]="stpAutomationPct"></div>
-        </div>
-        <span class="text-[10px] text-secondary font-mono mt-1 block">Dataset: {{ totalPolizasDataset }} pólizas PG</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- Gráfico de Incurrencia y Reservas Actuariales -->
-  <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high space-y-4">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-surface-container-high gap-2">
-      <div>
-        <h2 class="text-base font-bold text-on-surface font-headline">
-          Incurrencia de Siniestros &amp; Reservas Técnicas
-        </h2>
-        <p class="text-xs text-secondary">
-          Trayectoria móvil semestral con desglose por flota vehicular y coberturas de salud
+        <h1 class="text-2xl font-bold font-headline text-on-surface mt-1 tracking-tight">
+          Panel Ejecutivo de KPIs &amp; Pulso de Riesgo
+        </h1>
+        <p class="text-xs text-on-surface-variant font-body">
+          Consolidado gerencial de índices de capital técnico, siniestralidad neta, primas brutas emitidas y automatización con IA.
         </p>
       </div>
-      <div class="flex items-center gap-2">
-        <span class="px-2.5 py-1 rounded-full bg-surface-container text-xs font-mono font-semibold text-primary">
-          Reserva Actuarial: $214M USD
-        </span>
-        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono text-xs font-bold">
-          Riesgo Bajo
-        </span>
+
+      <!-- Filtro de Periodos Trimestrales -->
+      <div class="flex items-center bg-surface-container-high rounded-full p-1 shadow-sm self-start md:self-auto">
+        <button 
+          type="button"
+          (click)="setPeriod('Q3')"
+          [class.bg-surface]="activePeriod === 'Q3'"
+          [class.text-primary]="activePeriod === 'Q3'"
+          [class.shadow-sm]="activePeriod === 'Q3'"
+          [class.font-bold]="activePeriod === 'Q3'"
+          [class.text-secondary]="activePeriod !== 'Q3'"
+          class="px-3 py-1 rounded-full text-xs font-mono transition-all">
+          Q3 2026
+        </button>
+        <button 
+          type="button"
+          (click)="setPeriod('YTD')"
+          [class.bg-surface]="activePeriod === 'YTD'"
+          [class.text-primary]="activePeriod === 'YTD'"
+          [class.shadow-sm]="activePeriod === 'YTD'"
+          [class.font-bold]="activePeriod === 'YTD'"
+          [class.text-secondary]="activePeriod !== 'YTD'"
+          class="px-3 py-1 rounded-full text-xs font-mono transition-all">
+          Acumulado (YTD)
+        </button>
       </div>
-    </div>
+    </section>
 
-    <!-- Chart Canvas -->
-    <div class="h-64 relative">
-      <canvas #lossTrendChart></canvas>
-    </div>
-  </section>
+    <!-- Bento Grid de 4 KPIs Ejecutivos Principales -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-  <!-- Bento Grid Inferior: Cohortes de Cartera & Alertas de Fraude -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- Cohortes de Cartera (7 cols) -->
-    <section class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high space-y-4">
-      <div class="flex items-center justify-between pb-2 border-b border-surface-container-high">
-        <h2 class="text-sm font-bold text-on-surface font-headline flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary text-lg">pie_chart</span>
-          Exposición por Cohortes de Cartera
-        </h2>
-        <span class="text-xs font-mono text-secondary">Suscripción Actuarial</span>
-      </div>
-
-      <div class="space-y-3">
-        <!-- Cohorte 1: Flota Comercial -->
-        <div class="bg-surface-container-low rounded-lg p-3 space-y-2">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-lg">directions_car</span>
-              </div>
-              <div>
-                <div class="text-xs font-bold text-on-surface">Flotas Comerciales Nivel 1</div>
-                <div class="text-[10px] font-mono text-secondary">Telemetría IoT • 42,100 Unidades</div>
-              </div>
-            </div>
-            <div class="text-right">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
-                Riesgo 0.24 Bajo
-              </span>
-              <div class="text-[10px] font-mono text-secondary mt-0.5">$522.4M Exposición</div>
-            </div>
+      <!-- KPI 1: Ratio de Solvencia II -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-mono text-secondary uppercase tracking-tight">Solvencia II</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
+              <span class="material-symbols-outlined text-[12px] mr-0.5">verified</span>
+              Óptimo
+            </span>
           </div>
-          <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-            <div class="bg-primary h-full rounded-full" style="width: 24%"></div>
-          </div>
-          <div class="flex justify-between items-center text-[10px] text-on-surface-variant font-mono">
-            <span>Límite de riesgo objetivo: &lt;0.45</span>
-            <span class="text-primary font-bold">99.1% Cumplimiento</span>
+          <div class="mt-2">
+            <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">{{ solvencyRatio | number:'1.1-1' }}%</div>
+            <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
+              <span class="material-symbols-outlined text-sm">trending_up</span>
+              <span class="font-mono font-bold">+4.2% Anual</span>
+            </div>
           </div>
         </div>
+        <div class="mt-4">
+          <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+            <div class="bg-primary h-full rounded-full" [style.width.%]="solvencyRatio / 3"></div>
+          </div>
+          <span class="text-[10px] text-secondary font-mono mt-1 block">Umbral regulatorio mínimo: 160%</span>
+        </div>
+      </div>
 
-        <!-- Cohorte 2: Colectivos Salud -->
-        <div class="bg-surface-container-low rounded-lg p-3 space-y-2">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
-                <span class="material-symbols-outlined text-lg">medical_services</span>
-              </div>
-              <div>
-                <div class="text-xs font-bold text-on-surface">Colectivos de Salud y Catastróficos</div>
-                <div class="text-[10px] font-mono text-secondary">Estratificación ML CIE-11 • 18 Planes Empresariales</div>
-              </div>
-            </div>
-            <div class="text-right">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface text-[10px] font-bold font-mono">
-                Reserva $14.2M
-              </span>
-              <div class="text-[10px] font-mono text-secondary mt-0.5">$320.1M Exposición</div>
+      <!-- KPI 2: Ratio Neto de Siniestralidad (Net Loss Ratio) -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-mono text-secondary uppercase tracking-tight">Siniestralidad Neta</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface text-[10px] font-bold font-mono">
+              Meta &lt;85%
+            </span>
+          </div>
+          <div class="mt-2">
+            <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">{{ netLossRatio | number:'1.1-1' }}%</div>
+            <div class="flex items-center gap-1 mt-1 text-emerald-700 text-xs font-semibold">
+              <span class="material-symbols-outlined text-sm">trending_down</span>
+              <span class="font-mono font-bold">-2.6% vs Mercado</span>
             </div>
           </div>
-          <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-            <div class="bg-tertiary h-full rounded-full" style="width: 68%"></div>
+        </div>
+        <div class="mt-4">
+          <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+            <div class="bg-tertiary h-full rounded-full" [style.width.%]="netLossRatio"></div>
           </div>
-          <div class="flex justify-between items-center text-[10px] text-on-surface-variant font-mono">
-            <span>Velocidad de adjudicación: 3.4 min</span>
-            <span class="text-tertiary font-bold">92.4% Tasa de Pérdida</span>
+          <span class="text-[10px] text-secondary font-mono mt-1 block">Vehicular: 78% • Otros: 84%</span>
+        </div>
+      </div>
+
+      <!-- KPI 3: Primas Brutas Emitidas (GWP) -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-mono text-secondary uppercase tracking-tight">Primas Emitidas</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold font-mono">
+              +14.1%
+            </span>
           </div>
+          <div class="mt-2">
+            <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">${{ gwpTotal | number:'1.1-1' }}M</div>
+            <div class="flex items-center gap-1 mt-1 text-secondary text-xs">
+              <span class="material-symbols-outlined text-sm text-primary">pie_chart</span>
+              <span class="font-mono text-[11px]">Auto 62% • Salud 38%</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden flex">
+            <div class="bg-primary h-full" style="width: 62%" title="Flotas Vehiculares"></div>
+            <div class="bg-tertiary h-full" style="width: 38%" title="Salud y Especiales"></div>
+          </div>
+          <span class="text-[10px] text-secondary font-mono mt-1 block">Ritmo Proyectado: $1.12B</span>
+        </div>
+      </div>
+
+      <!-- KPI 4: Liquidación STP con IA -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-mono text-secondary uppercase tracking-tight">Liquidación STP (IA)</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+              76.8%
+            </span>
+          </div>
+          <div class="mt-2">
+            <div class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-none">{{ stpAutomationPct | number:'1.1-1' }}%</div>
+            <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
+              <span class="material-symbols-outlined text-sm">bolt</span>
+              <span class="font-mono text-[11px]">&lt;45s Auto-Liquidado</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+            <div class="bg-primary h-full rounded-full" [style.width.%]="stpAutomationPct"></div>
+          </div>
+          <span class="text-[10px] text-secondary font-mono mt-1 block">Dataset: {{ totalPolizasDataset }} pólizas PG</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Gráfico Principal de Solvencia e Incurrencia -->
+    <section class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-surface-container-high space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-surface-container-high">
+        <div>
+          <h2 class="text-base font-bold text-on-surface font-headline">
+            Incurrencia de Siniestros &amp; Reservas Técnicas
+          </h2>
+          <p class="text-xs text-secondary font-body">
+            Trayectoria móvil semestral con desglose por flota vehicular y coberturas de salud
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-mono font-bold text-primary">Reserva Actuarial: $214M USD</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-100 text-emerald-800 font-bold">Riesgo Bajo</span>
+        </div>
+      </div>
+      <div class="h-72 relative">
+        <canvas #lossTrendChart></canvas>
+      </div>
+    </section>
+
+  </ng-container>
+
+  <!-- ========================================================================= -->
+  <!-- PESTAÑA 2: SINIESTRALIDAD & RIESGO DEMOGRÁFICO 360° (SQL 100% PURO EN PG) -->
+  <!-- ========================================================================= -->
+  <ng-container *ngIf="activeTab === 'loss_analytics'">
+
+    <!-- Encabezado de la Pestaña -->
+    <section class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline/20">
+      <div>
+        <div class="flex items-center gap-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-xs font-mono shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+            <span class="uppercase tracking-wider text-primary font-bold">PostgreSQL Neon: 1,200 Pólizas en Línea</span>
+          </div>
+          <span class="text-xs font-mono text-outline-variant">Agregaciones SQL 100% Puras</span>
+        </div>
+        <h1 class="text-2xl font-bold font-headline text-on-surface mt-1 tracking-tight">
+          Analítica de Siniestralidad &amp; Riesgo Demográfico 360°
+        </h1>
+        <p class="text-xs text-on-surface-variant font-body">
+          Medición actuarial exacta de frecuencia de siniestros, severidad de choques, cohortes de edad y tipos de vehículos sin intermediación de mocks.
+        </p>
+      </div>
+
+      <!-- Badge de Estado de la Cartera Filtrada -->
+      <div class="flex items-center gap-2 self-start md:self-auto">
+        <div class="px-3 py-1.5 rounded-lg bg-surface-container-high border border-outline-variant text-xs font-mono flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full"
+                [ngClass]="{
+                  'bg-emerald-500': lossData?.loss_ratio_tecnico_pct && lossData!.loss_ratio_tecnico_pct <= 65.0,
+                  'bg-amber-500': lossData?.loss_ratio_tecnico_pct && lossData!.loss_ratio_tecnico_pct > 65.0 && lossData!.loss_ratio_tecnico_pct <= 80.0,
+                  'bg-rose-500': lossData?.loss_ratio_tecnico_pct && lossData!.loss_ratio_tecnico_pct > 80.0
+                }"></span>
+          <span class="font-bold text-on-surface">{{ lossData?.salud_cartera_label || 'Calculando...' }}</span>
         </div>
       </div>
     </section>
 
-    <!-- Centinela de Fraude & Auditoría Criptográfica (5 cols) -->
-    <div class="lg:col-span-5 space-y-4">
-
-      <!-- Ticker de Redes de Fraude Interceptadas -->
-      <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high">
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 rounded-full bg-error-container/40 text-error flex items-center justify-center shrink-0 mt-0.5">
-            <span class="material-symbols-outlined text-lg">security</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between gap-1">
-              <span class="text-xs font-bold text-error font-headline">14 Redes de Fraude Interceptadas</span>
-              <span class="px-1.5 py-0.5 rounded bg-error text-white text-[10px] font-mono font-bold">CRÍTICO</span>
-            </div>
-            <p class="text-xs text-on-surface mt-1 font-body">
-              El ensamble Isolation Forest neutralizó colisiones sindicadas en talleres mecánicos del sector norte.
-            </p>
-            <div class="flex items-center justify-between mt-3 pt-2 bg-surface-container-low rounded-lg px-2.5 py-1.5">
-              <span class="text-xs font-mono font-bold text-primary">Ahorro: $1,842,500 USD</span>
-              <span class="text-[10px] font-mono text-secondary">Latencia: 142ms</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Paquete de Auditoría Criptográfica Actuarial -->
-      <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-            <span class="material-symbols-outlined text-xl">verified_user</span>
-          </div>
-          <div>
-            <div class="text-xs font-bold text-on-surface">Paquete de Auditoría Actuarial</div>
-            <div class="text-[10px] font-mono text-secondary">Sello Criptográfico SHA-256</div>
-          </div>
+    <!-- Barra de Filtros Actuariales 360° -->
+    <section class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container-high space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-base">filter_alt</span>
+          <span class="text-xs font-bold font-headline text-on-surface uppercase tracking-wide">
+            Segmentación Demográfica &amp; Vehicular (Filtros SQL)
+          </span>
+          <span *ngIf="loadingLoss" class="text-[10px] font-mono text-primary animate-pulse">
+            (Ejecutando SQL en PostgreSQL...)
+          </span>
         </div>
         <button 
-          type="button"
-          (click)="descargarAuditoria()"
-          class="px-3 py-1.5 bg-primary text-on-primary text-xs font-bold rounded-lg shadow-sm hover:opacity-95 transition-all flex items-center gap-1">
-          <span class="material-symbols-outlined text-sm">download</span>
-          <span>Verificar</span>
+          type="button" 
+          (click)="resetFilters()"
+          class="text-xs text-secondary hover:text-primary font-mono flex items-center gap-1 self-start sm:self-auto transition-colors">
+          <span class="material-symbols-outlined text-xs">restart_alt</span>
+          Restablecer Filtros (1,200 Pólizas)
         </button>
-      </section>
+      </div>
 
-      <!-- Enlaces Rápidos a Módulos del Perfil C -->
-      <section class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container-high">
-        <span class="text-[11px] font-mono uppercase text-secondary font-bold block mb-2">Accesos Directos Perfil C:</span>
-        <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
-          <a routerLink="/actuarial-dashboard" class="p-2 rounded bg-surface-container-low hover:bg-surface-container text-primary flex items-center gap-1.5 transition-colors">
-            <span class="material-symbols-outlined text-sm">stacked_line_chart</span>
-            <span>Motor Actuarial</span>
-          </a>
-          <a routerLink="/risk-fraud-sentinel" class="p-2 rounded bg-surface-container-low hover:bg-surface-container text-primary flex items-center gap-1.5 transition-colors">
-            <span class="material-symbols-outlined text-sm">shield_with_heart</span>
-            <span>Centinela Fraude</span>
-          </a>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+        <!-- Selector 1: Tipo de Vehículo -->
+        <div>
+          <label class="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+            Categoría Vehicular
+          </label>
+          <select 
+            [(ngModel)]="lossFilters.tipo_vehiculo" 
+            (change)="onFilterChange()"
+            class="w-full bg-surface-container-low border border-outline-variant text-on-surface rounded-lg px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none transition-all">
+            <option *ngFor="let opt of filterOptions.tipos_vehiculo" [value]="opt.id">
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
-      </section>
 
-    </div>
+        <!-- Selector 2: Rango de Edad del Conductor -->
+        <div>
+          <label class="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+            Edad del Conductor
+          </label>
+          <select 
+            [(ngModel)]="lossFilters.rango_edad" 
+            (change)="onFilterChange()"
+            class="w-full bg-surface-container-low border border-outline-variant text-on-surface rounded-lg px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none transition-all">
+            <option *ngFor="let opt of filterOptions.rangos_edad" [value]="opt.id">
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
 
-  </div>
+        <!-- Selector 3: Experiencia de Licencia -->
+        <div>
+          <label class="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+            Años de Licencia
+          </label>
+          <select 
+            [(ngModel)]="lossFilters.antiguedad_licencia" 
+            (change)="onFilterChange()"
+            class="w-full bg-surface-container-low border border-outline-variant text-on-surface rounded-lg px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none transition-all">
+            <option *ngFor="let opt of filterOptions.antiguedades_licencia" [value]="opt.id">
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Selector 4: Antigüedad del Vehículo -->
+        <div>
+          <label class="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+            Año de Fabricación
+          </label>
+          <select 
+            [(ngModel)]="lossFilters.antiguedad_vehiculo" 
+            (change)="onFilterChange()"
+            class="w-full bg-surface-container-low border border-outline-variant text-on-surface rounded-lg px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none transition-all">
+            <option *ngFor="let opt of filterOptions.antiguedades_vehiculo" [value]="opt.id">
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top 5 Bento KPI Cards de Siniestralidad Real -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
+      <!-- Card 1: Frecuencia de Siniestros (%) -->
+      <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div>
+          <span class="text-[11px] font-mono text-secondary uppercase tracking-tight block">Frecuencia Siniestros</span>
+          <div class="mt-2 flex items-baseline gap-1">
+            <span class="text-2xl font-extrabold font-headline text-on-surface tracking-tight">
+              {{ lossData?.frecuencia_siniestralidad_pct | number:'1.1-1' }}%
+            </span>
+            <span class="text-[10px] text-secondary font-mono">Tasa</span>
+          </div>
+          <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
+            <span class="material-symbols-outlined text-xs">car_crash</span>
+            <span class="font-mono text-[11px]">{{ lossData?.total_siniestros }} accidentes</span>
+          </div>
+        </div>
+        <div class="mt-3 pt-2 border-t border-surface-container-high/60 text-[10px] font-mono text-secondary">
+          Muestra: {{ lossData?.total_polizas }} pólizas activas
+        </div>
+      </div>
+
+      <!-- Card 2: Severidad Media por Choque ($ USD) -->
+      <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div>
+          <span class="text-[11px] font-mono text-secondary uppercase tracking-tight block">Severidad Media Choque</span>
+          <div class="mt-2 flex items-baseline gap-1">
+            <span class="text-2xl font-extrabold font-headline text-primary tracking-tight">
+              ${{ lossData?.severidad_media_usd | number:'1.2-2' }}
+            </span>
+            <span class="text-[10px] text-secondary font-mono">USD</span>
+          </div>
+          <div class="flex items-center gap-1 mt-1 text-secondary text-xs font-semibold">
+            <span class="material-symbols-outlined text-xs text-primary">build</span>
+            <span class="font-mono text-[11px]">Costo Medio Reparación</span>
+          </div>
+        </div>
+        <div class="mt-3 pt-2 border-t border-surface-container-high/60 text-[10px] font-mono text-secondary">
+          Total: ${{ (lossData?.costo_total_siniestros_usd || 0) | number:'1.0-0' }} USD
+        </div>
+      </div>
+
+      <!-- Card 3: Loss Ratio Técnico (%) -->
+      <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div>
+          <span class="text-[11px] font-mono text-secondary uppercase tracking-tight block">Loss Ratio Técnico</span>
+          <div class="mt-2 flex items-baseline gap-1">
+            <span class="text-2xl font-extrabold font-headline tracking-tight"
+                  [ngClass]="{
+                    'text-emerald-700': lossData?.loss_ratio_tecnico_pct && lossData!.loss_ratio_tecnico_pct <= 65.0,
+                    'text-amber-700': lossData?.loss_ratio_tecnico_pct && lossData!.loss_ratio_tecnico_pct > 65.0 && lossData!.loss_ratio_tecnico_pct <= 80.0,
+                    'text-rose-700': lossData?.loss_ratio_tecnico_pct && lossData!.loss_ratio_tecnico_pct > 80.0
+                  }">
+              {{ lossData?.loss_ratio_tecnico_pct | number:'1.1-1' }}%
+            </span>
+            <span class="text-[10px] text-secondary font-mono">Incurrencia</span>
+          </div>
+          <div class="flex items-center gap-1 mt-1 text-xs font-semibold text-secondary">
+            <span class="material-symbols-outlined text-xs text-primary">balance</span>
+            <span class="font-mono text-[11px]">Meta Actuarial &lt; 70%</span>
+          </div>
+        </div>
+        <div class="mt-3 pt-2 border-t border-surface-container-high/60 text-[10px] font-mono text-secondary">
+          Siniestros / Primas Cobradas
+        </div>
+      </div>
+
+      <!-- Card 4: Prima Media Anual ($ USD) -->
+      <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div>
+          <span class="text-[11px] font-mono text-secondary uppercase tracking-tight block">Prima Media Anual</span>
+          <div class="mt-2 flex items-baseline gap-1">
+            <span class="text-2xl font-extrabold font-headline text-on-surface tracking-tight">
+              ${{ lossData?.prima_media_anual_usd | number:'1.2-2' }}
+            </span>
+            <span class="text-[10px] text-secondary font-mono">USD</span>
+          </div>
+          <div class="flex items-center gap-1 mt-1 text-emerald-700 text-xs font-semibold">
+            <span class="material-symbols-outlined text-xs">savings</span>
+            <span class="font-mono text-[11px]">GWP: ${{ (lossData?.primas_totales_usd || 0) | number:'1.0-0' }} USD</span>
+          </div>
+        </div>
+        <div class="mt-3 pt-2 border-t border-surface-container-high/60 text-[10px] font-mono text-secondary">
+          Tarifa técnica ponderada
+        </div>
+      </div>
+
+      <!-- Card 5: Score Medio de Riesgo Actuarial -->
+      <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div>
+          <span class="text-[11px] font-mono text-secondary uppercase tracking-tight block">Riesgo Actuarial</span>
+          <div class="mt-2 flex items-baseline gap-1">
+            <span class="text-2xl font-extrabold font-headline text-on-surface tracking-tight">
+              {{ lossData?.score_medio_riesgo | number:'1.1-1' }}
+            </span>
+            <span class="text-[10px] text-secondary font-mono">/ 100 pts</span>
+          </div>
+          <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
+            <span class="material-symbols-outlined text-xs">psychology</span>
+            <span class="font-mono text-[11px]">Score Random Forest</span>
+          </div>
+        </div>
+        <div class="mt-3 pt-2 border-t border-surface-container-high/60 text-[10px] font-mono text-secondary">
+          Cartera ponderada por siniestro
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Dual Chart Estratégico (Chart.js) -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Gráfico 1: Siniestralidad y Severidad por Rango de Edad (Barras Dobles) -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-container-high">
+          <div>
+            <h2 class="text-sm font-bold text-on-surface font-headline flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-base">group</span>
+              Siniestralidad y Severidad por Rango de Edad
+            </h2>
+            <p class="text-[11px] text-secondary">
+              Frecuencia de accidentes (%) vs. costo medio de choque ($ USD) por cohorte demográfica
+            </p>
+          </div>
+          <span class="text-xs font-mono text-primary font-bold">
+            5 Cohortes
+          </span>
+        </div>
+
+        <div class="h-64 relative">
+          <canvas #ageCohortChart></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico 2: Evolución Mensual Cronológica (12 Meses en la BD) -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-container-high">
+          <div>
+            <h2 class="text-sm font-bold text-on-surface font-headline flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-tertiary text-base">timeline</span>
+              Evolución Mensual de Incurrencia y Siniestros
+            </h2>
+            <p class="text-[11px] text-secondary">
+              Total de accidentes mensuales (unid.) vs. costo acumulado de liquidaciones ($ USD)
+            </p>
+          </div>
+          <span class="text-xs font-mono text-secondary font-bold">
+            12 Meses Reales
+          </span>
+        </div>
+
+        <div class="h-64 relative">
+          <canvas #monthlyTrendChart></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Matriz de Riesgo por Tipo de Vehículo (Tabla 100% SQL) -->
+    <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-container-high space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-surface-container-high">
+        <div>
+          <h2 class="text-sm font-bold text-on-surface font-headline flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-primary text-base">directions_car</span>
+            Matriz Actuarial de Riesgo por Tipo de Vehículo
+          </h2>
+          <p class="text-[11px] text-secondary">
+            Desglose de frecuencia, severidad media, primas recaudadas y loss ratio por categoría vehicular en PostgreSQL
+          </p>
+        </div>
+        <span class="text-xs font-mono text-secondary">
+          Filtro Activo: {{ lossFilters.tipo_vehiculo }} | Edad: {{ lossFilters.rango_edad }}
+        </span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs font-body">
+          <thead>
+            <tr class="border-b border-surface-container-high text-secondary font-mono uppercase text-[11px]">
+              <th class="py-2.5">Tipo de Vehículo</th>
+              <th class="py-2.5">Pólizas</th>
+              <th class="py-2.5">Siniestros</th>
+              <th class="py-2.5">Frecuencia (%)</th>
+              <th class="py-2.5">Costo Medio Choque</th>
+              <th class="py-2.5">Prima Media Anual</th>
+              <th class="py-2.5">Total Siniestros</th>
+              <th class="py-2.5">Total Primas</th>
+              <th class="py-2.5">Loss Ratio</th>
+              <th class="py-2.5">Semáforo Actuarial</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-container-high/60">
+            <tr *ngFor="let v of lossData?.desglose_por_vehiculo" 
+                class="hover:bg-surface-container-low/40 transition-colors">
+              <td class="py-3 font-semibold text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm text-primary">
+                  {{ v.tipo_vehiculo === 'MOTOCICLETA' ? 'two_wheeler' : (v.tipo_vehiculo === 'CAMIONETA' ? 'local_shipping' : 'directions_car') }}
+                </span>
+                <span>{{ v.tipo_vehiculo }}</span>
+              </td>
+              <td class="py-3 font-mono">{{ v.total_polizas }}</td>
+              <td class="py-3 font-mono font-bold text-on-surface">{{ v.siniestros_count }}</td>
+              <td class="py-3 font-mono font-bold text-tertiary">{{ v.frecuencia_siniestralidad_pct }}%</td>
+              <td class="py-3 font-mono font-bold">${{ v.costo_medio_usd | number:'1.2-2' }}</td>
+              <td class="py-3 font-mono">${{ v.prima_media_usd | number:'1.2-2' }}</td>
+              <td class="py-3 font-mono font-bold text-rose-700">${{ v.total_costo_siniestros_usd | number:'1.0-0' }}</td>
+              <td class="py-3 font-mono font-bold text-primary">${{ v.total_primas_usd | number:'1.0-0' }}</td>
+              <td class="py-3 font-mono font-bold"
+                  [ngClass]="{
+                    'text-emerald-700': v.loss_ratio_pct <= 60.0,
+                    'text-amber-700': v.loss_ratio_pct > 60.0 && v.loss_ratio_pct <= 75.0,
+                    'text-rose-700': v.loss_ratio_pct > 75.0
+                  }">
+                {{ v.loss_ratio_pct }}%
+              </td>
+              <td class="py-3">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold"
+                      [ngClass]="{
+                        'bg-emerald-100 text-emerald-800': v.semaforo_tecnico === 'SUPERÁVIT TÉCNICO',
+                        'bg-amber-100 text-amber-800': v.semaforo_tecnico === 'EQUILIBRADO',
+                        'bg-rose-100 text-rose-800': v.semaforo_tecnico === 'ALTO RIESGO'
+                      }">
+                  {{ v.semaforo_tecnico }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </ng-container>
 
 </div>
-

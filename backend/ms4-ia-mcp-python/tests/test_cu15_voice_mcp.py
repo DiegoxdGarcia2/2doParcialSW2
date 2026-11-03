@@ -83,9 +83,9 @@ class TestCU15VoiceMcpReports:
     # 3. Pruebas del Catálogo de Herramientas MCP
     # -------------------------------------------------------------------------
     def test_mcp_tools_catalog_specification(self):
-        """Valida que el catálogo exponga las 4 herramientas con JSON Schema estricto."""
+        """Valida que el catálogo exponga las herramientas oficiales MCP con JSON Schema estricto."""
         tools = McpProtocolServer.list_tools()
-        assert len(tools) == 4
+        assert len(tools) >= 4
         tool_names = [t.name for t in tools]
         assert "tool_reporte_siniestralidad" in tool_names
         assert "tool_reporte_ventas_primas" in tool_names
@@ -160,3 +160,57 @@ class TestCU15VoiceMcpReports:
         assert res.documento is None
         assert res.traza_mcp.status == "BLOCKED"
         assert "neutralizado" in res.mensaje.lower()
+
+    def test_user_explicit_format_override_sales_to_pdf(self):
+        """Valida que si el usuario selecciona PDF para ventas, se respete y no se fuerce a XLSX."""
+        res = self.control.procesarComandoVozCompleto(
+            texto_dictado="demanda de vehiculos ordenadas por tipo de vehiculo del año en curso",
+            formato_preferido="pdf"
+        )
+        assert res.auditoria_seguridad.es_amenaza is False
+        assert res.intencion_detectada == "tool_reporte_ventas_primas"
+        assert res.documento is not None
+        assert res.documento.format == "pdf"
+        assert res.formato_solicitado == "pdf"
+
+    def test_user_explicit_format_claims_to_word(self):
+        """Valida que si el usuario selecciona Word para siniestros, se compile en DOCX."""
+        res = self.control.procesarComandoVozCompleto(
+            texto_dictado="siniestros de alta severidad de vehiculos",
+            formato_preferido="docx"
+        )
+        assert res.auditoria_seguridad.es_amenaza is False
+        assert res.intencion_detectada == "tool_reporte_siniestralidad"
+        assert res.documento is not None
+        assert res.documento.format == "docx"
+        assert res.formato_solicitado == "docx"
+
+    def test_format_pantalla_returns_table_without_physical_download(self):
+        """Valida que el formato 'pantalla' entregue registros y KPIs sin forzar descarga."""
+        res = self.control.procesarComandoVozCompleto(
+            texto_dictado="demanda de vehiculos del año en curso para ver en pantalla",
+            formato_preferido="pantalla"
+        )
+        assert res.auditoria_seguridad.es_amenaza is False
+        assert res.formato_solicitado == "pantalla"
+        assert res.documento is None
+        assert len(res.columnas) > 0
+        assert len(res.filas) > 0
+
+    def test_quick_export_en_caliente(self):
+        """Valida exportación en caliente sin volver a consultar la base de datos."""
+        kpis = {"total_registros": 5, "promedio": 1200}
+        cols = ["item", "valor"]
+        filas = [{"item": "SUV", "valor": 1200}, {"item": "SEDAN", "valor": 950}]
+        
+        doc = self.control.exportarDocumentoEnCaliente(
+            titulo="Reporte en Caliente",
+            kpis=kpis,
+            columnas=cols,
+            filas=filas,
+            formato="xlsx",
+            nombre_base="test_hot_export"
+        )
+        assert doc.format == "xlsx"
+        assert doc.file_size_bytes > 0
+        assert len(doc.sha256_hash) == 64

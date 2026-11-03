@@ -19,7 +19,9 @@ from fastapi.responses import FileResponse
 from app.entities.voice_mcp_dto import (
     VoiceCommandRequest,
     VoiceMcpExecutionResponse,
-    McpToolDefinitionDTO
+    McpToolDefinitionDTO,
+    QuickExportRequestDTO,
+    GeneratedDocumentDTO
 )
 from app.controls.voice_mcp_control import VoiceMcpControl
 
@@ -113,6 +115,37 @@ async def procesar_comando_json(request: VoiceCommandRequest):
         )
 
     return response
+
+
+@router.post("/export-document", response_model=GeneratedDocumentDTO, summary="Exportación en Caliente de Reporte en Pantalla")
+async def exportar_documento_en_caliente(request: QuickExportRequestDTO):
+    """
+    Exporta instantáneamente (< 200 ms) un reporte a partir de datos ya presentes en pantalla
+    hacia Excel (.xlsx), PDF (.pdf) o Word (.docx), sin reejecutar consultas a la base de datos.
+    """
+    fmt = request.formato.lower().strip()
+    if fmt not in ["xlsx", "pdf", "docx"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Formato no soportado: '{fmt}'. Debe ser xlsx, pdf o docx."
+        )
+
+    try:
+        documento = control.exportarDocumentoEnCaliente(
+            titulo=request.titulo,
+            kpis=request.kpis,
+            columnas=request.columnas,
+            filas=request.filas,
+            formato=fmt,
+            nombre_base=request.nombre_base,
+            params=request.params
+        )
+        return documento
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al compilar documento en formato {fmt}: {str(e)}"
+        )
 
 
 @router.get("/download-report/{filename}", summary="Descargar Archivo Físico Compilado")

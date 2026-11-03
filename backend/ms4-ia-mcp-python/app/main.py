@@ -156,6 +156,18 @@ def trigger_agent_evaluation_legacy():
     }
 
 # ---------------------------------------------------------------------------
+# Siniestralidad & Riesgo Demográfico 360° (PostgreSQL SQL Puro) - Router Modular ICONIX
+# ---------------------------------------------------------------------------
+from app.boundaries.actuarial_loss_router import router as actuarial_loss_router
+app.include_router(actuarial_loss_router)
+
+# ---------------------------------------------------------------------------
+# Analítica Comercial 360° & Rentabilidad (MCP + GraphQL) - Router Modular ICONIX
+# ---------------------------------------------------------------------------
+from app.boundaries.commercial_analytics_router import router as commercial_analytics_router
+app.include_router(commercial_analytics_router)
+
+# ---------------------------------------------------------------------------
 # CU15: Servidor MCP, Whisper STT, Blindaje OWASP Anti-SQLi y Exportación (ICONIX)
 # ---------------------------------------------------------------------------
 from app.boundaries.voice_mcp_router import router as voice_mcp_router

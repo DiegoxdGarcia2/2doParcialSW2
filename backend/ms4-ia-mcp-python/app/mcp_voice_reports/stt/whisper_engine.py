@@ -177,33 +177,36 @@ class WhisperSTTEngine:
     @classmethod
     def _detectar_formato(cls, texto: str, herramienta: Optional[str] = None, default: Optional[str] = None) -> str:
         """
-        Determina dinámicamente el formato óptimo:
-        1. Si el usuario dictó explícitamente el formato en lenguaje natural:
-           - 'excel', 'xlsx', 'planilla', 'hoja de cálculo', 'tabla' -> xlsx
-           - 'word', 'docx', 'documento', 'minuta' -> docx
-           - 'pdf', 'acrobat', 'imprimible' -> pdf
-        2. Si no mencionó formato, se infiere autónomamente según la naturaleza de los datos:
-           - Ventas / Demanda / Primas (tool_reporte_ventas_primas) -> xlsx (Planilla numérica)
-           - Solvencia / Reservas Técnicas (tool_solvencia_reservas) -> xlsx (Balances y ratios)
-           - Auditoría de Fraude / SIU (tool_reporte_auditoria_fraude_siu) -> docx (Dossier forense)
-           - Siniestralidad / Daños / TFLite (tool_reporte_siniestralidad) -> pdf (Certificado pericial)
+        Determina dinámicamente el formato óptimo con prioridad estricta al usuario:
+        1. Comandos de formato exactos en el texto dictado:
+           - 'pantalla' -> 'pantalla'
+           - 'excel' o 'xlsx' -> 'xlsx'
+           - 'word' o 'docx' -> 'docx'
+           - 'pdf' -> 'pdf'
+        2. Si no se dictó explícitamente en el texto pero el usuario fijó un formato en la UI (default):
+           - default in ['pantalla', 'xlsx', 'docx', 'pdf'] -> default
+        3. Inferencia autónoma por dominio si no hay comando ni selección manual:
+           - Ventas / Demanda (tool_reporte_ventas_primas) -> xlsx
+           - Solvencia / Reservas (tool_solvencia_reservas) -> xlsx
+           - Auditoría SIU (tool_reporte_auditoria_fraude_siu) -> docx
+           - Siniestralidad (tool_reporte_siniestralidad) -> pdf
         """
         t = texto.lower()
-        if any(w in t for w in ["excel", "xlsx", "planilla", "hoja de calculo", "hoja de cálculo", "matriz"]):
+        if re.search(r"\bpantalla\b", t):
+            return "pantalla"
+        if re.search(r"\b(excel|xlsx)\b", t):
             return "xlsx"
-        if any(w in t for w in ["word", "docx", "documento word", "minuta", "dossier", "informe forense"]):
+        if re.search(r"\b(word|docx)\b", t):
             return "docx"
-        if any(w in t for w in ["pdf", "acrobat", "imprimible", "certificado"]):
+        if re.search(r"\bpdf\b", t):
             return "pdf"
 
-        # Si el llamador especificó un default explícito diferente a 'pdf'/'auto'
-        if default and default.lower() in ["xlsx", "docx"]:
-            return default.lower()
+        # Si el llamador especificó un default explícito diferente a 'auto'
+        if default and default.lower().strip() in ["pantalla", "xlsx", "docx", "pdf"]:
+            return default.lower().strip()
 
         # Inferencia Autónoma por Dominio de Negocio:
-        if herramienta == "tool_reporte_ventas_primas":
-            return "xlsx"
-        elif herramienta == "tool_solvencia_reservas":
+        if herramienta in ["tool_reporte_ventas_primas", "tool_solvencia_reservas"]:
             return "xlsx"
         elif herramienta == "tool_reporte_auditoria_fraude_siu":
             return "docx"

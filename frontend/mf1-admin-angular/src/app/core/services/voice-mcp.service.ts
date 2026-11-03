@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
-import { VoiceMcpResponse, McpToolDefinition } from '../models/voice-mcp.models';
+import { VoiceMcpResponse, McpToolDefinition, QuickExportRequest, GeneratedDocument } from '../models/voice-mcp.models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -36,6 +36,16 @@ export class VoiceMcpService {
     }
 
     return this.http.post<VoiceMcpResponse>(`${this.baseUrl}/voice-command`, formData).pipe(
+      catchError(err => throwError(() => err))
+    );
+  }
+
+  /**
+   * Exporta instantáneamente (< 200 ms) un reporte a partir de datos ya presentes en pantalla
+   * hacia Excel (.xlsx), PDF (.pdf) o Word (.docx) sin consultar la base de datos de nuevo.
+   */
+  exportarDocumentoEnCaliente(payload: QuickExportRequest): Observable<GeneratedDocument> {
+    return this.http.post<GeneratedDocument>(`${this.baseUrl}/export-document`, payload).pipe(
       catchError(err => throwError(() => err))
     );
   }

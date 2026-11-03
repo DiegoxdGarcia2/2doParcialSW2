@@ -165,84 +165,104 @@
           </textarea>
         </div>
 
-        <!-- Inferencia Dinámica Autónoma: Formato y Herramienta MCP (100% Automático) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          <!-- 1. Formato de Exportación Autónomo -->
-          <div>
-            <label class="text-[11px] font-semibold text-on-surface-variant flex items-center justify-between mb-1">
-              <span>Formato de Exportación Resuelto:</span>
-              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-tertiary/10 text-tertiary font-bold">AUTO-IA</span>
+        <!-- Segmented Button Group Cuádruple: Pantalla | Excel | PDF | Word -->
+        <div class="space-y-2 pt-2">
+          <div class="flex items-center justify-between">
+            <label class="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-primary">output</span>
+              <span>Formato de Entrega del Reporte:</span>
             </label>
-            <div class="p-2.5 rounded-lg bg-surface border border-outline/30 space-y-1.5">
-              <div class="flex items-center justify-between">
-                <span class="flex items-center gap-1.5 font-mono font-bold text-xs text-on-surface">
-                  <span class="material-symbols-outlined text-base text-primary">
-                    {{ getFormatIcon(formatoDetectado) }}
-                  </span>
-                  {{ getFormatLabel(formatoDetectado) }}
-                </span>
-                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">
-                  {{ formatoDetectado.toUpperCase() }}
-                </span>
-              </div>
-              <div class="text-[10px] text-outline-variant font-mono truncate" [title]="formatoRazon">
-                {{ formatoRazon }}
-              </div>
-            </div>
-            <!-- Chips opcionales de forzado rápido si el usuario lo desea sin hablar -->
-            <div class="flex items-center gap-1.5 mt-1.5">
-              <span class="text-[9px] font-mono text-outline-variant">Forzar:</span>
+            <div class="flex items-center gap-2">
+              <span *ngIf="!formatoModoManual" class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold border border-primary/20">
+                AUTO-IA (Sugerido)
+              </span>
+              <span *ngIf="formatoModoManual" class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-bold border border-tertiary/20 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                MANUAL (Fijado)
+              </span>
               <button 
+                *ngIf="formatoModoManual"
                 type="button"
-                (click)="cambiarFormatoManual('xlsx')"
-                [class.bg-primary]="formatoDetectado === 'xlsx'"
-                [class.text-on-primary]="formatoDetectado === 'xlsx'"
-                [class.bg-surface-container]="formatoDetectado !== 'xlsx'"
-                class="px-2 py-0.5 rounded text-[10px] font-mono transition-colors">
-                Excel
-              </button>
-              <button 
-                type="button"
-                (click)="cambiarFormatoManual('pdf')"
-                [class.bg-primary]="formatoDetectado === 'pdf'"
-                [class.text-on-primary]="formatoDetectado === 'pdf'"
-                [class.bg-surface-container]="formatoDetectado !== 'pdf'"
-                class="px-2 py-0.5 rounded text-[10px] font-mono transition-colors">
-                PDF
-              </button>
-              <button 
-                type="button"
-                (click)="cambiarFormatoManual('docx')"
-                [class.bg-primary]="formatoDetectado === 'docx'"
-                [class.text-on-primary]="formatoDetectado === 'docx'"
-                [class.bg-surface-container]="formatoDetectado !== 'docx'"
-                class="px-2 py-0.5 rounded text-[10px] font-mono transition-colors">
-                Word
+                (click)="restaurarModoAutoIA()"
+                title="Volver a inferencia automática"
+                class="text-[9px] font-mono text-outline-variant hover:text-primary underline cursor-pointer">
+                Restaurar Auto-IA
               </button>
             </div>
           </div>
 
-          <!-- 2. Resolución MCP 100% Automática por IA (Sin selección manual) -->
-          <div>
-            <label class="text-[11px] font-semibold text-on-surface-variant flex items-center justify-between mb-1">
-              <span>Resolución MCP Autónoma:</span>
-              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">AUTO-IA</span>
-            </label>
-            <div class="p-2.5 rounded-lg bg-surface border border-primary/30 space-y-1.5">
-              <div class="flex items-center justify-between">
-                <span class="flex items-center gap-1.5 font-mono font-bold text-xs text-primary truncate">
-                  <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                  {{ obtenerNombreHerramienta(herramientaDetectada || lastResponse?.traza_mcp?.tool_name) }}
-                </span>
-                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold ml-1">
-                  ACTIVO
-                </span>
-              </div>
-              <div class="text-[10px] text-outline-variant font-mono truncate">
-                Mapeo automático a consulta SQL/Mongo parametrizada
-              </div>
-            </div>
+          <!-- Selector Segmentado Cuádruple -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-surface-container rounded-xl border border-outline/20">
+            <button 
+              type="button"
+              (click)="cambiarFormatoManual('pantalla')"
+              [class.bg-primary]="formatoDetectado === 'pantalla'"
+              [class.text-white]="formatoDetectado === 'pantalla'"
+              [class.shadow-md]="formatoDetectado === 'pantalla'"
+              [class.bg-surface]="formatoDetectado !== 'pantalla'"
+              [class.text-on-surface]="formatoDetectado !== 'pantalla'"
+              class="py-2 px-2.5 rounded-lg text-xs font-semibold font-headline flex items-center justify-center gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-base">desktop_windows</span>
+              <span>Pantalla</span>
+            </button>
+
+            <button 
+              type="button"
+              (click)="cambiarFormatoManual('xlsx')"
+              [class.bg-primary]="formatoDetectado === 'xlsx'"
+              [class.text-white]="formatoDetectado === 'xlsx'"
+              [class.shadow-md]="formatoDetectado === 'xlsx'"
+              [class.bg-surface]="formatoDetectado !== 'xlsx'"
+              [class.text-on-surface]="formatoDetectado !== 'xlsx'"
+              class="py-2 px-2.5 rounded-lg text-xs font-semibold font-headline flex items-center justify-center gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-base">table_chart</span>
+              <span>Excel (.xlsx)</span>
+            </button>
+
+            <button 
+              type="button"
+              (click)="cambiarFormatoManual('pdf')"
+              [class.bg-primary]="formatoDetectado === 'pdf'"
+              [class.text-white]="formatoDetectado === 'pdf'"
+              [class.shadow-md]="formatoDetectado === 'pdf'"
+              [class.bg-surface]="formatoDetectado !== 'pdf'"
+              [class.text-on-surface]="formatoDetectado !== 'pdf'"
+              class="py-2 px-2.5 rounded-lg text-xs font-semibold font-headline flex items-center justify-center gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-base">picture_as_pdf</span>
+              <span>PDF (.pdf)</span>
+            </button>
+
+            <button 
+              type="button"
+              (click)="cambiarFormatoManual('docx')"
+              [class.bg-primary]="formatoDetectado === 'docx'"
+              [class.text-white]="formatoDetectado === 'docx'"
+              [class.shadow-md]="formatoDetectado === 'docx'"
+              [class.bg-surface]="formatoDetectado !== 'docx'"
+              [class.text-on-surface]="formatoDetectado !== 'docx'"
+              class="py-2 px-2.5 rounded-lg text-xs font-semibold font-headline flex items-center justify-center gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-base">description</span>
+              <span>Word (.docx)</span>
+            </button>
           </div>
+
+          <div class="flex items-center justify-between text-[10px] font-mono text-outline-variant px-1">
+            <span class="truncate" [title]="formatoRazon">{{ formatoRazon }}</span>
+            <span class="font-bold text-primary">{{ getFormatLabel(formatoDetectado) }}</span>
+          </div>
+        </div>
+
+        <!-- Tool MCP Resuelta Autónoma -->
+        <div class="p-2.5 rounded-lg bg-surface border border-primary/20 flex items-center justify-between">
+          <div class="flex items-center gap-2 truncate">
+            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            <span class="text-xs font-bold font-mono text-primary truncate">
+              {{ obtenerNombreHerramienta(herramientaDetectada || lastResponse?.traza_mcp?.tool_name) }}
+            </span>
+          </div>
+          <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">
+            MCP ORM ACTIVO
+          </span>
         </div>
 
         <!-- Botón de Ejecución -->
@@ -313,7 +333,8 @@
         </div>
       </div>
 
-      <!-- Tarjeta de Descarga Documental (Si la ejecución fue exitosa) -->
+      <!-- Tarjeta de Estado de Entrega (Descarga Documental o Vista en Pantalla) -->
+      <!-- CASO A: Archivo Físico Compilado (.xlsx, .pdf, .docx) -->
       <div *ngIf="lastResponse?.documento" class="bg-surface-container-lowest rounded-2xl p-6 border-2 border-primary/30 shadow-md space-y-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -360,6 +381,66 @@
           <span class="material-symbols-outlined text-sm">download</span>
           DESCARGAR ARCHIVO {{ lastResponse?.documento?.format?.toUpperCase() }}
         </a>
+      </div>
+
+      <!-- CASO B: Modo Pantalla Interactivo (Sin descarga forzada) -->
+      <div *ngIf="lastResponse && !lastResponse.documento" class="bg-surface-container-lowest rounded-2xl p-6 border-2 border-primary/30 shadow-md space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-2xl">desktop_windows</span>
+            <div>
+              <h3 class="text-sm font-bold font-headline text-on-surface">Visualización en Pantalla Activa</h3>
+              <span class="text-[10px] font-mono text-outline-variant">Análisis Interactivo • Cero Restricciones</span>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-primary/10 text-primary border border-primary/20">
+            EN PANTALLA
+          </span>
+        </div>
+
+        <p class="text-xs text-on-surface-variant font-body">
+          {{ lastResponse.filas?.length || 0 }} registros listos para análisis interactivo en el panel inferior.
+        </p>
+
+        <!-- Botón de Salto Directo a la Visualización -->
+        <button 
+          type="button" 
+          (click)="desplazarAPanelReporte()"
+          class="w-full py-2.5 rounded-lg bg-primary text-on-primary text-xs font-bold font-headline flex items-center justify-center gap-2 shadow hover:bg-primary-container transition-colors cursor-pointer">
+          <span class="material-symbols-outlined text-sm">visibility</span>
+          VER REPORTE & GRÁFICO EN PANTALLA ({{ lastResponse.filas?.length }} REGISTROS)
+        </button>
+
+        <!-- Botones de Exportación Rápida -->
+        <div class="pt-1 border-t border-outline/10">
+          <span class="text-[10px] font-mono text-outline-variant block mb-1.5">Exportación en caliente:</span>
+          <div class="grid grid-cols-3 gap-2">
+            <button 
+              type="button" 
+              (click)="exportarEnCaliente('xlsx')"
+              [disabled]="isExportingHot"
+              class="py-2 px-2 rounded-lg bg-surface hover:bg-primary/10 border border-outline/20 text-xs font-mono font-semibold text-primary flex items-center justify-center gap-1 transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-sm">table_chart</span>
+              Excel
+            </button>
+            <button 
+              type="button" 
+              (click)="exportarEnCaliente('pdf')"
+              [disabled]="isExportingHot"
+              class="py-2 px-2 rounded-lg bg-surface hover:bg-primary/10 border border-outline/20 text-xs font-mono font-semibold text-primary flex items-center justify-center gap-1 transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+              PDF
+            </button>
+            <button 
+              type="button" 
+              (click)="exportarEnCaliente('docx')"
+              [disabled]="isExportingHot"
+              class="py-2 px-2 rounded-lg bg-surface hover:bg-primary/10 border border-outline/20 text-xs font-mono font-semibold text-primary flex items-center justify-center gap-1 transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-sm">description</span>
+              Word
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Traza de Invocación MCP -->
@@ -420,41 +501,105 @@
 
     </div>
 
-    <!-- Previsualización Tabular de Datos en Vivo (Executive Precision Data Table) -->
-    <div *ngIf="lastResponse?.columnas && lastResponse?.filas && lastResponse?.filas?.length! > 0" 
-         class="lg:col-span-12 bg-surface-container-lowest rounded-2xl p-6 border-2 border-primary/30 shadow-md space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline/20">
-        <div class="flex items-center gap-2.5">
-          <span class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            <span class="material-symbols-outlined text-lg">table_chart</span>
+    <!-- Panel Generativo Interactivo en Pantalla (Executive Precision Multi-Formato) -->
+    <div id="panelReporteInteractivo" 
+         *ngIf="lastResponse?.columnas && lastResponse?.filas && lastResponse?.filas?.length! > 0" 
+         class="lg:col-span-12 bg-surface-container-lowest rounded-2xl p-6 border-2 border-primary/30 shadow-md space-y-5">
+      
+      <!-- Encabezado del Panel Generativo y Barra de Exportación Rápida -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline/20">
+        <div class="flex items-center gap-3">
+          <span class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
+            <span class="material-symbols-outlined text-2xl">auto_graph</span>
           </span>
           <div>
-            <h3 class="text-sm font-bold font-headline text-on-surface">
-              Previsualización de Datos Procesados ({{ lastResponse?.filas?.length }} registros)
-            </h3>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-bold font-headline text-on-surface">
+                Reporte Generativo Interactivo ({{ lastResponse?.filas?.length }} registros)
+              </h3>
+              <span class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                100% PARAMETRIZADO
+              </span>
+            </div>
             <p class="text-[11px] text-on-surface-variant font-body">
-              Obtenido en tiempo real desde {{ lastResponse?.traza_mcp?.fuente_datos }}
+              Fuente de Datos: <span class="font-bold text-on-surface">{{ lastResponse?.traza_mcp?.fuente_datos }}</span> • Latencia MCP: {{ lastResponse?.traza_mcp?.execution_time_ms }} ms
             </p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <span class="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-surface-container border border-outline/20 text-primary flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-sm">filter_list</span>
-            {{ lastResponse?.filas?.length }} filas
-          </span>
-          <a 
-            [href]="obtenerDownloadUrl(lastResponse!.documento!.filename)"
-            download
-            target="_blank"
-            class="px-3 py-1.5 rounded-md bg-primary text-on-primary text-xs font-semibold flex items-center gap-1.5 shadow hover:bg-primary-container transition-colors">
-            <span class="material-symbols-outlined text-sm">download</span>
-            Descargar {{ lastResponse?.documento?.format?.toUpperCase() }}
-          </a>
+        <!-- Barra de Exportación en Caliente (< 200 ms) -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-[11px] font-mono text-outline-variant mr-1">Exportar a:</span>
+
+          <button 
+            type="button"
+            (click)="exportarEnCaliente('xlsx')"
+            [disabled]="isExportingHot"
+            class="px-3 py-1.5 rounded-lg bg-surface hover:bg-primary/10 border border-outline/20 text-xs font-semibold text-primary flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+            <span class="material-symbols-outlined text-sm">table_chart</span>
+            Excel (.xlsx)
+          </button>
+
+          <button 
+            type="button"
+            (click)="exportarEnCaliente('pdf')"
+            [disabled]="isExportingHot"
+            class="px-3 py-1.5 rounded-lg bg-surface hover:bg-primary/10 border border-outline/20 text-xs font-semibold text-primary flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+            <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+            PDF (.pdf)
+          </button>
+
+          <button 
+            type="button"
+            (click)="exportarEnCaliente('docx')"
+            [disabled]="isExportingHot"
+            class="px-3 py-1.5 rounded-lg bg-surface hover:bg-primary/10 border border-outline/20 text-xs font-semibold text-primary flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+            <span class="material-symbols-outlined text-sm">description</span>
+            Word (.docx)
+          </button>
+
+          <span *ngIf="isExportingHot" class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin ml-2"></span>
         </div>
       </div>
 
-      <!-- Tabla Responsive -->
+      <!-- Gráfico Contextual Dinámico Chart.js -->
+      <div class="bg-surface rounded-xl p-4 border border-outline/20 shadow-sm space-y-2">
+        <div class="flex items-center justify-between pb-2 border-b border-outline/10">
+          <span class="text-xs font-bold font-headline text-on-surface flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-primary">bar_chart</span>
+            Visualización Contextual Dinámica (Chart.js)
+          </span>
+          <span class="text-[10px] font-mono text-outline-variant">
+            Mapeo adaptativo según Tool MCP ejecutada
+          </span>
+        </div>
+        <div class="relative h-72 w-full">
+          <canvas #contextualChartCanvas id="contextualChartCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Barra de Filtro en Vivo y Conteo -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+        <div class="relative flex-1 max-w-md">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-base pointer-events-none">
+            search
+          </span>
+          <input 
+            type="text"
+            [(ngModel)]="busquedaFiltro"
+            placeholder="Filtrar registros por cualquier columna (placa, vehículo, severidad, taller)..."
+            class="w-full pl-9 pr-3 py-2 text-xs rounded-lg bg-surface border border-outline/20 focus:border-primary focus:outline-none transition-colors text-on-surface font-body"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-surface-container border border-outline/20 text-primary flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">filter_list</span>
+            Mostrando {{ filasFiltradas.length }} de {{ lastResponse?.filas?.length }} filas
+          </span>
+        </div>
+      </div>
+
+      <!-- Tabla Responsive con Datos Filtrados -->
       <div class="overflow-x-auto rounded-xl border border-outline/20 max-h-96">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
@@ -465,16 +610,21 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-outline/10 font-body">
-            <tr *ngFor="let row of lastResponse?.filas; let i = index" 
+            <tr *ngFor="let row of filasFiltradas; let i = index" 
                 [class.bg-surface-container-lowest]="i % 2 === 0" 
                 [class.bg-surface-container-low]="i % 2 !== 0"
                 class="hover:bg-primary/5 transition-colors">
               <td *ngFor="let col of lastResponse?.columnas" class="px-4 py-2.5 text-on-surface font-mono text-[11px] whitespace-nowrap">
-                <span [class.font-bold]="col === 'tipo_vehiculo' || col === 'numero_reclamo' || col === 'poliza'"
-                      [class.text-primary]="col === 'demanda_polizas' || col === 'volumen_total_usd'"
-                      [class.text-error]="col === 'siniestralidad_pct' || col === 'tasa_siniestralidad_pct'">
+                <span [class.font-bold]="col === 'tipo_vehiculo' || col === 'numero_reclamo' || col === 'poliza' || col === 'taller_mecanico'"
+                      [class.text-primary]="col === 'demanda_polizas' || col === 'volumen_total_usd' || col === 'monto_usd'"
+                      [class.text-error]="col === 'siniestralidad_pct' || col === 'score_anomalia' || col === 'costo_estimado'">
                   {{ formatCellValue(row[col], col) }}
                 </span>
+              </td>
+            </tr>
+            <tr *ngIf="filasFiltradas.length === 0">
+              <td [attr.colspan]="lastResponse?.columnas?.length || 1" class="px-4 py-8 text-center text-outline-variant font-mono text-xs">
+                No se encontraron registros que coincidan con "{{ busquedaFiltro }}".
               </td>
             </tr>
           </tbody>

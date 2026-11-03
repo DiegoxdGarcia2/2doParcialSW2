@@ -14,6 +14,10 @@
 import time
 from typing import List, Dict, Any, Tuple
 from app.entities.voice_mcp_dto import McpToolDefinitionDTO, McpToolInvocationTraceDTO
+from app.entities.commercial_analytics_dto import CommercialFilterInputDTO, CommercialKpiSummaryDTO
+from app.controls.commercial_analytics_control import commercial_control
+from app.entities.actuarial_loss_dto import ActuarialLossFilterInputDTO, ActuarialLossSummaryDTO
+from app.controls.actuarial_loss_control import actuarial_loss_control
 from app.db.connections import get_postgres_connection, get_mongo_db
 
 
@@ -118,6 +122,86 @@ class McpProtocolServer:
                     },
                     "required": ["formato"]
                 }
+            ),
+            McpToolDefinitionDTO(
+                name="tool_analitica_siniestralidad_360",
+                description="Analítica multidimensional 360° de frecuencia de siniestros, severidad de choques, edad del conductor y tipos de vehículos con SQL 100% puro.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "tipo_vehiculo": {
+                            "type": "string",
+                            "enum": ["TODOS", "SUV", "CAMIONETA", "HATCHBACK", "MOTOCICLETA", "SEDAN"],
+                            "default": "TODOS",
+                            "description": "Filtro por tipo de vehículo en la base de datos PostgreSQL"
+                        },
+                        "rango_edad": {
+                            "type": "string",
+                            "enum": ["TODOS", "18-25", "26-35", "36-50", "51-65", "65+"],
+                            "default": "TODOS",
+                            "description": "Cohorte de edad del conductor asegurado"
+                        },
+                        "antiguedad_licencia": {
+                            "type": "string",
+                            "enum": ["TODOS", "NOVATO", "INTERMEDIO", "EXPERTO"],
+                            "default": "TODOS",
+                            "description": "Años de experiencia de licencia de conducir"
+                        },
+                        "antiguedad_vehiculo": {
+                            "type": "string",
+                            "enum": ["TODOS", "2020_2023", "2015_2019", "2010_2014"],
+                            "default": "TODOS",
+                            "description": "Rango de años de fabricación del vehículo"
+                        },
+                        "formato": {
+                            "type": "string",
+                            "enum": ["xlsx", "pdf", "docx", "json"],
+                            "default": "pdf",
+                            "description": "Formato deseado del documento compilado"
+                        }
+                    },
+                    "required": []
+                }
+            ),
+            McpToolDefinitionDTO(
+                name="tool_analitica_comercial_360",
+                description="Analítica multidimensional 360° de rentabilidad comercial, LTV, CAC, retención, churn y eficiencia de canales.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "departamento": {
+                            "type": "string",
+                            "enum": ["TODOS", "SANTA_CRUZ", "LA_PAZ", "COCHABAMBA", "TARIJA", "CHUQUISACA", "ORURO", "POTOSI", "BENI", "PANDO"],
+                            "default": "TODOS",
+                            "description": "Filtro geográfico departamental o consolidado nacional"
+                        },
+                        "ramo": {
+                            "type": "string",
+                            "enum": ["TODOS", "VEHICULAR", "SALUD", "VIDA", "HOGAR"],
+                            "default": "TODOS",
+                            "description": "Línea de seguros / Tipo de plan según esquema GraphQL"
+                        },
+                        "canal": {
+                            "type": "string",
+                            "enum": ["TODOS", "WEB_REACT", "WHATSAPP_N8N", "BROKER", "OFICINA_ANGULAR"],
+                            "default": "TODOS",
+                            "description": "Canal de distribución y venta de pólizas"
+                        },
+                        "periodo": {
+                            "type": "string",
+                            "enum": ["Q1", "Q2", "Q3", "Q4", "YTD", "MENSUAL"],
+                            "default": "Q3",
+                            "description": "Ventana temporal de análisis financiero"
+                        },
+                        "formato": {
+                            "type": "string",
+                            "enum": ["xlsx", "pdf", "docx", "json"],
+                            "default": "pdf",
+                            "description": "Formato deseado del documento compilado"
+                        }
+                    },
+                    "required": []
+                }
             )
         ]
 
@@ -141,6 +225,10 @@ class McpProtocolServer:
             titulo, kpis, cols, filas, fuente = cls._query_auditoria_fraude_siu(arguments)
         elif tool_name == "tool_solvencia_reservas":
             titulo, kpis, cols, filas, fuente = cls._query_solvencia_reservas(arguments)
+        elif tool_name == "tool_analitica_siniestralidad_360":
+            titulo, kpis, cols, filas, fuente = cls._query_analitica_siniestralidad(arguments)
+        elif tool_name == "tool_analitica_comercial_360":
+            titulo, kpis, cols, filas, fuente = cls._query_analitica_comercial(arguments)
         else:
             # Fallback seguro
             titulo, kpis, cols, filas, fuente = cls._query_siniestralidad(arguments)
@@ -543,3 +631,98 @@ class McpProtocolServer:
 
         columnas = ["ramo_vehicular", "polizas_activas", "primas_emitidas_usd", "siniestros_pagados_usd", "reserva_tecnica_usd", "loss_ratio", "estado_solvencia"]
         return "Informe Ejecutivo de Solvencia Técnica, Reservas y Solvency II (Neon DB & Spring Boot)", kpis, columnas, filas, "Neon PostgreSQL (reserva_tecnica + dataset_historico) + MS3 Spring Boot"
+
+    @classmethod
+    def _query_analitica_comercial(cls, args: Dict[str, Any]):
+        """Ejecuta consulta analítica 360° y formatea resultados para el motor de reportes / voz."""
+        filter_dto = CommercialFilterInputDTO(
+            departamento=args.get("departamento", "TODOS"),
+            ramo=args.get("ramo", "TODOS"),
+            canal=args.get("canal", "TODOS"),
+            periodo=args.get("periodo", "Q3")
+        )
+        res = commercial_control.analizar_rentabilidad_comercial_360(filter_dto)
+
+        titulo = f"Informe 360°: Rentabilidad y Eficiencia de Canales ({res.filtros_aplicados.periodo} - {res.filtros_aplicados.departamento})"
+        kpis = {
+            "Prima Media Emitida": f"${res.prima_media_usd:,.2f} USD",
+            "CAC Promedio Ponderado": f"${res.cac_promedio_usd:,.2f} USD",
+            "Lifetime Value (LTV)": f"${res.ltv_promedio_usd:,.2f} USD",
+            "Ratio LTV / CAC": f"{res.ltv_cac_ratio:.2f}x ({res.salud_comercial_label})",
+            "Tasa Anual de Retención": f"{res.retencion_anual_pct:.1f}%",
+            "Tasa de Churn": f"{res.churn_anual_pct:.1f}%",
+            "Conversión Global": f"{res.tasa_conversion_global_pct:.1f}%",
+            "Pólizas Activas": f"{res.polizas_totales:,} unid.",
+            "Ingresos Totales (GWP)": f"${res.ingresos_totales_usd:,.2f} USD"
+        }
+        cols = ["Canal", "CAC (USD)", "Conversión (%)", "Pólizas", "Ingresos GWP (USD)", "Margen (%)"]
+        filas = [
+            {
+                "Canal": c.canal,
+                "CAC (USD)": f"${c.cac_usd:.2f}",
+                "Conversión (%)": f"{c.conversion_pct:.1f}%",
+                "Pólizas": c.polizas_vendidas,
+                "Ingresos GWP (USD)": f"${c.ingresos_usd:,.2f}",
+                "Margen (%)": f"{c.margen_contribucion_pct:.1f}%"
+            }
+            for c in res.canales_eficiencia
+        ]
+        fuente = "Neon PostgreSQL (1,200 Pólizas) + Modelos ML MS4 (Scikit-Learn) + GraphQL MS1"
+        return titulo, kpis, cols, filas, fuente
+
+    @classmethod
+    def _query_analitica_siniestralidad(cls, args: Dict[str, Any]):
+        """Ejecuta consulta analítica de siniestralidad 100% SQL en PostgreSQL y formatea para reportes / voz."""
+        filter_dto = ActuarialLossFilterInputDTO(
+            tipo_vehiculo=args.get("tipo_vehiculo", "TODOS"),
+            rango_edad=args.get("rango_edad", "TODOS"),
+            antiguedad_licencia=args.get("antiguedad_licencia", "TODOS"),
+            antiguedad_vehiculo=args.get("antiguedad_vehiculo", "TODOS")
+        )
+        res = actuarial_loss_control.analizar_siniestralidad_actuarial_360(filter_dto)
+
+        titulo = f"Informe 360°: Siniestralidad y Severidad Vehicular ({res.filtros_aplicados.tipo_vehiculo} - {res.filtros_aplicados.rango_edad})"
+        kpis = {
+            "Frecuencia de Siniestralidad": f"{res.frecuencia_siniestralidad_pct:.2f}%",
+            "Severidad Media por Choque": f"${res.severidad_media_usd:,.2f} USD",
+            "Loss Ratio Técnico": f"{res.loss_ratio_tecnico_pct:.2f}% ({res.salud_cartera_label})",
+            "Prima Media Anual": f"${res.prima_media_anual_usd:,.2f} USD",
+            "Score Medio de Riesgo": f"{res.score_medio_riesgo:.1f} pts",
+            "Pólizas Analizadas": f"{res.total_polizas:,} unid.",
+            "Accidentes Totales": f"{res.total_siniestros:,} casos",
+            "Costo Total Siniestros": f"${res.costo_total_siniestros_usd:,.2f} USD",
+            "Primas Recaudadas": f"${res.primas_totales_usd:,.2f} USD"
+        }
+        cols = ["Tipo Vehículo", "Total Pólizas", "Siniestros", "Frecuencia (%)", "Costo Medio (USD)", "Prima Media (USD)", "Loss Ratio (%)", "Semáforo"]
+        filas = [
+            {
+                "Tipo Vehículo": v.tipo_vehiculo,
+                "Total Pólizas": v.total_polizas,
+                "Siniestros": v.siniestros_count,
+                "Frecuencia (%)": f"{v.frecuencia_siniestralidad_pct:.1f}%",
+                "Costo Medio (USD)": f"${v.costo_medio_usd:,.2f}",
+                "Prima Media (USD)": f"${v.prima_media_usd:,.2f}",
+                "Loss Ratio (%)": f"{v.loss_ratio_pct:.1f}%",
+                "Semáforo": v.semaforo_tecnico
+            }
+            for v in res.desglose_por_vehiculo
+        ]
+        fuente = "Neon PostgreSQL (1,200 Pólizas dataset_historico_ml_polizas) - Consultas SQL 100% Puras"
+        return titulo, kpis, cols, filas, fuente
+
+    @classmethod
+    def ejecutar_tool_analitica_siniestralidad_360(
+        cls,
+        filter_dto: ActuarialLossFilterInputDTO
+    ) -> ActuarialLossSummaryDTO:
+        """Invoca la Tool MCP tipada de siniestralidad directamente retornando la estructura DTO de negocio."""
+        return actuarial_loss_control.analizar_siniestralidad_actuarial_360(filter_dto)
+
+    @classmethod
+    def ejecutar_tool_analitica_comercial_360(
+        cls,
+        filter_dto: CommercialFilterInputDTO
+    ) -> CommercialKpiSummaryDTO:
+        """Invoca la Tool MCP tipada directamente retornando la estructura DTO de negocio."""
+        return commercial_control.analizar_rentabilidad_comercial_360(filter_dto)
+

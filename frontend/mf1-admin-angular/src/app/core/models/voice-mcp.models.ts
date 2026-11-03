@@ -1,3 +1,5 @@
+export type VoiceDeliveryFormat = 'pantalla' | 'xlsx' | 'pdf' | 'docx';
+
 export interface OwaspSecurityAudit {
   es_amenaza: boolean;
   threat_score: number;
@@ -30,12 +32,22 @@ export interface McpToolInvocationTrace {
 
 export interface GeneratedDocument {
   filename: string;
-  format: 'xlsx' | 'pdf' | 'docx';
+  format: 'xlsx' | 'pdf' | 'docx' | 'pantalla';
   file_size_bytes: number;
   file_size_kb: number;
   sha256_hash: string;
   download_url: string;
   created_at: string;
+}
+
+export interface QuickExportRequest {
+  titulo: string;
+  kpis: Record<string, any>;
+  columnas: string[];
+  filas: Record<string, any>[];
+  formato: 'xlsx' | 'pdf' | 'docx';
+  nombre_base?: string;
+  params?: Record<string, any>;
 }
 
 export interface VoiceMcpResponse {

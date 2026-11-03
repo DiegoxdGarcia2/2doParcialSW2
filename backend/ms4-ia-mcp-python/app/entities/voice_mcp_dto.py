@@ -81,6 +81,17 @@ class GeneratedDocumentDTO(BaseModel):
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 
+class QuickExportRequestDTO(BaseModel):
+    """Solicitud de exportación rápida en caliente a partir de datos ya cargados en pantalla."""
+    titulo: str = Field(default="Reporte Generativo AegisCore")
+    kpis: Dict[str, Any] = Field(default_factory=dict)
+    columnas: List[str] = Field(default_factory=list)
+    filas: List[Dict[str, Any]] = Field(default_factory=list)
+    formato: str = Field(description="xlsx, pdf o docx")
+    nombre_base: str = Field(default="reporte_generativo")
+    params: Optional[Dict[str, Any]] = Field(default=None)
+
+
 class VoiceMcpExecutionResponse(BaseModel):
     """Respuesta unificada de procesamiento de comando de voz con MCP y OWASP."""
     transcripcion: str = Field(description="Texto transcrito por Whisper STT o texto dictado")

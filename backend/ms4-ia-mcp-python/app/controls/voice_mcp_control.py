@@ -189,13 +189,16 @@ class VoiceMcpControl:
         else:
             herramienta = herramienta_detectada or "tool_reporte_siniestralidad"
 
-        # Resolución Dinámica Autónoma del Formato:
-        if formato_detectado and formato_detectado in ["xlsx", "pdf", "docx"]:
+        # Resolución con Prioridad Absoluta al Usuario (Sin restricciones del Auto-IA):
+        # 1. Prioridad: Si el usuario seleccionó un formato manual explícito en el UI
+        pref_limpio = (formato_preferido or "").lower().strip()
+        if pref_limpio in ["pantalla", "xlsx", "pdf", "docx"]:
+            formato_final = pref_limpio
+        # 2. Prioridad: Si el usuario dictó explícitamente el formato en lenguaje natural
+        elif formato_detectado and formato_detectado in ["pantalla", "xlsx", "pdf", "docx"]:
             formato_final = formato_detectado
-        elif formato_preferido and formato_preferido.lower() in ["xlsx", "pdf", "docx"]:
-            formato_final = formato_preferido.lower()
+        # 3. Fallback: Inferencia Autónoma por Dominio (Auto-IA)
         else:
-            # Inferencia según naturaleza de los datos del dominio asegurador:
             if herramienta in ["tool_reporte_ventas_primas", "tool_solvencia_reservas"]:
                 formato_final = "xlsx"
             elif herramienta == "tool_reporte_auditoria_fraude_siu":
@@ -250,16 +253,21 @@ class VoiceMcpControl:
         # Paso 4: Ejecución segura de herramienta MCP
         titulo, kpis, cols, filas, traza = self.ejecutarHerramientaMCP(herramienta, params)
 
-        # Paso 5: Generación física del documento (.xlsx, .pdf, .docx) con persistencia dual
-        documento = self.exportarReporteDocumento(
-            titulo=titulo,
-            kpis=kpis,
-            columnas=cols,
-            filas=filas,
-            formato=formato_final,
-            nombre_base=herramienta.replace("tool_", "reporte_"),
-            params=params
-        )
+        # Paso 5: Generación física del documento (.xlsx, .pdf, .docx) o entrega en pantalla
+        if formato_final == "pantalla":
+            documento = None
+            mensaje = f"✅ Consulta procesada con éxito. Visualizando {len(filas)} registros en pantalla sin restricciones."
+        else:
+            documento = self.exportarReporteDocumento(
+                titulo=titulo,
+                kpis=kpis,
+                columnas=cols,
+                filas=filas,
+                formato=formato_final,
+                nombre_base=herramienta.replace("tool_", "reporte_"),
+                params=params
+            )
+            mensaje = f"✅ Comando de voz procesado con éxito. Reporte '{documento.filename}' compilado en formato {formato_final.upper()} listo para descarga."
 
         return VoiceMcpExecutionResponse(
             transcripcion=texto,
@@ -271,7 +279,32 @@ class VoiceMcpControl:
             columnas=cols,
             filas=filas[:50],
             documento=documento,
-            mensaje=f"✅ Comando de voz procesado con éxito. Reporte '{documento.filename}' generado y listo para descarga."
+            mensaje=mensaje
+        )
+
+    def exportarDocumentoEnCaliente(
+        self,
+        titulo: str,
+        kpis: Dict[str, Any],
+        columnas: List[str],
+        filas: List[Dict[str, Any]],
+        formato: str = "pdf",
+        nombre_base: str = "reporte_generativo",
+        params: Optional[Dict[str, Any]] = None
+    ) -> GeneratedDocumentDTO:
+        """
+        Operación UML 2.5+: exportarDocumentoEnCaliente()
+        Permite compilar instantáneamente (< 200 ms) un reporte a partir de datos ya presentes
+        en pantalla hacia Excel, PDF o Word, sin reejecutar consultas a la base de datos.
+        """
+        return self.exportarReporteDocumento(
+            titulo=titulo,
+            kpis=kpis,
+            columnas=columnas,
+            filas=filas,
+            formato=formato,
+            nombre_base=nombre_base,
+            params=params
         )
 
     def obtenerCatalogoTools(self) -> List[McpToolDefinitionDTO]:
