@@ -27,6 +27,24 @@
           {{ formatOrientacion(assessment?.orientacion_detectada) }}
         </span>
         <span class="verified-icon material-symbols-outlined">verified</span>
+
+        <!-- Badge de Persistencia Amazon S3 -->
+        <span *ngIf="assessment?.s3_dictamen_pdf_url"
+          class="px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-800 text-xs font-mono font-bold border border-sky-300 flex items-center gap-1.5"
+          title="Dictamen técnico y evidencias respaldadas en Amazon S3">
+          <span class="material-symbols-outlined text-[14px] text-sky-600">cloud_done</span>
+          AWS S3 ACTIVO
+        </span>
+
+        <!-- Badge de Conectividad y Modo Offline / Local IA -->
+        <span *ngIf="offlineAiService.isOnline()" class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-mono font-bold border border-emerald-300 flex items-center gap-1.5" title="Conectado a MS4 Python TensorFlow CNN">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          MODO CLOUD (TensorFlow CNN v2.1)
+        </span>
+        <span *ngIf="!offlineAiService.isOnline()" class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-xs font-mono font-bold border border-amber-300 flex items-center gap-1.5" title="Inferencia Local en Navegador (Sin Conexión)">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          MODO OFFLINE (IA Local Web)
+        </span>
       </div>
 
       <div class="case-actions">
@@ -45,9 +63,17 @@
           <span>Actualizar</span>
         </button>
         <button class="btn-action-primary" (click)="analyzeNewEvidence()" [disabled]="loading"
-          title="Re-analizar Evidencia con CrashNet">
+          title="Ejecutar Peritaje con Red Neuronal Convolucional TensorFlow CrashNet">
           <span class="material-symbols-outlined text-[18px]" [class.spin]="loading">document_scanner</span>
-          <span>Re-analizar</span>
+          <span>Ejecutar Peritaje con Red Convolucional</span>
+        </button>
+        <button class="btn-action-secondary border-amber-300 text-amber-900 bg-amber-50/50 hover:bg-amber-100" (click)="ejecutarInferenciaLocalOffline()" [disabled]="loading" title="Ejecutar análisis con IA local en navegador sin enviar peticiones a la nube">
+          <span class="material-symbols-outlined text-[18px]">offline_bolt</span>
+          <span>IA Local (Offline)</span>
+        </button>
+        <button class="btn-action-secondary border-sky-300 text-sky-900 bg-sky-50/60 hover:bg-sky-100 flex items-center gap-1.5" (click)="exportarExpedientePdf()" [disabled]="loading" title="Descargar Dictamen Técnico Pericial oficial en PDF (Amazon S3 / SHA-256)">
+          <span class="material-symbols-outlined text-[18px] text-sky-700">picture_as_pdf</span>
+          <span>Dictamen PDF</span>
         </button>
       </div>
     </div>

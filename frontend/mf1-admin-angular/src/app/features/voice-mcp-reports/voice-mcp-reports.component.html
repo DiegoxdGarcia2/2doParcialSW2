@@ -370,6 +370,15 @@
           <div class="pt-1 text-[9px] font-mono text-outline-variant truncate">
             SHA-256: <span class="text-primary">{{ lastResponse?.documento?.sha256_hash }}</span>
           </div>
+
+          <!-- Badge de Persistencia Amazon S3 Cloud -->
+          <div *ngIf="lastResponse?.documento?.s3_storage_enabled" class="flex items-center justify-between text-[10px] font-mono bg-sky-50 text-sky-800 border border-sky-200 rounded-lg px-2.5 py-1">
+            <span class="flex items-center gap-1 font-bold">
+              <span class="material-symbols-outlined text-[13px] text-sky-600">cloud_done</span>
+              Amazon S3 Cloud
+            </span>
+            <span class="truncate max-w-[200px]" [title]="lastResponse?.documento?.s3_key">{{ lastResponse?.documento?.s3_key }}</span>
+          </div>
         </div>
 
         <!-- Botón de Descarga Física Directa -->

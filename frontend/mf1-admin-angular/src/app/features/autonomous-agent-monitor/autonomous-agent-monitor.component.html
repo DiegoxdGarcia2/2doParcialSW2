@@ -205,6 +205,55 @@
       </div>
     </section>
 
+    <!-- 1.5. Mission Control: Asignación de Misión Funcional al Agente Autónomo -->
+    <section class="mission-directive-card">
+      <div class="mission-directive-header">
+        <div class="mission-directive-title">
+          <span class="material-symbols-outlined text-teal-400 text-2xl">flag_circle</span>
+          <h2>Directiva & Misión Funcional del Agente Autónomo</h2>
+        </div>
+        <span class="mission-priority-badge">
+          PRIORIDAD: {{ activeMission?.prioridad || 'CRÍTICA' }}
+        </span>
+      </div>
+
+      <div class="mission-grid">
+        <!-- Tarjeta de Misión Activa -->
+        <div class="mission-active-box">
+          <span class="mission-active-label">Misión Activa Asignada</span>
+          <h3 class="mission-active-heading">{{ activeMission?.titulo || 'Descongestión de Siniestros Estancados SLA >48h' }}</h3>
+          <p class="mission-active-desc">{{ activeMission?.descripcion }}</p>
+          <div class="mission-active-metrics">
+            <span>SLA: &le; {{ activeMission?.meta_sla_horas || 24 }}h</span>
+            <span>•</span>
+            <span>Reserva: &ge; 80%</span>
+          </div>
+        </div>
+
+        <!-- Tarjeta de Comandar Misiones -->
+        <div class="mission-command-box">
+          <div>
+            <span class="mission-command-label">Comandar Nueva Misión al Agente:</span>
+            <div class="mission-btn-group">
+              <button
+                *ngFor="let m of misionesPredefinidas"
+                type="button"
+                (click)="asignarMision(m)"
+                class="mission-btn"
+                [class.is-active]="activeMission?.titulo === m.titulo">
+                <span class="material-symbols-outlined">target</span>
+                <span class="mission-btn-title">{{ m.titulo }}</span>
+              </button>
+            </div>
+          </div>
+          <div *ngIf="feedbackMessage" class="mission-feedback-msg">
+            <span class="material-symbols-outlined">check_circle</span>
+            {{ feedbackMessage }}
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 2. LangGraph StateGraph DAG Visualizer -->
     <section class="card">
       <div class="section-header">

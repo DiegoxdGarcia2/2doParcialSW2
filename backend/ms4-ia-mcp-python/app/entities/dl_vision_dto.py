@@ -111,6 +111,14 @@ class DamageAssessmentOutputDTO(BaseModel):
     mensaje_dictamen_actuarial: Optional[str] = Field(default=None, description="Dictamen técnico sobre reparabilidad vs pérdida total")
     evidencias_galeria: Optional[List[Dict[str, Any]]] = Field(default=None, description="Galería de tomas in-situ analizadas")
     estado_peritaje: str = Field(default="PERITAJE_COMPLETADO")
+    s3_evidencia_url: Optional[str] = Field(default=None, description="URL en S3 de la foto original")
+    s3_foto_anotada_url: Optional[str] = Field(default=None, description="URL en S3 de la foto con deteccion IA")
+    s3_telemetria_lidar_url: Optional[str] = Field(default=None, description="URL en S3 de la telemetria LiDAR")
+    s3_dictamen_pdf_url: Optional[str] = Field(default=None, description="URL en S3 del dictamen pericial en PDF")
+    s3_bucket: Optional[str] = Field(default=None, description="Bucket de almacenamiento")
+    s3_key_evidencia: Optional[str] = Field(default=None, description="Key S3 de la evidencia")
+    s3_key_dictamen: Optional[str] = Field(default=None, description="Key S3 del PDF del dictamen")
+    local_dictamen_pdf_url: Optional[str] = Field(default=None, description="URL de respaldo local del dictamen")
     timestamp: str
 
 

@@ -40,10 +40,12 @@ class Settings(BaseSettings):
     DYNAMODB_TABLE_IDEMPOTENCY: str = os.getenv("DYNAMODB_TABLE_IDEMPOTENCY", "AegisCore_IdempotencyRecords")
 
     # Amazon S3 (Multimedia, Evidencias Jerárquicas y Reportes Duales)
-    S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "empresa-seguros-s3")
-    AWS_S3_REGION: str = os.getenv("AWS_S3_REGION", os.getenv("AWS_REGION", "us-east-2"))
-    AWS_S3_ACCESS_KEY_ID: str = os.getenv("AWS_S3_ACCESS_KEY_ID", os.getenv("AWS_ACCESS_KEY_ID", ""))
-    AWS_S3_SECRET_ACCESS_KEY: str = os.getenv("AWS_S3_SECRET_ACCESS_KEY", os.getenv("AWS_SECRET_ACCESS_KEY", ""))
+    S3_BUCKET_NAME: str = os.getenv("AWS_S3_BUCKET") or os.getenv("S3_BUCKET_NAME") or "servicio-de-seguros-aegiscore"
+    AWS_S3_BUCKET: str = os.getenv("AWS_S3_BUCKET") or os.getenv("S3_BUCKET_NAME") or "servicio-de-seguros-aegiscore"
+    AWS_S3_REGION: str = os.getenv("AWS_S3_REGION") or os.getenv("AWS_REGION") or "us-east-2"
+    AWS_S3_ACCESS_KEY_ID: str = os.getenv("AWS_S3_ACCESS_KEY_ID") or os.getenv("AWS_ACCESS_KEY_ID") or ""
+    AWS_S3_SECRET_ACCESS_KEY: str = os.getenv("AWS_S3_SECRET_ACCESS_KEY") or os.getenv("AWS_SECRET_ACCESS_KEY") or ""
+    AWS_S3_PUBLIC_URL: str = os.getenv("AWS_S3_PUBLIC_URL") or "https://servicio-de-seguros-aegiscore.s3.us-east-2.amazonaws.com"
     S3_PRESIGNED_EXPIRATION_SECONDS: int = int(os.getenv("S3_PRESIGNED_EXPIRATION_SECONDS", "900"))
 
     # Keycloak SSO

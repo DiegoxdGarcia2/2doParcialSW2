@@ -89,6 +89,14 @@ export interface DamageAssessmentOutput {
   mensaje_dictamen_actuarial?: string;
   evidencias_galeria?: Array<{ id: string; url: string; label: string; ratio_dano?: number }>;
   estado_peritaje: string;
+  s3_evidencia_url?: string;
+  s3_foto_anotada_url?: string;
+  s3_telemetria_lidar_url?: string;
+  s3_dictamen_pdf_url?: string;
+  s3_bucket?: string;
+  s3_key_evidencia?: string;
+  s3_key_dictamen?: string;
+  local_dictamen_pdf_url?: string;
   timestamp: string;
 }
 

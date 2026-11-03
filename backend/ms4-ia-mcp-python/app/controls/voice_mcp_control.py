@@ -237,10 +237,24 @@ class VoiceMcpControl:
         # Archivo pericial de audio en Amazon S3 (para trazabilidad y auditoría legal)
         if audio_bytes and s3_storage_service.is_configured:
             try:
-                audio_key = s3_storage_service.construir_s3_key_global(
-                    categoria="audios-voz",
-                    nombre_archivo=f"audio_declaracion_{int(time.time())}.wav"
-                )
+                rec_id = params.get("numero_reclamo") or params.get("reclamo_id")
+                if rec_id:
+                    from app.controls.crashnet_vision_control import crashnet_vision_control
+                    pol_id = params.get("numero_poliza") or params.get("poliza_id")
+                    cli_doc, veh_placa = crashnet_vision_control.resolver_jerarquia_cliente_vehiculo(pol_id, str(rec_id))
+                    audio_key = s3_storage_service.construir_s3_key_incidente(
+                        cliente_id=cli_doc,
+                        vehiculo_id=veh_placa,
+                        reclamo_id=str(rec_id),
+                        categoria="audios",
+                        nombre_archivo=f"audio_declaracion_{int(time.time())}.wav"
+                    )
+                else:
+                    audio_key = s3_storage_service.construir_s3_key_global(
+                        categoria="audios-voz",
+                        nombre_archivo=f"audio_declaracion_{int(time.time())}.wav"
+                    )
+
                 s3_storage_service.subir_bytes(
                     datos_bytes=audio_bytes,
                     s3_key=audio_key,
@@ -248,6 +262,7 @@ class VoiceMcpControl:
                     metadata={"threat_score": str(auditoria.threat_score)}
                 )
             except Exception as e_audio:
+                print(f"[VoiceMcpControl] Advertencia al subir audio a S3: {e_audio}")
                 print(f"[VoiceMcpControl] Advertencia al archivar audio en S3: {e_audio}")
 
         # Paso 4: Ejecución segura de herramienta MCP

@@ -364,6 +364,39 @@ export class AgentMonitorService {
   /**
    * Recupera los eventos recientes de la bitácora del agente
    */
+  getActiveMission(): Observable<any> {
+    return this.http.get<any>(
+      `${this.baseUrl}/mission`,
+      { headers: this.getHeaders() }
+    ).pipe(
+      timeout(5000),
+      catchError(err => {
+        console.warn('[AgentMonitorService] Aviso al consultar misión activa:', err);
+        return of({
+          mision_id: 'MISION-DEFAULT-01',
+          titulo: 'Monitoreo Continuo y Destrabe de Siniestros',
+          descripcion: 'Supervisar expedientes estancados >48h y preservar reservas técnicas ($25M USD)',
+          prioridad: 'ALTA',
+          meta_sla_horas: 48
+        });
+      })
+    );
+  }
+
+  assignMission(payload: { titulo: string; descripcion: string; prioridad?: string; meta_sla_horas?: number }): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/assign-mission`,
+      payload,
+      { headers: this.getHeaders() }
+    ).pipe(
+      timeout(5000),
+      catchError(err => {
+        console.error('[AgentMonitorService] Error al asignar misión al agente:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
   getExecutionLogs(): Observable<AgentLogEvent[]> {
     return this.http.get<AgentLogEvent[]>(
       `${this.baseUrl}/execution-logs`,

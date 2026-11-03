@@ -764,6 +764,9 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
   }
 
   obtenerDownloadUrl(filename: string): string {
+    if (this.lastResponse?.documento?.download_url && this.lastResponse.documento.download_url.startsWith('http')) {
+      return this.lastResponse.documento.download_url;
+    }
     return this.voiceService.getDownloadUrl(filename);
   }
 }

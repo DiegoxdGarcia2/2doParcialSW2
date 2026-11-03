@@ -10,7 +10,7 @@ import os
 import time
 import datetime
 import threading
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 import numpy as np
 import pandas as pd
 import joblib
@@ -368,6 +368,59 @@ class RandomForestActuarialControl:
         self.pipeline_claim = joblib.load(self.artifacts_dir / "rf_pipeline_claim.joblib")
         self.pipeline_sales = joblib.load(self.artifacts_dir / "rf_pipeline_sales.joblib")
         self.metrics = joblib.load(self.artifacts_dir / "rf_metrics.joblib")
+
+    # -----------------------------------------------------------------------
+    # Método Operacional UML: sincronizarModelosEnS3()
+    # -----------------------------------------------------------------------
+    def sincronizar_modelos_en_s3(self, version: str = "v2.1") -> Dict[str, Any]:
+        """
+        Sube los pipelines de Random Forest y sus métricas hacia Amazon S3:
+        modelos-ml/{version}/rf_pipeline_*.joblib
+        """
+        from app.services.s3_storage_service import s3_storage_service
+        resultados = {}
+        archivos = [
+            "rf_pipeline_premium.joblib",
+            "rf_pipeline_claim.joblib",
+            "rf_pipeline_sales.joblib",
+            "rf_metrics.joblib"
+        ]
+        for f in archivos:
+            local_path = self.artifacts_dir / f
+            if local_path.exists():
+                s3_key = f"modelos-ml/{version}/{f}"
+                url = s3_storage_service.subir_archivo_disco(
+                    local_path=str(local_path),
+                    s3_key=s3_key,
+                    metadata={"version": version, "algoritmo": "RandomForest"}
+                )
+                resultados[f] = {
+                    "s3_key": s3_key,
+                    "s3_url": url,
+                    "size_bytes": local_path.stat().st_size,
+                    "status": "SINCRONIZADO" if url else "FALLIDO"
+                }
+        return resultados
+
+    def descargar_modelos_desde_s3(self, version: str = "v2.1") -> bool:
+        """Descarga artefactos desde el Model Registry de S3 si no existen localmente."""
+        from app.services.s3_storage_service import s3_storage_service
+        if not s3_storage_service.is_configured:
+            return False
+        archivos = ["rf_pipeline_premium.joblib", "rf_pipeline_claim.joblib", "rf_pipeline_sales.joblib", "rf_metrics.joblib"]
+        self.artifacts_dir.mkdir(parents=True, exist_ok=True)
+        downloaded = False
+        for f in archivos:
+            local_path = self.artifacts_dir / f
+            if not local_path.exists():
+                s3_key = f"modelos-ml/{version}/{f}"
+                data = s3_storage_service.descargar_bytes(s3_key)
+                if data:
+                    with open(local_path, "wb") as out_f:
+                        out_f.write(data)
+                    downloaded = True
+        return downloaded
+
 
 
 # Singleton para inyección de dependencias en FastAPI

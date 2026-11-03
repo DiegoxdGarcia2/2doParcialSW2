@@ -64,6 +64,38 @@ export class RiskFraudSentinelComponent implements OnInit, OnDestroy {
 
   lastEvaluationResult: FraudAlert | null = null;
 
+  cargarPresetNormal(): void {
+    this.newClaim = {
+      reclamo_id: `REC-NORM-${Math.floor(100 + Math.random() * 900)}`,
+      poliza_id: 'POL-2026-AUT-00210',
+      edad_conductor: 42,
+      tipo_vehiculo: 'SEDAN',
+      valor_comercial_usd: 22000,
+      monto_solicitado_usd: 1450,
+      dias_desde_emision: 140,
+      historial_siniestros: 0,
+      taller_mecanico: 'Taller Autorizado Central'
+    };
+    this.lastEvaluationResult = null;
+    this.showToast('Cargado caso estándar de bajo riesgo.', 'info');
+  }
+
+  cargarPresetFraude(): void {
+    this.newClaim = {
+      reclamo_id: `REC-FRAUD-${Math.floor(100 + Math.random() * 900)}`,
+      poliza_id: 'POL-2026-AUT-99801',
+      edad_conductor: 22,
+      tipo_vehiculo: 'SUV',
+      valor_comercial_usd: 35000,
+      monto_solicitado_usd: 31500,
+      dias_desde_emision: 3,
+      historial_siniestros: 4,
+      taller_mecanico: 'Taller Mecánico Desconocido'
+    };
+    this.lastEvaluationResult = null;
+    this.showToast('Cargado caso sospechoso de alta anomalía.', 'info');
+  }
+
   ngOnInit(): void {
     this.loadTelemetry();
   }

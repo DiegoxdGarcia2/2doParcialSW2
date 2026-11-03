@@ -16,6 +16,7 @@ from typing import Dict, Any, List, Optional, TypedDict
 from langgraph.graph import StateGraph, END
 
 from app.db.connections import get_mongo_db, get_postgres_connection
+from app.services.s3_storage_service import s3_storage_service
 from app.entities.agent_monitor_dto import (
     AgentNodeStatusDTO,
     ActiveMicroAgentDTO,
@@ -83,6 +84,32 @@ class LangGraphAutonomousAgentControl:
         self.ws_manager = AgentWebSocketManager()
         self.worker_activo = False
         self._last_alerted_frauds = set()
+        self.mision_activa = {
+            "mision_id": "MISION-DEFAULT-01",
+            "titulo": "Monitoreo Continuo y Destrabe de Siniestros Estancados",
+            "descripcion": "Supervisar expedientes estancados >48h y preservar solvencia de reservas regulatorias ($25M USD)",
+            "prioridad": "ALTA",
+            "meta_sla_horas": 48,
+            "objetivo_cobertura_pct": 80.0
+        }
+
+    def asignar_mision_agente(self, titulo: str, descripcion: str, prioridad: str = "ALTA", meta_sla_horas: int = 48) -> Dict[str, Any]:
+        """Asigna una misión específica al agente funcional LangGraph."""
+        import uuid
+        self.mision_activa = {
+            "mision_id": f"MISION-{uuid.uuid4().hex[:8].upper()}",
+            "titulo": titulo,
+            "descripcion": descripcion,
+            "prioridad": prioridad,
+            "meta_sla_horas": meta_sla_horas,
+            "objetivo_cobertura_pct": 80.0,
+            "asignada_en": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        }
+        return self.mision_activa
+
+    def obtener_mision_activa(self) -> Dict[str, Any]:
+        """Retorna la misión actual que guía la toma de decisiones del agente."""
+        return self.mision_activa
 
     # -----------------------------------------------------------------------
     # Método Operacional UML: inicializarGrafoLangGraph()
@@ -285,8 +312,8 @@ class LangGraphAutonomousAgentControl:
                     "monto_estimado_usd": float(doc.get("monto_estimado_reparacion", 1200.0)),
                     "score_fraude": float(doc.get("score_fraude", 0.08))
                 })
-            # Si no hay siniestros estancados, verificar si la colección está vacía (primer arranque)
-            if not claims and db.expedientes_siniestros.count_documents({}) == 0:
+            # Si no hay siniestros estancados pendientes, auto-sembrar para garantizar operacion continua y testing
+            if not claims:
                 self.reiniciar_siniestros_demostracion()
                 return self._obtener_siniestros_estancados_canonicos()
 
@@ -441,7 +468,8 @@ class LangGraphAutonomousAgentControl:
     # -----------------------------------------------------------------------
     def registrar_bitacora_agente(self, ciclo_id: str, duracion_ms: int, state: AgentGraphState) -> str:
         """
-        Persiste el registro cronológico del ciclo de LangGraph en MongoDB Atlas.
+        Persiste el registro cronológico del ciclo de LangGraph en MongoDB Atlas
+        y replica el log estructurado de auditoría hacia Amazon S3.
         """
         try:
             db = get_mongo_db()
@@ -457,6 +485,26 @@ class LangGraphAutonomousAgentControl:
                 "created_at": datetime.datetime.now(datetime.timezone.utc)
             }
             res = db.bitacora_agente_autonomo.insert_one(doc)
+
+            # Persistencia de auditoría en Amazon S3
+            if s3_storage_service.is_configured:
+                try:
+                    s3_key = s3_storage_service.construir_s3_key_global(
+                        categoria="auditorias-enjambre",
+                        nombre_archivo=f"auditoria_ciclo_{ciclo_id}.json"
+                    )
+                    s3_storage_service.subir_json(
+                        datos_dict=doc,
+                        s3_key=s3_key,
+                        metadata={
+                            "ciclo_id": ciclo_id,
+                            "duracion_ms": str(duracion_ms),
+                            "skills_count": str(len(state.get("skills_disparadas", [])))
+                        }
+                    )
+                except Exception as e_s3:
+                    print(f"[LangGraphControl] Advertencia al respaldar auditoría en S3: {e_s3}")
+
             return str(res.inserted_id)
         except Exception as e:
             print(f"[LangGraphControl] Advertencia al registrar en bitácora MongoDB: {e}")

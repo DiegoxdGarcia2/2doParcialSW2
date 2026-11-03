@@ -9,6 +9,8 @@
 
 import io
 import re
+import json
+import mimetypes
 import datetime
 from typing import Optional, Dict, Any, Tuple
 from app.core.config import settings
@@ -30,10 +32,10 @@ class S3StorageService:
     """
 
     def __init__(self):
-        self.bucket = settings.S3_BUCKET_NAME
-        self.region = settings.AWS_S3_REGION
-        self.access_key = settings.AWS_S3_ACCESS_KEY_ID
-        self.secret_key = settings.AWS_S3_SECRET_ACCESS_KEY
+        self.bucket = getattr(settings, "AWS_S3_BUCKET", None) or settings.S3_BUCKET_NAME
+        self.region = settings.AWS_S3_REGION or settings.AWS_REGION or "us-east-2"
+        self.access_key = settings.AWS_S3_ACCESS_KEY_ID or settings.AWS_ACCESS_KEY_ID
+        self.secret_key = settings.AWS_S3_SECRET_ACCESS_KEY or settings.AWS_SECRET_ACCESS_KEY
         self.expiracion_default = settings.S3_PRESIGNED_EXPIRATION_SECONDS
         self._s3_client = None
 
@@ -65,6 +67,19 @@ class S3StorageService:
         # Reemplazar espacios y caracteres no alfanuméricos simples
         limpio = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', str(segmento).strip())
         return limpio or fallback
+
+    @staticmethod
+    def _sanitizar_metadata(metadata: Optional[Dict[str, Any]]) -> Dict[str, str]:
+        """Garantiza que todas las claves y valores de metadata sean puramente ASCII según el RFC de AWS S3."""
+        if not metadata:
+            return {}
+        import unicodedata
+        limpio = {}
+        for k, v in metadata.items():
+            k_ascii = re.sub(r'[^a-zA-Z0-9_\-]', '', str(k))
+            v_ascii = unicodedata.normalize('NFKD', str(v)).encode('ascii', 'ignore').decode('ascii')
+            limpio[k_ascii] = v_ascii[:255]
+        return limpio
 
     # -----------------------------------------------------------------------
     # Operación UML: construir_s3_key_incidente()
@@ -131,7 +146,7 @@ class S3StorageService:
         try:
             extra_args = {"ContentType": content_type}
             if metadata:
-                extra_args["Metadata"] = metadata
+                extra_args["Metadata"] = self._sanitizar_metadata(metadata)
 
             self._s3_client.put_object(
                 Bucket=self.bucket,
@@ -164,7 +179,7 @@ class S3StorageService:
             buffer.seek(0)
             extra_args = {"ContentType": content_type}
             if metadata:
-                extra_args["Metadata"] = metadata
+                extra_args["Metadata"] = self._sanitizar_metadata(metadata)
 
             self._s3_client.upload_fileobj(
                 buffer,
@@ -203,6 +218,119 @@ class S3StorageService:
         except Exception as e:
             print(f"[S3StorageService] Error al generar Pre-signed URL para {s3_key}: {e}")
             return None
+
+    # -----------------------------------------------------------------------
+    # Operación UML: subir_json()
+    # -----------------------------------------------------------------------
+    def subir_json(
+        self,
+        datos_dict: Dict[str, Any],
+        s3_key: str,
+        metadata: Optional[Dict[str, str]] = None
+    ) -> Optional[str]:
+        """
+        Serializa un diccionario a JSON y lo almacena en S3 con ContentType application/json.
+        """
+        try:
+            payload_str = json.dumps(datos_dict, ensure_ascii=False, indent=2, default=str)
+            payload_bytes = payload_str.encode("utf-8")
+            return self.subir_bytes(
+                datos_bytes=payload_bytes,
+                s3_key=s3_key,
+                content_type="application/json; charset=utf-8",
+                metadata=metadata
+            )
+        except Exception as e:
+            print(f"[S3StorageService] Error al serializar/subir JSON a S3 ({s3_key}): {e}")
+            return None
+
+    # -----------------------------------------------------------------------
+    # Operación UML: subir_archivo_disco()
+    # -----------------------------------------------------------------------
+    def subir_archivo_disco(
+        self,
+        local_path: str,
+        s3_key: str,
+        content_type: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None
+    ) -> Optional[str]:
+        """
+        Sube un archivo ubicado en el disco local hacia S3.
+        """
+        if not self.is_configured:
+            return None
+
+        try:
+            guessed_type, _ = mimetypes.guess_type(local_path)
+            ct = content_type or guessed_type or "application/octet-stream"
+            extra_args = {"ContentType": ct}
+            if metadata:
+                extra_args["Metadata"] = self._sanitizar_metadata(metadata)
+
+            self._s3_client.upload_file(
+                Filename=local_path,
+                Bucket=self.bucket,
+                Key=s3_key,
+                ExtraArgs=extra_args
+            )
+            return self.obtener_url_publica(s3_key)
+        except Exception as e:
+            print(f"[S3StorageService] Error al subir archivo local ({local_path}) a S3 ({s3_key}): {e}")
+            return None
+
+    # -----------------------------------------------------------------------
+    # Operación UML: descargar_bytes()
+    # -----------------------------------------------------------------------
+    def descargar_bytes(self, s3_key: str) -> Optional[bytes]:
+        """
+        Descarga los bytes de un objeto almacenado en S3.
+        """
+        if not self.is_configured:
+            return None
+
+        try:
+            resp = self._s3_client.get_object(Bucket=self.bucket, Key=s3_key)
+            return resp["Body"].read()
+        except Exception as e:
+            print(f"[S3StorageService] Error al descargar objeto S3 ({s3_key}): {e}")
+            return None
+
+    # -----------------------------------------------------------------------
+    # Operación UML: existe_objeto()
+    # -----------------------------------------------------------------------
+    def existe_objeto(self, s3_key: str) -> bool:
+        """
+        Verifica si un objeto existe en el bucket de S3 sin descargar su contenido.
+        """
+        if not self.is_configured:
+            return False
+
+        try:
+            self._s3_client.head_object(Bucket=self.bucket, Key=s3_key)
+            return True
+        except ClientError as e:
+            if e.response.get("Error", {}).get("Code") in ["404", "NoSuchKey"]:
+                return False
+            return False
+        except Exception:
+            return False
+
+    # -----------------------------------------------------------------------
+    # Operación UML: eliminar_objeto()
+    # -----------------------------------------------------------------------
+    def eliminar_objeto(self, s3_key: str) -> bool:
+        """
+        Elimina un objeto del bucket S3.
+        """
+        if not self.is_configured:
+            return False
+
+        try:
+            self._s3_client.delete_object(Bucket=self.bucket, Key=s3_key)
+            return True
+        except Exception as e:
+            print(f"[S3StorageService] Error al eliminar objeto S3 ({s3_key}): {e}")
+            return False
 
     # -----------------------------------------------------------------------
     # Operación UML: verificar_conexion_bucket()

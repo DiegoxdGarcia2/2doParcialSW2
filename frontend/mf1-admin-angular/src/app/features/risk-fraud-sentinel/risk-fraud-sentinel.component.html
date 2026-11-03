@@ -30,9 +30,9 @@
           <span class="material-symbols-outlined text-[18px]" [class.spin]="retraining">model_training</span>
           <span>Reentrenar</span>
         </button>
-        <button class="btn-action-primary" (click)="showEvaluateModal = !showEvaluateModal">
+        <button class="btn-action-primary" (click)="showEvaluateModal = !showEvaluateModal" title="Auditar un siniestro en tiempo real con Isolation Forest">
           <span class="material-symbols-outlined text-[18px]">add_moderator</span>
-          <span>Auditar Siniestro</span>
+          <span>Auditar Siniestro / Evaluar Fraude</span>
         </button>
       </div>
     </div>
@@ -179,10 +179,21 @@
     <div class="modal-header">
       <div class="flex items-center gap-2">
         <span class="material-symbols-outlined text-primary text-[20px]">manage_search</span>
-        <h3 class="modal-title">Auditar Siniestro en Tiempo Real (Isolation Forest)</h3>
+        <h3 class="modal-title">Auditar Siniestro / Evaluar Sospecha de Fraude (Isolation Forest)</h3>
       </div>
       <button class="btn-close" (click)="showEvaluateModal = false">
         <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+    </div>
+
+    <!-- Botones de Casos Rápidos para Pruebas -->
+    <div class="flex items-center gap-2 px-6 py-2 bg-slate-50 border-b border-slate-200">
+      <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Carga Rápida de Casos Demo:</span>
+      <button type="button" (click)="cargarPresetNormal()" class="px-2.5 py-1 text-xs font-medium rounded bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors">
+        🟢 Caso Normal (Bajo Riesgo)
+      </button>
+      <button type="button" (click)="cargarPresetFraude()" class="px-2.5 py-1 text-xs font-medium rounded bg-rose-100 text-rose-800 hover:bg-rose-200 transition-colors">
+        🚨 Caso Sospechoso (Alta Anomalía)
       </button>
     </div>
 
@@ -234,7 +245,7 @@
     <div class="modal-footer">
       <button class="btn-action-primary" (click)="evaluateClaim()" [disabled]="evaluating">
         <span class="material-symbols-outlined text-[18px]" [class.spin]="evaluating">analytics</span>
-        <span>{{ evaluating ? 'Auditando...' : 'Ejecutar Diagnóstico Isolation Forest' }}</span>
+        <span>{{ evaluating ? 'Evaluando...' : 'Evaluar Sospecha de Fraude (Isolation Forest)' }}</span>
       </button>
     </div>
 

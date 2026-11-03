@@ -37,6 +37,10 @@ export interface GeneratedDocument {
   file_size_kb: number;
   sha256_hash: string;
   download_url: string;
+  local_download_url?: string;
+  s3_bucket?: string;
+  s3_key?: string;
+  s3_storage_enabled?: boolean;
   created_at: string;
 }
 

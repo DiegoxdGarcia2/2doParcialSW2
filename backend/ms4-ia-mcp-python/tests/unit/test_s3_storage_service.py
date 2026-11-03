@@ -129,3 +129,34 @@ def test_descarga_dual_voice_mcp():
     assert doc.filename in doc.local_download_url
     assert doc.download_url is not None
 
+
+def test_s3_subir_json_y_descargar(s3_service):
+    """Verifica la serialización y subida de datos JSON a S3."""
+    mock_boto = MagicMock()
+    mock_boto.get_object.return_value = {
+        "Body": io.BytesIO(b'{"test": "data", "status": "ok"}')
+    }
+    s3_service._s3_client = mock_boto
+
+    key = "reportes-globales/2026/03/auditoria_test.json"
+    url = s3_service.subir_json({"test": "data", "status": "ok"}, key)
+    assert url is not None
+    mock_boto.put_object.assert_called_once()
+
+    descargado = s3_service.descargar_bytes(key)
+    assert descargado == b'{"test": "data", "status": "ok"}'
+
+
+def test_s3_existe_y_eliminar_objeto(s3_service):
+    """Verifica chequeo de existencia y borrado en S3."""
+    mock_boto = MagicMock()
+    s3_service._s3_client = mock_boto
+
+    key = "modelos-ml/v2.1/rf_test.joblib"
+    assert s3_service.existe_objeto(key) is True
+    mock_boto.head_object.assert_called_once_with(Bucket=s3_service.bucket, Key=key)
+
+    assert s3_service.eliminar_objeto(key) is True
+    mock_boto.delete_object.assert_called_once_with(Bucket=s3_service.bucket, Key=key)
+
+

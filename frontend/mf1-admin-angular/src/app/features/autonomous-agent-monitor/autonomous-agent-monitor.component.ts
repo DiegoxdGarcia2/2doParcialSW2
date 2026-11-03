@@ -205,7 +205,65 @@ export class AutonomousAgentMonitorComponent implements OnInit {
     };
   }
 
+  // Misión Funcional Asignada al Agente
+  activeMission: any = null;
+  misionesPredefinidas = [
+    {
+      id: 'm1',
+      titulo: 'Preservar Reserva de Solvencia II ($25M USD)',
+      descripcion: 'Monitorear ratio de cobertura técnica ante ráfagas de siniestralidad crítica',
+      prioridad: 'ALTA',
+      meta_sla_horas: 48
+    },
+    {
+      id: 'm2',
+      titulo: 'Descongestión de Siniestros Estancados SLA >48h',
+      descripcion: 'Reasignar peritos por GPS y solicitar segunda evidencia en expedientes trabados',
+      prioridad: 'CRITICA',
+      meta_sla_horas: 24
+    },
+    {
+      id: 'm3',
+      titulo: 'Detección Proactiva de Fraude y Colusión de Talleres',
+      descripcion: 'Aislar sobreprecios con Isolation Forest y congelar preventivamente en la Saga',
+      prioridad: 'MAXIMA',
+      meta_sla_horas: 12
+    }
+  ];
+
+  cargarMisionActiva(): void {
+    this.agentService.getActiveMission().subscribe({
+      next: (m) => {
+        this.activeMission = m;
+        this.cdr.detectChanges();
+      },
+      error: (e) => console.warn('Error al cargar misión:', e)
+    });
+  }
+
+  asignarMision(m: any): void {
+    this.agentService.assignMission({
+      titulo: m.titulo,
+      descripcion: m.descripcion,
+      prioridad: m.prioridad,
+      meta_sla_horas: m.meta_sla_horas
+    }).subscribe({
+      next: (resp) => {
+        this.activeMission = resp;
+        this.feedbackMessage = `Misión asignada al agente: "${resp.titulo}"`;
+        this.cdr.detectChanges();
+        setTimeout(() => this.feedbackMessage = null, 4000);
+      },
+      error: (err) => {
+        this.errorMessage = 'Error al asignar misión al agente: ' + err.message;
+        this.cdr.detectChanges();
+        setTimeout(() => this.errorMessage = null, 4000);
+      }
+    });
+  }
+
   ngOnInit(): void {
+    this.cargarMisionActiva();
     this.cargarDatosCluster();
     this.conectarCanalWebSocket();
   }

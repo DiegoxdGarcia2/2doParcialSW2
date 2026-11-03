@@ -21,6 +21,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DlVisionService } from '../../core/services/dl-vision.service';
+import { OfflineLocalAiService, LocalDamagePrediction } from '../../core/services/offline-local-ai.service';
 import {
   DamageAnalysisInput,
   DamageAssessmentOutput,
@@ -28,6 +29,7 @@ import {
   Keyframe,
   ConfirmAssessmentResponse
 } from '../../core/models/dl-vision.models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-ai-damage-inspector',
@@ -38,7 +40,11 @@ import {
 })
 export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly visionService = inject(DlVisionService);
+  readonly offlineAiService = inject(OfflineLocalAiService);
   private readonly cdr = inject(ChangeDetectorRef);
+
+  isLocalOfflineMode = false;
+  localOfflineResult: LocalDamagePrediction | null = null;
 
   @ViewChild('lidarCanvas', { static: false }) lidarCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('thermalCanvas', { static: false }) thermalCanvasRef!: ElementRef<HTMLCanvasElement>;
@@ -237,6 +243,27 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
         this.analyzeNewEvidence();
       }
     });
+  }
+
+  async ejecutarInferenciaLocalOffline(imageSrc?: string): Promise<void> {
+    const src = imageSrc || this.inputClaim.imagen_url || (this.galeriaEvidencias && this.galeriaEvidencias[0]?.url) || '';
+    this.loading = true;
+    try {
+      this.localOfflineResult = await this.offlineAiService.analizarImagenLocalOffline(
+        src || 'assets/models/car_crash_demo.jpg',
+        this.inputClaim.numero_reclamo
+      );
+      this.isLocalOfflineMode = true;
+      this.showToast(
+        `Inferencia IA Local Web completada sin conexión. Calidad: ${this.localOfflineResult.calidad_imagen} (Score: ${this.localOfflineResult.score_nitidez}). Inspección guardada en cola local.`,
+        'success'
+      );
+    } catch (e) {
+      this.showToast('Error en inferencia local de IA: ' + e, 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   /**
@@ -673,8 +700,35 @@ export class AiDamageInspectorComponent implements OnInit, AfterViewInit, OnDest
   }
 
   exportarExpedientePdf(): void {
-    this.showToast('Generando dictamen pericial forense certificado con firma SHA-256...', 'info');
-    window.print();
+    const s3Url = this.assessment?.s3_dictamen_pdf_url;
+    if (s3Url && s3Url.startsWith('http')) {
+      this.showToast('Descargando Dictamen Técnico Pericial oficial desde Amazon S3...', 'success');
+      const link = document.createElement('a');
+      link.href = s3Url;
+      link.target = '_blank';
+      link.download = `dictamen_peritaje_${this.assessment?.numero_reclamo || 'siniestro'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    const reclamoId = this.assessment?.numero_reclamo || this.inputClaim.numero_reclamo;
+    let targetUrl = this.assessment?.local_dictamen_pdf_url || `/api/dl/claim-report-pdf/${reclamoId}`;
+    if (!targetUrl.startsWith('http')) {
+      const base = environment.ms4.baseUrl.replace(/\/$/, '');
+      const path = targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`;
+      targetUrl = `${base}${path}`;
+    }
+
+    this.showToast('Descargando dictamen pericial técnico certificado...', 'info');
+    const link = document.createElement('a');
+    link.href = targetUrl;
+    link.target = '_blank';
+    link.download = `dictamen_peritaje_${reclamoId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   showToast(message: string, type: 'success' | 'error' | 'info' = 'info'): void {

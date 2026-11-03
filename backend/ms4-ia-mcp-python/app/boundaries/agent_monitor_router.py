@@ -372,3 +372,39 @@ def reset_stalled_claims(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al restaurar siniestros: {str(e)}"
         )
+
+
+class AssignMissionRequest(BaseModel):
+    titulo: str
+    descripcion: str
+    prioridad: str = "ALTA"
+    meta_sla_horas: int = 48
+
+
+@router.get(
+    "/mission",
+    summary="Obtener Misión Activa del Agente Funcional",
+    description="Retorna la misión y objetivo operacional asignado actualmente al agente autónomo LangGraph."
+)
+def get_active_mission(
+    current_user: CurrentUser = Depends(require_roles(["ACTUARIO", "ADMIN", "PERITO", "AUDITOR"]))
+):
+    return langgraph_agent_control.obtener_mision_activa()
+
+
+@router.post(
+    "/assign-mission",
+    summary="Asignar Nueva Misión al Agente Funcional",
+    description="Actualiza la misión y directiva del agente autónomo para orientar sus habilidades y re-planning."
+)
+def assign_mission(
+    req: AssignMissionRequest,
+    current_user: CurrentUser = Depends(require_roles(["ACTUARIO", "ADMIN", "PERITO", "AUDITOR"]))
+):
+    return langgraph_agent_control.asignar_mision_agente(
+        titulo=req.titulo,
+        descripcion=req.descripcion,
+        prioridad=req.prioridad,
+        meta_sla_horas=req.meta_sla_horas
+    )
+

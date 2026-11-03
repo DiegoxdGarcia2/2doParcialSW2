@@ -74,3 +74,8 @@ def require_roles(allowed_roles: List[str]):
             )
         return current_user
     return role_checker
+
+
+# Alias para endpoints que admiten autenticación opcional o descarga directa
+get_current_user_optional = get_current_user
+

@@ -172,3 +172,13 @@ def test_imagen_personalizada_dinamica_base64():
     assert bumper.bounding_box is not None
     assert bumper.bounding_box.polygon_points is not None
     assert len(bumper.bounding_box.polygon_points.split()) == 4
+
+
+def test_tensorflow_deep_learning_model_loaded_and_predicts():
+    """Valida que el modelo TensorFlow CrashNet CNN esté cargado y realice inferencia por tensores."""
+    assert crashnet_vision_control.tf_model is not None
+    sample_tensor = np.random.uniform(0.0, 1.0, size=(1, 224, 224, 3)).astype(np.float32)
+    clase, confianza = crashnet_vision_control.predecir_severidad_convolucional(sample_tensor)
+    assert clase in ["LEVE", "MODERADO", "GRAVE", "PERDIDA_TOTAL"]
+    assert 0.0 <= confianza <= 1.0
+

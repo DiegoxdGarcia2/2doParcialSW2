@@ -12,7 +12,7 @@ from app.entities.voice_mcp_dto import VoiceCommandRequest
 from app.mcp_voice_reports.security.owasp_antisqli_guard import OwaspAntiSqliGuard
 from app.mcp_voice_reports.stt.whisper_engine import WhisperSTTEngine
 from app.mcp_voice_reports.server.mcp_protocol_server import McpProtocolServer
-from app.mcp_voice_reports.exporters.excel_exporter import ExcelDocumentExporter
+from app.mcp_voice_reports.exporters.excel_exporter import ExcelDocumentExporter, REPORTS_DIR
 from app.mcp_voice_reports.exporters.pdf_exporter import PdfDocumentExporter
 from app.mcp_voice_reports.exporters.word_exporter import WordDocumentExporter
 from app.controls.voice_mcp_control import VoiceMcpControl
@@ -110,7 +110,7 @@ class TestCU15VoiceMcpReports:
         assert doc.format == "xlsx"
         assert doc.file_size_bytes > 0
         assert len(doc.sha256_hash) == 64
-        assert os.path.exists(Path(doc.download_url.replace("/api/v1/mcp/download-report/", "artifacts/reports/")))
+        assert (REPORTS_DIR / doc.filename).exists()
 
     def test_document_generation_pdf(self):
         """Valida generación física y firma SHA-256 de informe PDF (.pdf)."""

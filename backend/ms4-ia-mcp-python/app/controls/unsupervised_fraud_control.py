@@ -569,6 +569,66 @@ class UnsupervisedFraudControl:
         self.cluster_profiles = metadata.get("cluster_profiles", [])
         self.silhouette_score_val = metadata.get("silhouette_score", 0.42)
 
+    # -----------------------------------------------------------------------
+    # Método Operacional UML: sincronizarModelosEnS3()
+    # -----------------------------------------------------------------------
+    def sincronizar_modelos_en_s3(self, version: str = "v2.1") -> Dict[str, Any]:
+        """
+        Sube los modelos no supervisados hacia Amazon S3:
+        modelos-ml/{version}/kmeans_*.joblib y isolation_*.joblib
+        """
+        from app.services.s3_storage_service import s3_storage_service
+        resultados = {}
+        archivos = [
+            "kmeans_model.joblib",
+            "kmeans_scaler.joblib",
+            "isolation_forest.joblib",
+            "isolation_scaler.joblib",
+            "unsupervised_metadata.joblib"
+        ]
+        for f in archivos:
+            local_path = self.artifacts_dir / f
+            if local_path.exists():
+                s3_key = f"modelos-ml/{version}/{f}"
+                url = s3_storage_service.subir_archivo_disco(
+                    local_path=str(local_path),
+                    s3_key=s3_key,
+                    metadata={"version": version, "algoritmo": "KMeans_IsolationForest"}
+                )
+                resultados[f] = {
+                    "s3_key": s3_key,
+                    "s3_url": url,
+                    "size_bytes": local_path.stat().st_size,
+                    "status": "SINCRONIZADO" if url else "FALLIDO"
+                }
+        return resultados
+
+    def descargar_modelos_desde_s3(self, version: str = "v2.1") -> bool:
+        """Descarga modelos no supervisados desde el Model Registry de S3."""
+        from app.services.s3_storage_service import s3_storage_service
+        if not s3_storage_service.is_configured:
+            return False
+        archivos = [
+            "kmeans_model.joblib",
+            "kmeans_scaler.joblib",
+            "isolation_forest.joblib",
+            "isolation_scaler.joblib",
+            "unsupervised_metadata.joblib"
+        ]
+        self.artifacts_dir.mkdir(parents=True, exist_ok=True)
+        downloaded = False
+        for f in archivos:
+            local_path = self.artifacts_dir / f
+            if not local_path.exists():
+                s3_key = f"modelos-ml/{version}/{f}"
+                data = s3_storage_service.descargar_bytes(s3_key)
+                if data:
+                    with open(local_path, "wb") as out_f:
+                        out_f.write(data)
+                    downloaded = True
+        return downloaded
+
+
 
 # Instancia Singleton para inyección de dependencias
 unsupervised_control = UnsupervisedFraudControl()

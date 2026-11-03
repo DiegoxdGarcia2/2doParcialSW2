@@ -115,3 +115,30 @@ def test_endpoints_agent_api(client):
     d4 = r4.json()
     assert d4["exito"] is True
     assert d4["nuevo_estado_expediente"] == "APROBADO_FAST_TRACK"
+
+
+def test_asignar_y_obtener_mision_agente(client):
+    """Valida la asignación interactiva y consulta de misiones al agente funcional."""
+    # 1. Obtener misión por defecto
+    r1 = client.get("/api/agent/mission")
+    assert r1.status_code == 200
+    m1 = r1.json()
+    assert "mision_id" in m1
+    assert "titulo" in m1
+
+    # 2. Asignar nueva misión con objetivo funcional
+    r2 = client.post(
+        "/api/agent/assign-mission",
+        json={
+            "titulo": "Auditoría Prioritaria y Solvencia Regulatoria",
+            "descripcion": "Verificar liquidaciones críticas y resguardar reserva de $25M USD ante alta siniestralidad",
+            "prioridad": "CRITICA",
+            "meta_sla_horas": 24
+        }
+    )
+    assert r2.status_code == 200
+    m2 = r2.json()
+    assert m2["titulo"] == "Auditoría Prioritaria y Solvencia Regulatoria"
+    assert m2["prioridad"] == "CRITICA"
+    assert m2["meta_sla_horas"] == 24
+
