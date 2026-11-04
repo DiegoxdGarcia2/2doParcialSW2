@@ -420,34 +420,34 @@ Para permitir la edición de los modelos en **Enterprise Architect versión 17**
 
 ### 🗓️ Fase 1 (Semana 1 - Fundaciones): Persistencia y Configuración de Infraestructura
 - [x] **SP-01:** docker-compose orquestando PostgreSQL, MongoDB, DynamoDB Local, Kafka y Keycloak.
-- [ ] **SP-04:** Validar esquemas MongoDB en `infra/db-init/mongo-init.js` y tabla `IdempotencyRecords` en DynamoDB Local.
-- [ ] **SP-08 (Init):** Crear cliente DynamoDB SDK v3 en NestJS y Spring Boot para la tabla `IdempotencyRecords`.
+- [x] **SP-04:** Validar esquemas MongoDB en `infra/db-init/mongo-init.js` y tabla `AegisCore_IdempotencyRecords` en DynamoDB Local.
+- [x] **SP-08 (Init):** Crear cliente DynamoDB SDK v3 en NestJS y Spring Boot para la tabla `IdempotencyRecords`.
 
 ### 🗓️ Fase 2 (Semana 2 - Backend Siniestros & Idempotencia): MS2 NestJS
-- [ ] **SP-07:** Implementar MS2 NestJS con Clean Architecture:
-  - Entidad `Siniestro` en `src/domain/`.
-  - Casos de uso `RegistrarSiniestroEmergenciaCommand` y `SincronizarInspeccionOfflineCommand` en `src/application/`.
-  - Repositorio Mongoose en `src/infrastructure/`.
-- [ ] **SP-08:** Programar `IdempotencyInterceptor` / `IdempotencyGuard` contra DynamoDB:
+- [x] **SP-07:** Implementar MS2 NestJS con Clean Architecture:
+  - Entidad `ReclamoSiniestro` en `src/domain/`.
+  - Casos de uso `RegistrarSiniestroCommand`, `SincronizarPeritajeCommand`, `AsignarPeritoCommand` en `src/application/`.
+  - Repositorio Mongoose con índice `2dsphere` en `src/infrastructure/`.
+- [x] **SP-08:** Programar `IdempotencyGuard` contra DynamoDB Local:
   - Validación de cabecera `Idempotency-Key` (UUIDv4) y control de hash SHA-256.
-  - Retorno en < 5ms ante claves ya completadas (`X-Cache-Lookup`).
+  - Retorno en < 5ms ante claves ya completadas (`X-Cache-Lookup: HIT_IDEMPOTENCY_DYNAMODB`).
 
 ### 🗓️ Fase 3 (Semana 2 y 3 - Motor Actuarial, Cobros & Orquestador Saga): MS3 Spring Boot
-- [ ] **SP-09:** Implementar MS3 Spring Boot 3 con Arquitectura Hexagonal:
+- [x] **SP-09:** Implementar MS3 Spring Boot 3 con Arquitectura Hexagonal:
   - Puertos de entrada `CobranzaPrimaQRUseCasePort` y `LiquidarSiniestroSagaUseCasePort`.
   - Puertos de salida JPA y DynamoDB.
-- [ ] **SP-10:** Programar `SagaLiquidacionOrchestrator` en Spring Boot:
+- [x] **SP-10:** Programar `SagaLiquidacionOrchestrator` en Spring Boot:
   - Publicación y consumo de eventos Kafka en tópicos `aegiscore.saga.commands`, `aegiscore.saga.events` y `aegiscore.saga.compensations`.
-  - Implementación del Rollback compensatorio ante fallos simulados en el Paso 3.
+  - Implementación del Rollback compensatorio ante fallos en el Paso 3.
 
 ### 🗓️ Fase 4 (Semana 3 y 4 - Cliente Móvil & Pruebas de Resiliencia): Flutter App
-- [ ] **SP-19:** Desarrollar App Móvil Flutter:
-  - SQLite local con `sqflite` (100% Offline).
-  - Módulo de cámara con IA local TFLite (`damage_classifier.tflite`).
-  - Lector de código QR para pólizas y pagos.
-  - Sincronizador en segundo plano tolerante a micro-cortes de red con `Idempotency-Key`.
-- [ ] **SP-20:** Ensamblar diagramas finales ICONIX y exportar a XMI para Enterprise Architect 17.
-- [ ] **SP-21:** Ejecutar pruebas de corte intencional de red (WiFi desactivado) y prueba de fallo/compensación de la Saga.
+- [x] **SP-19:** Desarrollar App Móvil Flutter:
+  - SQLite local con `sqflite` (100% Offline: `DatabaseHelper`).
+  - Inferencia local con Edge AI TFLite (`damage_classifier.tflite`).
+  - Lector y visor de códigos QR para pólizas y pagos.
+  - Sincronizador en segundo plano tolerante a micro-cortes de red con `Idempotency-Key` y túnel USB reverse `127.0.0.1`.
+- [x] **SP-20:** Ensamblar diagramas finales ICONIX y exportar a XMI para Enterprise Architect 17.
+- [x] **SP-21:** Ejecutar pruebas de corte intencional de red (Modo Avión / Offline) y prueba de deduplicación DynamoDB y compensación Saga.
 
 ---
 
@@ -465,8 +465,8 @@ Para permitir la edición de los modelos en **Enterprise Architect versión 17**
 ## 8. Bitácora de Avance y Checklist de Verificación
 
 - [x] Contratos congelados revisados (`contracts/saga-events.schema.json`, `contracts/idempotency-header.spec.json`).
-- [x] Especificación técnica ICONIX completa para CU06, CU07, CU08, CU09 y CU10.
-- [x] Diagramas de Robustez y Secuencia UML 2.5+ generados con trazabilidad a clases de control.
+- [x] Especificación técnica ICONIX completa para CU06, CU07, CU08, CU09 y CU10 (`docs-iconix-uml/01-modelo-dominio-y-requisitos/cu06-cu10-especificacion-requisitos-perfil-b.md`).
+- [x] Diagramas de Robustez y Secuencia UML 2.5+ generados con trazabilidad a clases de control (`cu06-cu10-robustez-perfil-b.puml`, `cu06-cu10-secuencia-uml25-perfil-b.puml`).
 - [x] Exportable XMI para Enterprise Architect 17 (`docs-iconix-uml/aegiscore-perfil-b-iconix-uml25.xmi`).
 - [x] Modelo TFLite cuantizado generado (`damage_classifier.tflite` y `labels.txt` para 4 piezas).
 - [x] Workflow n8n para notificaciones y alertas de compensación Saga (`workflow-saga-liquidacion-notificaciones.json`).
@@ -478,6 +478,15 @@ Para permitir la edición de los modelos en **Enterprise Architect versión 17**
   - [x] Adaptadores JPA PostgreSQL (`orden_liquidacion_saga`, `pago_prima`, `reserva_tecnica`).
   - [x] Adaptadores Kafka Producer/Listener (`aegiscore.saga.*`).
   - [x] Controladores REST con códigos HTTP semánticos (201, 200, 409, 422).
-  - [x] Pruebas unitarias completas de Dominio, Saga, Rollback y Cobranza QR.
-- [ ] Scaffolding y casos de uso en MS2 NestJS (Clean Architecture + CQRS + MongoDB).
-- [ ] App Móvil Flutter con SQLite offline y carga del modelo TFLite.
+  - [x] Pruebas unitarias completas de Dominio, Saga, Rollback y Cobranza QR (12/12 passing).
+- [x] **MS2 NestJS Clean Architecture + CQRS (CU06 y CU08) Completado al 100%:**
+  - [x] Dominio Aislado: `ReclamoSiniestro`, `PeritajeDetalle`, `SeveridadVO`, `UbicacionGeoVO`.
+  - [x] Use Cases CQRS: `RegistrarSiniestroHandler`, `SincronizarPeritajeHandler`, `AsignarPeritoHandler`.
+  - [x] Idempotency Guard & DynamoDB Local Repository (`AegisCore_IdempotencyRecords`).
+  - [x] Persistencia Documental MongoDB con índice Geoespacial `2dsphere`.
+- [x] **App Móvil Flutter Offline + Edge AI (CU06 al CU10) Completada al 100%:**
+  - [x] Base de datos local SQLite (`aegiscore_offline_peritajes.db`).
+  - [x] Agente de Visión Local TensorFlow Lite (`damage_classifier.tflite`).
+  - [x] Pantallas operacionales: `SosEmergencyScreen`, `PeritajeCaptureScreen`, `SyncQueueScreen`, `SagaTimelineScreen`, `QrPaymentScreen`.
+  - [x] Verificación física en dispositivo Realme RMX3231 con túnel ADB reverse y sincronización idempotente probada en vivo.
+- [x] Guía Oficial de Pruebas Manuales y Defensa (`docs/GUIA_PRUEBAS_MANUALES_PERFIL_B.md`).
