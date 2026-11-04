@@ -29,3 +29,4 @@
    - Diagramas PlantUML de Robustez y Secuencia en `docs-iconix-uml/`.
    - Modelo exportable XMI para Enterprise Architect 17.
    - Guía oficial de pruebas manuales y defensa en `docs/GUIA_PRUEBAS_MANUALES_PERFIL_B.md`.
+

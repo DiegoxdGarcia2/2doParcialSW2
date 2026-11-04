@@ -26,3 +26,4 @@
    - `SiniestrosCommandController`: Rutas `/api/v1/siniestros/sos`, `/api/v1/siniestros/peritaje/sync`.
    - `SiniestrosQueryController`: Búsquedas por ID, cliente y geoproximidad GPS.
    - `HealthController`: Chequeo de salud UP en `/health`.
+

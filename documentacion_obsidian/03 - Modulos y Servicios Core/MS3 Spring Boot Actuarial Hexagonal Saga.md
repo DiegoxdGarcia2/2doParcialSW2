@@ -30,3 +30,4 @@
    - JPA PostgreSQL: Adaptadores Spring Data JPA.
    - Kafka Producer: Despacho a `aegiscore.saga.commands` y `aegiscore.saga.compensations`.
    - DynamoDB Adapter: Candados de idempotencia para cobro QR.
+

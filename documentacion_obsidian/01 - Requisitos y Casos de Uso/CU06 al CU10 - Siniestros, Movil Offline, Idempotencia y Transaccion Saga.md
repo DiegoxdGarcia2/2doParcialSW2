@@ -55,3 +55,4 @@ Este documento detalla la especificación formal bajo metodología **ICONIX** y 
 ## 💳 CU10: Cobro Recurrente y Pago QR Idempotente
 - **Arquitectura Hexagonal:** Puerto de entrada `ProcesarPagoPrimaQRUseCasePort`, adaptador JPA `PostgreSqlPagoPrimaAdapter` y adaptador `DynamoDbIdempotencyAdapter`.
 - **Garantía Bancaria:** Generación y validación de códigos QR estándar con sellado idempotente para prevenir pagos duplicados por doble pulsación del cliente.
+

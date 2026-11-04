@@ -28,3 +28,4 @@
    - Simulación de compensación semántica (rollback en Kafka).
 6. **CU10 — Pagos QR (`qr_payment_screen.dart`):**
    - Renderizado de código QR EMV/BCB y confirmación idempotente contra MS3 Spring Boot.
+

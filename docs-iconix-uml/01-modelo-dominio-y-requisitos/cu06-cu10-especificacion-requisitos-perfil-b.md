@@ -217,3 +217,4 @@
 - **Boundary:** `QrPaymentScreen` (Flutter UI & QR Generator), `PagoQRRestController` (Spring Boot REST).
 - **Control:** `CobranzaPrimaQRService` (Spring Boot Hexagonal Inbound Port), `DynamoDbIdempotencyAdapter`, `IdempotencyService`.
 - **Entity:** `pago_prima` (PostgreSQL 16), `IdempotencyRecords` (DynamoDB Local), `TransaccionPagoQR` (Entidad de dominio puro).
+
