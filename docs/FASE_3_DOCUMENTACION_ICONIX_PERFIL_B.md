@@ -7,309 +7,380 @@
 
 ---
 
-# DOCUMENTO MAESTRO DE DISEÑO Y MODELADO ICONIX (FASE 3)
+# DOCUMENTO DE ANÁLISIS, DISEÑO E IMPLEMENTACIÓN ICONIX
 ## PROYECTO: AegisCore AI — ERP Distribuido, Peritaje Inteligente y Liquidación Autónoma de Siniestros de Seguros
 
 ### 🎯 ENFOQUE VERTICAL: PERFIL B (Casos de Uso CU06 al CU10)
 > **Núcleo de Siniestros, Peritaje Móvil Offline-First con Edge AI, Idempotencia Distribuida en DynamoDB y Transacciones Transversales Saga con Compensación Semántica**
 
 ```
-========================================================================================
-EQUIPO DE DESARROLLO (GRUPO #27):
+=====================================================================================================
+INTEGRANTES DEL PROYECTO (GRUPO #27):
 1. Garcia Caballero David         - Registro: 217058795 (Perfil A: Comercial, SSO, React & n8n)
 2. Garcia Caballero Jose Diego    - Registro: 221044523 (Perfil B: Siniestros, Móvil & Saga) [RESPONSABLE]
 3. Velasquez Paz Arnulfo          - Registro: 220030383 (Perfil C: IA, MCP, LangGraph & Angular)
-========================================================================================
+=====================================================================================================
 ```
 
----
-
-## 📑 Índice General del Documento
-
-1. [Introducción y Metodología ICONIX en 4 Fases](#1-introducción-y-metodología-iconix-en-4-fases)
-   - 1.1 Fundamentos y Adaptación del Proceso ICONIX a la Célula Perfil B
-   - 1.2 Cronograma Formal de 4 Semanas de Desarrollo
-2. [Requisitos Funcionales Formales (RF01 - RF07) en el Perfil B](#2-requisitos-funcionales-formales-rf01---rf07-en-el-perfil-b)
-3. [Arquitectura del Sistema en 4 Niveles (Célula Perfil B)](#3-arquitectura-del-sistema-en-4-niveles-célula-perfil-b)
-   - 3.1 Nivel 1: Frontend Heterogéneo (Cliente Móvil Flutter Offline-First + SQLite + Edge AI)
-   - 3.2 Nivel 2: Dominio ERP y Microservicios (MS2 NestJS Clean Arch/CQRS + MS3 Spring Boot Hexagonal)
-   - 3.3 Nivel 3: Persistencia Políglota y Agregación (MongoDB 7 + DynamoDB Local + PostgreSQL 16)
-   - 3.4 Nivel 4: Arquitectura General, Mensajería e Infraestructura (Kafka + Apollo Supergraph + Docker)
-4. [Patrones de Código, Transacciones Distribuidas y Automatización](#4-patrones-de-código-transacciones-distribuidas-y-automatización)
-   - 4.1 Patrones de Arquitectura de Software a Nivel de Código
-   - 4.2 Transacciones Distribuidas: Patrón Saga Orquestado y Compensación Semántica (Rollback)
-   - 4.3 Mecanismo Universal de Idempotencia Distribuida (DynamoDB Local)
-5. [Especificación y Modelado ICONIX Detallado por Caso de Uso (CU06 al CU10)](#5-especificación-y-modelado-iconix-detallado-por-caso-de-uso-cu06-al-cu10)
-   - 5.1 CU06: Reportar Siniestro Vial de Emergencia SOS con Triaje Automático
-   - 5.2 CU07: Inspeccionar Daños Offline en Terreno con Edge AI (TFLite)
-   - 5.3 CU08: Sincronizar Expediente de Siniestro con Control de Idempotencia en DynamoDB
-   - 5.4 CU09: Liquidar y Pagar Indemnización de Siniestro (Saga Transversal en 3 Microservicios)
-   - 5.5 CU10: Procesar Cobro Recurrente de Primas y Pago QR Idempotente
-6. [Evidencias de Ejecución, Pruebas y Resiliencia en Entorno Real](#6-evidencias-de-ejecución-pruebas-y-resiliencia-en-entorno-real)
-   - 6.1 Pruebas en Dispositivo Móvil Físico (Android real RMX3231)
-   - 6.2 Resultados de Suites de Pruebas Automatizadas (MS3 Java + Flutter Mobile)
-   - 6.3 Verificación de Idempotencia Sub-milisegundo y Prevención de Duplicidad
-7. [Conclusiones y Trazabilidad Arquitectónica](#7-conclusiones-y-trazabilidad-arquitectónica)
+> **Nota de Compatibilidad con Enterprise Architect 17.2:**  
+> Todos los diagramas de este documento (Casos de Uso, Robustez BCE, Secuencia UML 2.5+ y Clases) cuentan con su archivo fuente nativo XMI 2.1 / XML ubicado en:  
+> 📁 `docs-iconix-uml/enterprise-architect/aegiscore-perfil-b-ea17.xml` (y `.xmi`), 100% editable y visualizable en **Sparx Systems Enterprise Architect v17.2** (Instrucciones detalladas en [Capítulo VIII. Anexos](#capítulo-viii-anexos)).
 
 ---
 
-## 1. Introducción y Metodología ICONIX en 4 Fases
+# 📑 ÍNDICE GENERAL DEL PROYECTO
+*(Conforme a la estructura oficial requerida en `Indice_ICONIX.pdf`)*
 
-### 1.1 Fundamentos y Adaptación del Proceso ICONIX a la Célula Perfil B
-El presente proyecto adopta rigurosamente la metodología **ICONIX**, un enfoque ágil guiado por casos de uso que cierra la brecha entre el análisis de requisitos de alto nivel y el diseño detallado orientado a objetos, garantizando una trazabilidad estricta y sin ambigüedades. 
+- [CAPÍTULO I. ASPECTOS GENERALES](#capítulo-i-aspectos-generales)
+  - [1.1. Introducción](#11-introducción)
+  - [1.2. Planteamiento del problema](#12-planteamiento-del-problema)
+  - [1.3. Objetivos del proyecto](#13-objetivos-del-proyecto)
+    - [1.3.1. Objetivo general](#131-objetivo-general)
+    - [1.3.2. Objetivos específicos](#132-objetivos-específicos)
+  - [1.4. Justificación](#14-justificación)
+  - [1.5. Alcance y limitaciones](#15-alcance-y-limitaciones)
+  - [1.6. Metodología de desarrollo ICONIX](#16-metodología-de-desarrollo-iconix)
+- [CAPÍTULO II. ANÁLISIS DE REQUISITOS](#capítulo-ii-análisis-de-requisitos)
+  - [2.1. Descripción del sistema propuesto](#21-descripción-del-sistema-propuesto)
+  - [2.2. Identificación de actores](#22-identificación-de-actores)
+  - [2.3. Requisitos funcionales y no funcionales](#23-requisitos-funcionales-y-no-funcionales)
+  - [2.4. Reglas de negocio](#24-reglas-de-negocio)
+  - [2.5. Diagrama UML de casos de uso](#25-diagrama-uml-de-casos-de-uso)
+  - [2.6. Especificación de casos de uso](#26-especificación-de-casos-de-uso)
+- [CAPÍTULO III. ANÁLISIS Y DISEÑO CON ICONIX](#capítulo-iii-análisis-y-diseño-con-iconix)
+  - [3.1. Modelo de dominio](#31-modelo-de-dominio)
+  - [3.2. Diagramas de robustez](#32-diagramas-de-robustez)
+  - [3.3. Diagramas de secuencia UML](#33-diagramas-de-secuencia-uml)
+  - [3.4. Diagrama de clases UML](#34-diagrama-de-clases-uml)
+  - [3.5. Diseño de la base de datos](#35-diseño-de-la-base-de-datos)
+  - [3.6. Diseño de interfaces de usuario](#36-diseño-de-interfaces-de-usuario)
+- [CAPÍTULO IV. DESARROLLO E IMPLEMENTACIÓN](#capítulo-iv-desarrollo-e-implementación)
+  - [4.1. Herramientas y tecnologías utilizadas](#41-herramientas-y-tecnologías-utilizadas)
+  - [4.2. Diseño de la arquitectura del sistema](#42-diseño-de-la-arquitectura-del-sistema)
+  - [4.3. Implementación de la base de datos](#43-implementación-de-la-base-de-datos)
+  - [4.4. Desarrollo de los módulos del sistema](#44-desarrollo-de-los-módulos-del-sistema)
+  - [4.5. Integración de componentes](#45-integración-de-componentes)
+- [CAPÍTULO V. PRUEBAS Y RESULTADOS](#capítulo-v-pruebas-y-resultados)
+  - [5.1. Plan de pruebas](#51-plan-de-pruebas)
+  - [5.2. Pruebas funcionales](#52-pruebas-funcionales)
+  - [5.3. Pruebas de integración](#53-pruebas-de-integración)
+  - [5.4. Corrección de errores](#54-corrección-de-errores)
+  - [5.5. Resultados de las pruebas](#55-resultados-de-las-pruebas)
+  - [5.6. Casos de prueba](#56-casos-de-prueba)
+- [CAPÍTULO VI. CONCLUSIONES Y RECOMENDACIONES](#capítulo-vi-conclusiones-y-recomendaciones)
+  - [6.1. Conclusiones](#61-conclusiones)
+  - [6.2. Recomendaciones](#62-recomendaciones)
+- [7. BIBLIOGRAFÍA](#7-bibliografía)
+- [8. ANEXOS](#8-anexos)
 
-En la célula de desarrollo asignada al **Perfil B**, la metodología se ejecuta mediante 4 fases formales:
+---
+
+# CAPÍTULO I. ASPECTOS GENERALES
+
+## 1.1. Introducción
+El sector asegurador contemporáneo enfrenta un desafío crítico en la gestión de siniestros vehiculares: la desconexión operativa entre el momento en que ocurre un accidente vial en terreno y la liquidación financiera en los sistemas centrales ERP. Tradicionalmente, los peritos de campo deben acudir a zonas remotas, carreteras o sótanos sin cobertura celular, tomando notas manuales y fotografías que solo se digitan horas o días después. Esta demora genera cuellos de botella, riesgos de duplicidad en cobros e indemnizaciones, y una alta vulnerabilidad ante fraudes o inconsistencias de datos.
+
+El proyecto **AegisCore AI** surge como una solución tecnológica empresarial distribuida, orientada a transformar radicalmente este ecosistema. El sistema integra tecnologías web reactivas, aplicaciones móviles offline-first con inteligencia artificial embebida (Edge AI), microservicios políglotas desacoplados y motores de persistencia políglota de alto rendimiento.
+
+En el marco del equipo de desarrollo (Grupo #27), el presente documento detalla exhaustivamente la ingeniería, análisis, diseño e implementación asignados al **Perfil B**, célula responsable de los casos de uso **CU06 a CU10**: radicación de emergencias viales SOS, peritaje móvil 100% offline con TensorFlow Lite, sincronización idempotente con Amazon DynamoDB, liquidación transversal distribuida mediante el patrón Saga con compensación semántica (Rollback), y procesamiento de pagos QR interoperables con blindaje contra doble facturación.
+
+---
+
+## 1.2. Planteamiento del problema
+En los sistemas tradicionales de peritaje y seguros de Bolivia y Latinoamérica, se identifican las siguientes deficiencias estructurales:
+1. **Dependencia absoluta de la conectividad de red:** Cuando un ajustador pericial inspecciona un vehículo en sótanos o rutas interprovinciales sin señal 4G/Wi-Fi, las aplicaciones móviles basadas puramente en la nube quedan inoperativas, obligando a usar planillas físicas en papel.
+2. **Duplicidad de transacciones por reintentos de red:** Al recuperar la señal en áreas intermitentes, los dispositivos reenvían solicitudes encoladas. Sin un mecanismo de idempotencia distribuida en tiempo real, se generan expedientes duplicados, dobles débitos en cuentas bancarias y reservas contables infladas.
+3. **Inconsistencia transaccional entre microservicios independientes:** La aprobación de una indemnización económica exige descontar el límite anual de la póliza (MS Pólizas), cerrar el siniestro pericial (MS Siniestros) y ordenar el desembolso bancario contable (MS Actuarial). Si un paso intermedio falla y no existe una orquestación transaccional con reversión automática (Saga Rollback), el sistema entra en un estado corrupto de datos huérfanos.
+4. **Falta de asistencia inteligente en el punto de inspección:** Los peritos carecen de herramientas locales que clasifiquen daños, evalúen la severidad y sugieran baremos de reparación estandarizados de manera inmediata.
+
+---
+
+## 1.3. Objetivos del proyecto
+
+### 1.3.1. Objetivo general
+Diseñar, modelar e implementar un subsistema transaccional distribuido, resiliente y de alta concurrencia para la gestión de siniestros viales, peritaje pericial offline con Edge AI, sincronización idempotente y liquidación actuarial autónoma bajo la metodología **ICONIX** y el estándar **UML 2.5+**, garantizando tolerancia a fallas de red y consistencia de datos en el ERP AegisCore AI.
+
+### 1.3.2. Objetivos específicos
+1. Desarrollar una aplicación móvil en **Flutter (Dart 3)** con arquitectura **Offline-First**, utilizando persistencia local en **SQLite** y un agente de visión computacional local cuantizado en **TensorFlow Lite (LiteRT)** para clasificar abolladuras y partes dañadas sin conexión a internet.
+2. Implementar el microservicio **MS2 Siniestros** en **NestJS 10 (TypeScript)** bajo **Clean Architecture + CQRS**, dotándolo de un interceptor de idempotencia sub-milisegundo conectado a **Amazon DynamoDB Local** y persistencia semi-estructurada en **MongoDB 7** con índice geoespacial `2dsphere`.
+3. Construir el microservicio **MS3 Actuarial** en **Java 21 / Spring Boot 3** bajo **Arquitectura Hexagonal (Ports & Adapters)**, implementando el orquestador de transacciones distribuidas **Saga** coordinado sobre **Apache Kafka** con compensación semántica automática ante contingencias de pago.
+4. Diseñar el flujo de cobros recurrentes de primas con código QR interoperable (estándar BCB/EMVCo), validado mediante claves universales `Idempotency-Key` (UUIDv4 + Hash SHA-256).
+5. Documentar todos los artefactos mediante la metodología **ICONIX**, produciendo modelos visuales compatibles y editables en **Sparx Systems Enterprise Architect v17.2**.
+
+---
+
+## 1.4. Justificación
+- **Justificación Técnica:** Demuestra la viabilidad de fusionar el patrón arquitectónico Clean Architecture y la Arquitectura Hexagonal con persistencia políglota (MongoDB, DynamoDB, PostgreSQL) y Edge AI en el dispositivo móvil, eliminando la latencia de red en tareas de inspección.
+- **Justificación Económica:** La automatización de la liquidación y la detección preliminar de severidad reducen en más de un 60% el tiempo de tramitación de un reclamo de siniestro, minimizando los gastos administrativos y previniendo pérdidas por desembolsos duplicados.
+- **Justificación Operativa:** Provee a los peritos de seguros una herramienta confiable que no se cuelga ante pérdidas de cobertura celular y garantiza a la gerencia que cada transacción financiera posee trazabilidad ACID y consistencia eventual verificada.
+
+---
+
+## 1.5. Alcance y limitaciones
+- **Alcance del Perfil B:**
+  - Implementación completa de los casos de uso **CU06, CU07, CU08, CU09 y CU10**.
+  - Microservicio 2: NestJS 10 (`backend/ms2-siniestros-nestjs/`).
+  - Microservicio 3: Spring Boot 3 (`backend/ms3-actuarial-springboot/`).
+  - Aplicación Móvil: Flutter Android/iOS (`frontend/app-peritos-flutter/`).
+  - Motores de persistencia: MongoDB 7 (`aegiscore_siniestros`), Amazon DynamoDB Local (`IdempotencyRecords`) y PostgreSQL 16 (`aegiscore_erp`).
+  - Mensajería distribuida: Apache Kafka (Topics de Saga y eventos periciales).
+- **Limitaciones:**
+  - La emisión de contratos de pólizas base corresponde al Perfil A (MS1 PHP).
+  - Los modelos avanzados de Machine Learning de fraude y servidores MCP corresponden al Perfil C (MS4 Python).
+  - La pasarela de pago QR simula las firmas digitales del Banco Central de Bolivia (BCB) mediante endpoints de prueba estandarizados.
+
+---
+
+## 1.6. Metodología de desarrollo ICONIX
+El desarrollo adopta rigurosamente el proceso ágil y estructurado **ICONIX**, el cual utiliza un subconjunto pragmático de diagramas UML para llevar los casos de uso a código ejecutable en cuatro fases formales:
 
 ```mermaid
-flowchart TD
-    subgraph FASE_1["Fase 1: Requisitos y Casos de Uso"]
-        R1["Modelo del Dominio de Siniestros"] --> R2["Especificación Formal CU06 - CU10"]
-        R2 --> R3["Prototipado UI Flutter & Contratos de Idempotencia"]
+flowchart LR
+    subgraph FASE_1["1. Requisitos y Dominio"]
+        CU["Casos de Uso (CU06-CU10)"]
+        MD["Modelo de Dominio Preliminar"]
     end
-
-    subgraph FASE_2["Fase 2: Análisis de Robustez (BCE)"]
-        BCE1["Objetos Boundary (Vistas Flutter, Push FCM, REST/Kafka)"]
-        BCE2["Objetos Control (Casos de Uso NestJS CQRS, Orquestador Saga Spring Boot)"]
-        BCE3["Objetos Entity (Documentos MongoDB, Tablas DynamoDB y PostgreSQL)"]
-        BCE1 --> BCE2 --> BCE3
+    subgraph FASE_2["2. Análisis de Robustez"]
+        B["Boundary (Vistas/APIs)"]
+        C["Control (Lógica/Orquestación)"]
+        E["Entity (Persistencia)"]
+        B --> C --> E
     end
-
-    subgraph FASE_3["Fase 3: Diseño Detallado"]
-        D1["Diagramas de Secuencia UML 2.5+ (Métodos en Control)"]
-        D2["Definición de Esquemas JSON Schema Saga y Headers"]
+    subgraph FASE_3["3. Diseño Detallado"]
+        DS["Diagramas de Secuencia UML 2.5+"]
+        DC["Diagrama de Clases Extendido"]
     end
-
-    subgraph FASE_4["Fase 4: Implementación y Pruebas"]
-        I1["MS2 NestJS: Clean Architecture + CQRS"]
-        I2["MS3 Spring Boot: Arquitectura Hexagonal"]
-        I3["App Flutter: SQLite + TFLite"]
-        I4["Pruebas Unitarias, Integración y Resiliencia Offline"]
+    subgraph FASE_4["4. Implementación y Pruebas"]
+        CODE["Código Limpio / Hexagonal"]
+        TEST["Pruebas Unitarias y en Vivo"]
     end
 
     FASE_1 --> FASE_2 --> FASE_3 --> FASE_4
 ```
 
-1. **Fase 1 — Requisitos y Casos de Uso:** Modelado del dominio de siniestros, redacción estructurada de los casos de uso (`CU06` a `CU10`), identificación de actores (Asegurado, Perito de Campo, Ajustador, Orquestador Saga) y delimitación de pre/postcondiciones.
-2. **Fase 2 — Análisis de Robustez (Boundary-Control-Entity):** Conexión semántica de cada caso de uso con objetos del sistema clasificados en:
-   - **Boundary (Frontera):** Interfaces móviles Flutter (`SiniestroSosMobileView`, `CamaraPeritajeOfflineView`, `ColaSincronizacionOfflineView`), controladores REST y endpoints de mensajería.
-   - **Control (Lógica / Orquestación):** Controladores de caso de uso puros (`SiniestroEmergencyControl`, `PeritajeOfflineTFLiteControl`, `SyncIdempotentControl`, `SagaLiquidacionOrchestratorControl`, `PagoPrimaQRControl`).
-   - **Entity (Persistencia):** Esquemas en MongoDB (`ExpedienteSiniestro`), DynamoDB (`IdempotencyRecord`) y PostgreSQL (`OrdenLiquidacion`, `TransaccionPagoQR`).
-3. **Fase 3 — Diseño Detallado:** Modelado formal de diagramas de secuencia **UML 2.5+**, asignando inequívocamente la responsabilidad operacional a los métodos declarados dentro de la clase de Control correspondiente. Definición estricta de contratos congelados (`contracts/`).
-4. **Fase 4 — Implementación y Pruebas:** Codificación guiada por patrones de arquitectura limpia y hexagonal, persistencia políglota funcional y validación de resiliencia ante pérdida de red y duplicación concurrente.
+1. **Requisitos y Casos de Uso:** Delimitación de actores, prototipado de pantallas móviles y redacción de flujos nominales y alternativos.
+2. **Análisis de Robustez (BCE):** Eliminación de ambigüedades mapeando los objetos en Boundary (Frontera), Control (Lógica de Aplicación) y Entity (Persistencia de Datos).
+3. **Diseño Detallado (Secuencia UML 2.5+):** Asignación inequívoca de responsabilidades: **los métodos operacionales pertenecen a las clases de control**.
+4. **Implementación y Pruebas:** Codificación guiada por pruebas (TDD) en NestJS, Spring Boot y Flutter, con verificación en hardware real.
 
 ---
 
-### 1.2 Cronograma Formal de 4 Semanas de Desarrollo
+# CAPÍTULO II. ANÁLISIS DE REQUISITOS
 
-| Semana | Hito / Fases ICONIX | Entregables Célula Perfil B | Estado |
-|---|---|---|---|
-| **Semana 1** | Fase 1 & 2: Requisitos, Modelo de Dominio y Análisis de Robustez BCE | Fichas técnicas `CU06-CU10`, Diagramas de Robustez Mermaid/PlantUML, contratos base (`idempotency-header.spec.json`, `saga-events.schema.json`). | **Completado (100%)** |
-| **Semana 2** | Fase 3: Diseño Detallado UML 2.5+ y Esqueletos de Microservicios | Diagramas de secuencia UML 2.5+ con métodos en clase Control; esqueleto MS2 NestJS (Clean/CQRS), MS3 Spring Boot (Hexagonal) y esquemas MongoDB/PostgreSQL/DynamoDB. | **Completado (100%)** |
-| **Semana 3** | Fase 4: Implementación Core Móvil, Edge AI y Saga Transversal | App Flutter Offline-First con SQLite y modelo embebido `damage_classifier.tflite`; Orquestador Saga en Spring Boot 3 coordinado con Apache Kafka y MS1/MS2. | **Completado (100%)** |
-| **Semana 4** | Fase 4: Sincronización Idempotente, Pruebas de Red y Blindaje | Interceptor de Idempotencia en NestJS/DynamoDB (< 5ms); pruebas en teléfono físico Android real; ejecución de 18 pruebas automatizadas exitosas (12 MS3 + 6 Flutter). | **Completado (100%)** |
+## 2.1. Descripción del sistema propuesto
+El subsistema de **Siniestros, Movilidad e Idempotencia (Perfil B)** conforma el núcleo operativo y financiero de AegisCore AI. Permite al asegurado reportar emergencias geolocalizadas desde su teléfono, organiza el triaje automático mediante proximidad satelital, otorga a los peritos una suite móvil offline con inteligencia artificial embebida para clasificar abolladuras, sincroniza la información de forma idempotente con DynamoDB (< 5ms) y coordina la liquidación contable a través de una transacción transversal Saga entre tres microservicios políglotas.
 
 ---
 
-## 2. Requisitos Funcionales Formales (RF01 - RF07) en el Perfil B
-
-La especificación académica institucional define 7 Requisitos Funcionales macro (RF01 a RF07). La célula del **Perfil B** asume y garantiza el cumplimiento directo de los siguientes requerimientos:
-
-```
-+-----------------------------------------------------------------------------------------------------+
-| MATRIZ DE TRAZABILIDAD: REQUISITOS FUNCIONALES MACRO vs. CASOS DE USO PERFIL B                      |
-+-----------------------------------------------------------------------------------------------------+
-| Requisito Funcional Académico           | Caso de Uso Perfil B | Componentes Tecnológicos Clave     |
-+-----------------------------------------+----------------------+------------------------------------+
-| RF01 - Gestión Integral del Dominio ERP | CU06, CU09, CU10     | MS2 NestJS, MS3 Spring Boot, Mongo |
-| RF02 - Agentes Autónomos de Monitoreo   | CU06 (Triaje)        | Algoritmo Geoespacial 2dsphere     |
-| RF03 - Operatividad Offline & Idempotenc| CU07, CU08, CU10     | Flutter SQLite, Edge AI, DynamoDB  |
-| RF04 - Automatización de Flujos         | CU06, CU08           | Push Notifications FCM, Webhooks   |
-| RF06 - Acceso Unificado (SSO Keycloak)  | CU06, CU07, CU09     | Keycloak JWT RS256, RBAC Perito    |
-| RF07 - Transacciones Saga Transversales | CU09                 | Apache Kafka, MS1, MS2, MS3 Rollback|
-+-----------------------------------------------------------------------------------------------------+
-```
-
-- **RF01 - Gestión Integral del Dominio ERP:** Registro completo de siniestros vehiculares, apertura y seguimiento del expediente pericial, cálculo actuarial de liquidación descontando deducibles y reservas técnicas, y emisión de pagos indemnizatorios y cuotas de seguro.
-- **RF03 - Operatividad Offline e Idempotencia:** Operación 100% autónoma de la App Móvil de Peritaje en zonas rurales, carreteras y estacionamientos subterráneos sin cobertura celular. Almacenamiento diferido en SQLite local. Sincronización a prueba de duplicidad mediante el encabezado `Idempotency-Key` (UUIDv4 + Hash SHA-256) validado contra Amazon DynamoDB Local con tiempo de respuesta inferior a 5 milisegundos.
-- **RF06 - Acceso Unificado (Single Sign-On - SSO):** Autenticación pericial y directiva basada en tokens Bearer JWT emitidos por Keycloak bajo OAuth 2.0 / OpenID Connect + PKCE, propagados transparentemente en las llamadas API hacia MS2 y MS3.
-- **RF07 - Transacciones Distribuidas Transversales:** Coordinación del caso de uso `CU09` entre 3 microservicios independientes mediante el patrón **Saga Orquestado** con compensación semántica (Rollback). Si la liquidación es rechazada financieramente en el paso final, se revierten automáticamente las reservas actuariales y se desbloquea la cobertura de la póliza en PHP.
+## 2.2. Identificación de actores
+- **Cliente Asegurado (Primario):** Conductor o propietario con póliza vigente; activa el botón de emergencia SOS y realiza pagos QR.
+- **Perito de Campo (Primario):** Inspector técnico automotriz; realiza inspecciones visuales en el lugar del choque con la App Flutter.
+- **Ajustador de Siniestros / Director Financiero (Primario):** Evaluador administrativo que revisa expedientes y aprueba liquidaciones indemnizatorias.
+- **Broker Apache Kafka (Secundario / Sistema):** Bus de eventos asíncronos que transporta comandos y eventos de compensación de la Saga.
+- **Pasarela Bancaria QR BCB (Secundario / Externo):** Entidad financiera que procesa el débito bancario y emite callbacks.
 
 ---
 
-## 3. Arquitectura del Sistema en 4 Niveles (Célula Perfil B)
+## 2.3. Requisitos funcionales y no funcionales
 
-La solución se estructura en una arquitectura empresarial desacoplada en cuatro niveles de abstracción:
+### Requisitos Funcionales (RF) Asignados
+- **RF-B01 (CU06):** El sistema debe permitir el reporte de siniestros viales de emergencia capturando coordenadas GPS y fotos de la escena, ejecutando un triaje automático y asignando al perito más cercano disponible mediante índice geoespacial `2dsphere`.
+- **RF-B02 (CU07):** La app móvil debe permitir la inspección completa de daños vehiculares sin internet, ejecutando inferencia de visión artificial con TensorFlow Lite en el móvil y almacenando la evidencia en SQLite local.
+- **RF-B03 (CU08):** El sistema debe sincronizar lotes periciales encolados inyectando una cabecera `Idempotency-Key` (UUIDv4) y firma SHA-256; Amazon DynamoDB debe interceptar reintentos en $< 5\text{ ms}$ para impedir duplicaciones en MongoDB.
+- **RF-B04 (CU09):** El sistema debe orquestar la liquidación transversal en 3 microservicios (MS2 Siniestro $\rightarrow$ MS1 Póliza $\rightarrow$ MS3 Desembolso) bajo el patrón Saga; ante fallas de desembolso, debe ejecutar rollback semántico automático vía Kafka.
+- **RF-B05 (CU10):** El sistema debe procesar pagos de primas devengadas mediante generación de códigos QR interoperables EMV, bloqueando cobros dobles con control de idempotencia en DynamoDB.
+
+### Requisitos No Funcionales (RNF)
+- **RNF01 (Rendimiento sub-milisegundo):** La validación de la clave de idempotencia en DynamoDB Local debe resolverse en un tiempo inferior a 5 ms ($T < 5\text{ ms}$).
+- **RNF02 (Operatividad 100% Offline):** El perito debe poder operar sin conexión por tiempo indefinido, manteniendo integridad de datos en SQLite local.
+- **RNF03 (Latencia de Inferencia Edge AI):** La inferencia del modelo cuantizado `damage_classifier.tflite` en el móvil no debe superar los 100 ms por fotograma.
+- **RNF04 (Seguridad y Cero Confianza):** Todas las solicitudes entre microservicios deben autenticarse mediante JWT RS256 emitidos por Keycloak SSO.
+
+---
+
+## 2.4. Reglas de negocio
+- **RN-B01 (Triaje por Radio Geoespacial):** Solo se despachan peritos cuyo radio de guardia esté a menos de 25 km del punto del siniestro.
+- **RN-B02 (Idempotency Key Obligatoria):** Toda petición de sincronización o cobro QR sin el encabezado `Idempotency-Key` válido (UUIDv4) será rechazada con error HTTP 400 Bad Request.
+- **RN-B03 (Inmutabilidad del Payload Idempotente):** Si una clave de idempotencia se reenvía con un cuerpo JSON cuyo hash SHA-256 difiera del original, el sistema retornará HTTP 422 Unprocessable Entity.
+- **RN-B04 (Deducible Actuarial Obligatorio):** Todo siniestro liquidado descontará un 10% del monto bruto tasado en concepto de deducible de póliza antes de autorizar el desembolso.
+- **RN-B05 (Expiración de Códigos QR):** Los códigos QR de cobro de prima caducan automáticamente a los 15 minutos de su emisión.
+
+---
+
+## 2.5. Diagrama UML de casos de uso
+El diagrama agrupa los 5 casos de uso del Perfil B y sus relaciones con los actores:
 
 ```mermaid
-flowchart TB
-    subgraph NIVEL_1["Nivel 1: Frontend Heterogéneo (Cliente Móvil Peritos)"]
-        FLUTTER["📱 App Móvil Flutter (Dart 3.5)\n- Offline-First con SQLite (sqflite)\n- Inferencia Edge AI (TensorFlow Lite)\n- Worker de Sincronización Diferida\n- Hardware: Cámara, GPS & Sensores"]
-        WEB_ADMIN["🖥️ Web ERP Angular / React\n- Aprobación Liquidaciones (CU09)\n- Monitoreo de Triaje de Siniestros"]
+flowchart LR
+    ASEG["👤 Cliente Asegurado"]
+    PER["👷 Perito de Campo"]
+    AJUS["👨‍💼 Ajustador / Finanzas"]
+    KAFKA["⚙️ Broker Apache Kafka"]
+
+    subgraph SISTEMA_PERFIL_B["AegisCore AI — Célula Perfil B"]
+        CU06(("CU06: Reportar Siniestro SOS con Triaje"))
+        CU07(("CU07: Inspeccionar Daños Offline con Edge AI"))
+        CU08(("CU08: Sincronizar con Idempotencia DynamoDB"))
+        CU09(("CU09: Liquidar Siniestro con Saga Transversal"))
+        CU10(("CU10: Procesar Cobro Recurrente y Pago QR"))
     end
 
-    subgraph NIVEL_4_GW["Nivel 4: Gateway & Red de Ingesta"]
-        APOLLO["🚀 Apollo Supergraph Router\nGateway Federado GraphQL / REST Proxy"]
-        KAFKA["📨 Apache Kafka Broker\nTopics: saga.orchestrator, saga.compensations"]
-    end
-
-    subgraph NIVEL_2["Nivel 2: Dominio ERP y Microservicios (Perfil B)"]
-        MS2["🦁 MS2: Reclamos, Triaje & Peritaje (NestJS 10)\n- Arquitectura: Clean Architecture + CQRS\n- Lenguaje: TypeScript / Node.js 20\n- Responsabilidad: CU06, CU07, CU08"]
-        MS3["☕ MS3: Motor Actuarial, Liquidación & Pagos (Spring Boot 3)\n- Arquitectura: Hexagonal (Ports & Adapters)\n- Lenguaje: Java 21 LTS\n- Responsabilidad: CU09, CU10, Orquestador Saga"]
-        MS1["🐘 MS1: Pólizas & Contratos (PHP 8.3 / Laravel DDD)\n- Integrado en Saga Transversal (CU09)"]
-    end
-
-    subgraph NIVEL_3["Nivel 3: Persistencia Políglota y Agregación"]
-        MONGO[("🍃 MongoDB 7\n- aegiscore_siniestros\n- Expedientes BSON\n- Índice Geoespacial 2dsphere")]
-        DYNAMO[("⚡ Amazon DynamoDB Local\n- Tabla: IdempotencyRecords\n- Clave: idempotency_key (UUIDv4)\n- Latencia < 5ms (Replay Cache)")]
-        POSTGRES[("🐘 PostgreSQL 16\n- aegiscore_erp\n- Tablas ACID:\n  orden_liquidacion, pagos_qr")]
-    end
-
-    FLUTTER -->|"HTTP POST + Idempotency-Key"| MS2
-    FLUTTER -->|"Lectura QR Cobro"| MS3
-    WEB_ADMIN -->|"GraphQL Mutation"| APOLLO
-    APOLLO --> MS2
-    APOLLO --> MS3
-
-    MS2 -->|"Lectura/Escritura BSON"| MONGO
-    MS2 -->|"Verificación Lock SHA-256"| DYNAMO
-
-    MS3 -->|"Eventos Saga Kafka"| KAFKA
-    KAFKA -->|"Comandos de Reserva/Rollback"| MS1
-    KAFKA -->|"Actualización Estado Siniestro"| MS2
-
-    MS3 -->|"Persistencia ACID"| POSTGRES
-    MS3 -->|"Validación Idempotencia Pagos"| DYNAMO
-```
-
-### 3.1 Nivel 1: Frontend Heterogéneo (Cliente Móvil Flutter)
-- **App Móvil de Peritos (`frontend/app-peritos-flutter/`):** Desarrollada en Flutter (Dart 3). Dispone de un motor de persistencia local en **SQLite**, lo que permite registrar fotografías periciales, geolocalización satelital y notas de audio completamente desconectado de la red celular.
-- **Edge AI Embebido (On-Device):** Ejecución de inferencia de visión artificial mediante modelo cuantizado TensorFlow Lite (`damage_classifier.tflite`). Clasifica abolladuras y severidad en menos de 80 milisegundos sin consumir megabytes del perito ni depender de conectividad.
-
-### 3.2 Nivel 2: Dominio ERP y Microservicios Core
-- **MS2 NestJS (`backend/ms2-siniestros-nestjs/`):** Implementado con **Clean Architecture + CQRS**. Maneja la ingesta de siniestros viales, triaje geoespacial con algoritmo Haversine e índice MongoDB `2dsphere`, y el procesamiento de lotes periciales sincronizados.
-- **MS3 Spring Boot (`backend/ms3-actuarial-springboot/`):** Implementado con **Arquitectura Hexagonal**. Actúa como motor actuarial de alta precisión numérica, ejecuta el cálculo de liquidaciones indemnizatorias y coordina la máquina de estados de la transacción distribuida Saga.
-
-### 3.3 Nivel 3: Persistencia Políglota y Agregación
-- **MongoDB 7 (`aegiscore_siniestros`):** Base de datos documental NoSQL optimizada para esquemas dinámicos de peritaje (fotografías, coordenadas GPS, baremos de daños). Índice `2dsphere` para búsquedas radiales de peritos y talleres más cercanos.
-- **Amazon DynamoDB Local:** Almacén clave-valor de acceso ultra-rápido en memoria/disco. Almacena la tabla `IdempotencyRecords` indexada por `idempotency_key` con hash de integridad SHA-256 del payload para garantizar respuesta en $< 5\text{ ms}$.
-- **PostgreSQL 16 (`aegiscore_erp`):** Motor relacional con garantías ACID estrictas para las tablas transaccionales de contabilidad, órdenes de pago de liquidación (`liquidaciones_siniestro`) y transacciones QR (`pagos_qr_registro`).
-
-### 3.4 Nivel 4: Infraestructura y Orquestación
-- **Apache Kafka:** Bus distribuido de eventos de dominio con retención persistente. Facilita la comunicación desacoplada y asíncrona entre MS1, MS2 y MS3 durante la ejecución de la Saga de Liquidación y la compensación semántica de fallos.
-- **Apollo Supergraph Router:** Router federado que consolida los subgrafos GraphQL de la plataforma bajo un único punto de entrada unificado para clientes web y móviles.
-
----
-
-## 4. Patrones de Código, Transacciones Distribuidas y Automatización
-
-### 4.1 Patrones de Arquitectura de Software a Nivel de Código
-
-| Componente | Patrón de Arquitectura | Justificación y Regla de Implementación |
-|---|---|---|
-| **MS2 NestJS** | **Clean Architecture + CQRS** | Desacoplamiento total del núcleo de dominio (`src/domain/`) respecto a Mongoose y NestJS. Casos de uso estrictamente divididos en **Commands** (`RegistrarSiniestroCommand`, `SincronizarInspeccionCommand`) y **Queries** (`ObtenerSiniestroPorIdQuery`). |
-| **MS3 Spring Boot** | **Arquitectura Hexagonal (Ports & Adapters)** | Aislamiento del dominio actuarial puro (`domain/`) sin dependencias de Spring Data JPA ni Kafka. Puertos de Entrada (`ports/in/`) para casos de uso y Puertos de Salida (`ports/out/`) implementados por adaptadores web, JPA y Kafka. |
-| **Flutter Mobile** | **Offline-First BLoC / Repository** | Separación entre vistas reactivas, gestión de estado y repositorios híbridos con estrategia Local-First (Lectura/Escritura inmediata en SQLite $\rightarrow$ Cola de sincronización diferida $\rightarrow$ Nube). |
-
----
-
-### 4.2 Transacciones Distribuidas: Patrón Saga Orquestado y Compensación Semántica (Rollback)
-
-El caso de uso `CU09` impacta de forma concurrente a tres microservicios políglotas independientes con persistencias separadas. Para garantizar consistencia eventual sin recurrir al protocolo Two-Phase Commit (2PC) —inviable en microservicios por bloqueo de hilos— se aplica el patrón **Saga Orquestado**:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant UI as 🖥️ Boundary: LiquidacionAdminView
-    participant ORQ as ⚙️ Control: SagaLiquidacionOrchestrator (MS3 Spring Boot)
-    participant MS2 as 🦁 Control: ReclamoEstadoControl (MS2 NestJS)
-    participant MS1 as 🐘 Control: PolizaCoberturaControl (MS1 PHP)
-    participant KAFKA as 📨 Broker: Apache Kafka Topics
-
-    Note over UI,KAFKA: FASE 1: FLUJO NOMINAL (CAMINO FELIZ)
-    UI->>ORQ: liquidarSiniestro(siniestroId: "SIN-2026-001", monto: 1200.00 BOB)
-    ORQ->>ORQ: registrarInstanciaSaga(estado: "INICIADA")
-    
-    ORQ->>MS2: PATCH /siniestros/SIN-2026-001/estado (EN_LIQUIDACION)
-    MS2-->>ORQ: 200 OK (Estado Actualizado en MongoDB)
-    
-    ORQ->>MS1: POST /polizas/POL-8841/bloquear-cobertura (monto: 1200.00)
-    MS1-->>ORQ: 200 OK (Cobertura Bloqueada en PostgreSQL MS1)
-    
-    ORQ->>ORQ: ejecutarCalculoActuarialYDesembolso()
-    Note over ORQ: Descuento de deducible (10%) y reserva técnica
-    ORQ->>ORQ: registrarOrdenLiquidacionPostgreSQL()
-    ORQ-->>UI: 200 OK (Liquidación Exitosa: "LIQ-2026-9921")
-
-    Note over UI,KAFKA: FASE 2: FLUJO DE FALLO Y COMPENSACIÓN SEMÁNTICA (ROLLBACK)
-    alt Falla en el Desembolso Bancario o Validación Actuarial
-        ORQ->>ORQ: detectarFalloDesembolso(causa: "CUENTA_BANCARIA_INVALIDA")
-        ORQ->>ORQ: cambiarEstadoSaga(estado: "COMPENSANDO")
-        
-        ORQ->>KAFKA: publicarEvento(SagaCompensatePolicyCoverageEvent)
-        KAFKA->>MS1: consumirCompensacion()
-        MS1->>MS1: reversarBloqueoCobertura(devolver: 1200.00 BOB)
-        MS1-->>KAFKA: CoberturaReversadaAck
-        
-        ORQ->>KAFKA: publicarEvento(SagaRevertClaimStatusEvent)
-        KAFKA->>MS2: consumirCompensacion()
-        MS2->>MS2: restaurarEstadoSiniestro(estado: "PENDIENTE_REVISION")
-        MS2-->>KAFKA: EstadoRestauradoAck
-        
-        ORQ->>ORQ: cambiarEstadoSaga(estado: "COMPENSADA_RECHAZADA")
-        ORQ-->>UI: 422 Unprocessable Entity (Saga Compensada: Fondos liberados)
-    end
+    ASEG --> CU06
+    PER --> CU06
+    PER --> CU07
+    PER --> CU08
+    AJUS --> CU09
+    KAFKA -.->|Compensación Rollback| CU09
+    ASEG --> CU10
 ```
 
 ---
 
-### 4.3 Mecanismo Universal de Idempotencia Distribuida (DynamoDB Local)
+## 2.6. Especificación de casos de uso
 
-Para dar estricto cumplimiento al contrato congelado `contracts/idempotency-header.spec.json`, las operaciones críticas de sincronización móvil (`CU08`) y pago QR (`CU10`) implementan el protocolo universal de idempotencia:
-
-```mermaid
-flowchart TD
-    REQ["Entrada HTTP Request\nHeader: Idempotency-Key: <UUIDv4>\nBody: JSON Payload"] --> HASH["Calcular Hash Criptográfico:\nSHA-256(Payload)"]
-    HASH --> QUERY["Consultar DynamoDB Local:\nGetItem(PK = idempotency_key)"]
-    
-    QUERY -->|¿Existe Registro?| EXISTE{Existe}
-    
-    EXISTE -->|NO| LOCK["Adquirir Bloqueo Atómico:\nPutItem con Estado: PROCESSING\nrequest_hash = SHA-256, TTL = 120s"]
-    LOCK --> EXEC["Ejecutar Caso de Uso en Backend:\nPersistir en MongoDB / PostgreSQL"]
-    EXEC --> UPDATE["Actualizar Registro DynamoDB:\nEstado: COMPLETED\nresponse_code = 201/200\nresponse_body = JSON"]
-    UPDATE --> RET_NEW["Retornar HTTP 201 Created\nX-Cache-Lookup: MISS"]
-
-    EXISTE -->|SÍ| CHECK_STATUS{Estado}
-    CHECK_STATUS -->|PROCESSING| RET_409["Retornar HTTP 409 Conflict\n'Transacción actualmente en proceso'"]
-    CHECK_STATUS -->|COMPLETED| CHECK_HASH{¿Hash Coincide?}
-    
-    CHECK_HASH -->|NO (Payload Alterado)| RET_422["Retornar HTTP 422 Unprocessable\n'Idempotency-Key reutilizada con payload diferente'"]
-    CHECK_HASH -->|SÍ (Reintento Legítimo)| RET_CACHE["Retornar Respuesta Previa Cacheada:\nHTTP 200 OK\nX-Cache-Lookup: HIT (Latencia < 5ms)\n(Sin reejecutar lógica de negocio)"]
-```
-
----
-
-## 5. Especificación y Modelado ICONIX Detallado por Caso de Uso (CU06 al CU10)
-
----
-
-### 5.1 CU06: Reportar Siniestro Vial de Emergencia SOS con Triaje Automático
-
-#### A. Ficha Técnica del Caso de Uso
-- **Identificador:** `CU06`
-- **Nombre:** Reportar Siniestro Vial de Emergencia SOS con Triaje Automático y Asignación Pericial.
-- **Objetivo:** Permitir al asegurado reportar un accidente vial desde el botón de pánico SOS de la aplicación móvil, capturando ubicación GPS satelital, fotos de la escena y ejecutando un triaje automático para despachar al perito más cercano.
-- **Actores:** Conductor Asegurado (Iniciador), Sistema de Despacho (Secundario), Perito de Guardia (Destinatario).
-- **Precondiciones:** El asegurado ha iniciado sesión mediante Keycloak SSO; el dispositivo móvil cuenta con sensor GPS habilitado.
+### Especificación CU06: Reportar Siniestro SOS con Triaje Automático
+- **Actor Principal:** Cliente Asegurado.
+- **Precondiciones:** Conductor autenticado vía Keycloak; GPS activo en el móvil.
 - **Flujo Nominal:**
-  1. El conductor asegurado pulsa el botón de emergencia "SOS Siniestro" en la App Móvil.
-  2. La vista frontera captura las coordenadas GPS satelitales (`lat`, `lng`) y solicita tomar 1 o más fotos del choque.
-  3. El objeto Control recibe los datos, valida la integridad del DTO y calcula el nivel de severidad de triaje mediante análisis de impacto y geocerca.
-  4. El objeto Control consulta en MongoDB la colección `peritos` mediante el índice geoespacial `2dsphere` y selecciona al perito en turno a menor distancia euclidiana.
-  5. El objeto Control persiste el nuevo expediente en MongoDB con estado `PENDIENTE_PERITAJE`.
-  6. El sistema emite una notificación Push inmediata al celular del perito asignado con la ruta de navegación.
-- **Postcondiciones:** Expediente de siniestro creado en MongoDB con código único `SIN-YYYY-XXXXX`; perito notificado en tiempo real.
+  1. El asegurado presiona el botón SOS en la App Flutter.
+  2. La app captura las coordenadas GPS satelitales y fotos del choque.
+  3. `SiniestroEmergencyControl` en NestJS valida el DTO y calcula el triaje geoespacial con algoritmo Haversine.
+  4. Consulta MongoDB (`2dsphere`) y selecciona al perito disponible más cercano.
+  5. Inserta el expediente con estado `PENDIENTE_PERITAJE`.
+  6. Dispara alerta Push inmediata al celular del perito asignado.
+- **Flujo Alternativo:** Si no hay peritos en un radio de 25 km, el siniestro se marca como `EN_ESPERA_CENTRAL` y se notifica al despachador central.
+- **Postcondiciones:** Expediente creado en MongoDB; perito asignado con ruta satelital.
 
-#### B. Diagrama de Robustez ICONIX (Boundary-Control-Entity)
+### Especificación CU07: Inspeccionar Daños Offline con Edge AI
+- **Actor Principal:** Perito de Campo.
+- **Precondiciones:** Dispositivo móvil sin señal celular; modelo `damage_classifier.tflite` precargado en assets.
+- **Flujo Nominal:**
+  1. El perito enfoca la cámara sobre las partes colisionadas del vehículo.
+  2. `PeritajeOfflineTFLiteControl` ejecuta la inferencia local sobre los tensores de imagen (< 80 ms).
+  3. Muestra en pantalla el recuadro delimitador, tipo de daño (`Abolladura Grave`) y confianza (94.2%).
+  4. El perito valida el baremo de reparación y confirma la inspección.
+  5. El sistema genera una `Idempotency-Key` (UUIDv4) y firma SHA-256 del payload.
+  6. Guarda la evidencia en SQLite local con estado `EN_COLA_SQLITE`.
+- **Postcondiciones:** Datos periciales persistidos en SQLite local sin requerir internet.
+
+### Especificación CU08: Sincronizar Expediente con Idempotencia en DynamoDB
+- **Actor Principal:** Perito de Campo / Worker de Segundo Plano.
+- **Precondiciones:** Registros en SQLite en estado `EN_COLA_SQLITE`; reconexión a red detectada.
+- **Flujo Nominal:**
+  1. El perito pulsa "Sincronizar Cola" (o el worker automático se dispara).
+  2. La app envía `POST /api/v1/siniestros/peritaje/sync` con la cabecera `Idempotency-Key: <UUIDv4>`.
+  3. El interceptor consulta DynamoDB Local: si la clave no existe, adquiere bloqueo atómico en estado `PROCESSING`.
+  4. Inserta el peritaje en MongoDB (`aegiscore_siniestros`).
+  5. Actualiza DynamoDB a estado `COMPLETED` con el JSON de respuesta.
+  6. La App recibe HTTP 201 y marca el registro local como `SINCRONIZADO_EN_NUBE`.
+- **Flujo Alternativo (Reintento de Red / Clave Existente):** DynamoDB detecta la clave en estado `COMPLETED` con el mismo hash SHA-256 y retorna inmediatamente la respuesta previa cacheada (**HTTP 200 / Cache HIT en < 5ms**), sin reinsertar duplicados en MongoDB.
+- **Postcondiciones:** Expediente integrado una sola vez en MongoDB; garantía de no-duplicidad en DynamoDB.
+
+### Especificación CU09: Liquidar Siniestro con Saga Transversal y Rollback
+- **Actor Principal:** Ajustador de Siniestros.
+- **Precondiciones:** Siniestro en estado `PERITADO_APROBADO`; póliza con cobertura suficiente.
+- **Flujo Nominal:**
+  1. El ajustador aprueba la liquidación por $1,200.00 BOB en el panel administrativo.
+  2. `SagaLiquidacionOrchestratorControl` (Spring Boot) registra la instancia Saga como `INICIADA` en PostgreSQL.
+  3. Paso 1: Notifica a MS2 (NestJS) para cambiar el estado a `EN_LIQUIDACION` en MongoDB.
+  4. Paso 2: Notifica a MS1 (PHP) para bloquear y reservar $1,200.00 BOB del techo anual de la póliza.
+  5. Paso 3: MS3 descuenta el deducible actuarial (10%), asienta la orden de pago y emite la transferencia bancaria.
+  6. La Saga se actualiza a estado `EXITOSA_COMPLETADA`.
+- **Flujo de Compensación Semántica (Rollback ante Fallo):**
+  - Si el desembolso bancario falla en el Paso 3, el orquestador cambia la Saga a `COMPENSANDO`.
+  - Publica el evento `SagaCompensatePolicyCoverageEvent` en Apache Kafka $\rightarrow$ MS1 libera los fondos reservados en la póliza.
+  - Publica el evento `SagaRevertClaimStatusEvent` en Apache Kafka $\rightarrow$ MS2 restaura el siniestro a `PENDIENTE_REVISION`.
+  - La Saga finaliza en estado `COMPENSADA_RECHAZADA` sin dejar datos huérfanos.
+- **Postcondiciones:** Consistencia eventual absoluta garantizada entre los 3 microservicios.
+
+### Especificación CU10: Procesar Cobro Recurrente y Pago QR Idempotente
+- **Actor Principal:** Cliente Asegurado.
+- **Precondiciones:** Cuota de póliza devengada y pendiente de pago.
+- **Flujo Nominal:**
+  1. El cliente solicita pagar su prima mensual en la app o web.
+  2. `PagoPrimaQRControl` (Spring Boot) genera el código QR EMVCo con clave `Idempotency-Key` y expiración de 15 min.
+  3. El asegurado paga desde su banca móvil.
+  4. La pasarela emite webhook con la cabecera `Idempotency-Key`.
+  5. MS3 valida en DynamoDB que no sea un pago repetido, inserta la transacción contable en PostgreSQL y notifica a MS1 (PHP) para extender la vigencia de la póliza por 30 días.
+  6. Retorna comprobante fiscal electrónico al asegurado.
+- **Postcondiciones:** Transacción asentada en PostgreSQL; vigencia de póliza renovada.
+
+---
+
+# CAPÍTULO III. ANÁLISIS Y DISEÑO CON ICONIX
+
+## 3.1. Modelo de dominio
+El modelo conceptual del Perfil B delimita las entidades fundamentales y agregados de siniestros, movilidad y liquidaciones:
+
+```mermaid
+classDiagram
+    class ExpedienteSiniestro {
+        +String idExpediente
+        +GeoJSON ubicacionGPS
+        +String estado
+        +String severidadTriaje
+        +Date fechaOcurrencia
+        +registrarPeritaje()
+        +cambiarEstado()
+    }
+
+    class InspeccionPericial {
+        +UUID idempotencyKey
+        +String hashSHA256
+        +List~String~ fotosUrls
+        +BigDecimal montoEstimado
+        +String baremoDanos
+        +validarConsistencia()
+    }
+
+    class IdempotencyRecord {
+        +String idempotencyKey
+        +String requestHash
+        +String status
+        +Integer responseCode
+        +String responseBody
+        +Long ttl
+    }
+
+    class SagaInstance {
+        +String sagaId
+        +String siniestroId
+        +String estadoSaga
+        +String pasoActual
+        +Date fechaInicio
+        +avanzarPaso()
+        +marcarCompensada()
+    }
+
+    class OrdenLiquidacion {
+        +String idLiquidacion
+        +BigDecimal montoBruto
+        +BigDecimal deducible
+        +BigDecimal montoNeto
+        +String estadoPago
+        +calcularDeduccion()
+    }
+
+    class TransaccionPagoQR {
+        +String idTransaccion
+        +String polizaId
+        +BigDecimal montoBOB
+        +String emvPayload
+        +String estado
+    }
+
+    ExpedienteSiniestro "1" *-- "1..*" InspeccionPericial : documenta
+    InspeccionPericial ..> IdempotencyRecord : protege duplicidad
+    ExpedienteSiniestro "1" -- "0..1" SagaInstance : orquesta liquidación
+    SagaInstance "1" *-- "1" OrdenLiquidacion : genera
+    TransaccionPagoQR ..> IdempotencyRecord : previene doble débito
+```
+
+---
+
+## 3.2. Diagramas de robustez (Boundary-Control-Entity)
+
+### Robustez CU06: Siniestro SOS con Triaje Geoespacial
 ```mermaid
 graph LR
     classDef boundary fill:#E0F2FE,stroke:#0284C7,stroke-width:2px;
@@ -318,9 +389,7 @@ graph LR
 
     B1["Boundary:\n📱 SiniestroSosMobileView"]:::boundary
     B2["Boundary:\n🔔 PushNotificationGateway"]:::boundary
-    
     C1["Control:\n⚙️ SiniestroEmergencyControl"]:::control
-    
     E1[("Entity:\n🍃 ExpedienteSiniestroEntity\n(MongoDB 2dsphere)")]:::entity
     E2[("Entity:\n👤 PeritoGuardiaEntity\n(MongoDB)")]:::entity
 
@@ -328,10 +397,110 @@ graph LR
     C1 -->|2. Validar DTO y calcular triaje| C1
     C1 -->|3. Consultar perito más cercano con 2dsphere| E2
     C1 -->|4. Persistir expediente de emergencia| E1
-    C1 -->|5. Despachar alerta de asignación| B2
+    C1 -->|5. Despachar alerta Push a perito| B2
 ```
 
-#### C. Diagrama de Secuencia UML 2.5+
+### Robustez CU07: Inspección Offline con Edge AI (TFLite)
+```mermaid
+graph LR
+    classDef boundary fill:#E0F2FE,stroke:#0284C7,stroke-width:2px;
+    classDef control fill:#FEF3C7,stroke:#D97706,stroke-width:2px;
+    classDef entity fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
+
+    B1["Boundary:\n📷 CamaraPeritajeOfflineView"]:::boundary
+    B2["Boundary:\n📝 FormularioDanosOfflineView"]:::boundary
+    C1["Control:\n⚙️ PeritajeOfflineTFLiteControl"]:::control
+    E1[("Entity Local:\n💾 InspeccionOfflineSQLiteEntity\n(sqflite)")]:::entity
+    E2[("Entity Local:\n🧠 ModeloTFLiteAsset\n(damage_classifier.tflite)")]:::entity
+
+    B1 -->|1. Capturar frames cámara| C1
+    C1 -->|2. Inyectar tensores a TFLite| E2
+    E2 -->|3. Retornar clases y score| C1
+    C1 -->|4. Proyectar predicciones| B2
+    B2 -->|5. Confirmar baremo| C1
+    C1 -->|6. Insertar registro con Idempotency-Key| E1
+```
+
+### Robustez CU08: Sincronización Idempotente con DynamoDB
+```mermaid
+graph LR
+    classDef boundary fill:#E0F2FE,stroke:#0284C7,stroke-width:2px;
+    classDef control fill:#FEF3C7,stroke:#D97706,stroke-width:2px;
+    classDef entity fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
+
+    B1["Boundary:\n🔄 ColaSincronizacionOfflineView"]:::boundary
+    B2["Boundary:\n🌐 SiniestroSyncRestController\n(NestJS)"]:::boundary
+    C1["Control:\n⚙️ SyncIdempotentControl"]:::control
+    E1[("Entity Local:\n💾 InspeccionSQLite\n(Móvil)")]:::entity
+    E2[("Entity Remota:\n⚡ IdempotencyRecordEntity\n(DynamoDB Local)")]:::entity
+    E3[("Entity Remota:\n🍃 ExpedienteSiniestroEntity\n(MongoDB)")]:::entity
+
+    B1 -->|1. Leer cola SQLite pendiente| E1
+    B1 -->|2. POST sync con Idempotency-Key| B2
+    B2 -->|3. Verificar llave y hash| C1
+    C1 -->|4. Validar o registrar llave atómica| E2
+    C1 -->|5. Persistir peritaje en MongoDB| E3
+    C1 -->|6. Actualizar llave a COMPLETED| E2
+    C1 -->|7. Retornar 201 Created| B1
+    B1 -->|8. Marcar como SINCRONIZADO| E1
+```
+
+### Robustez CU09: Liquidación Saga Transversal en 3 Microservicios
+```mermaid
+graph LR
+    classDef boundary fill:#E0F2FE,stroke:#0284C7,stroke-width:2px;
+    classDef control fill:#FEF3C7,stroke:#D97706,stroke-width:2px;
+    classDef entity fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
+
+    B1["Boundary:\n🖥️ LiquidacionSiniestroAdminView"]:::boundary
+    C1["Control Orquestador:\n⚙️ SagaLiquidacionOrchestratorControl\n(Spring Boot)"]:::control
+    C2["Control Remoto:\n🦁 ReclamoEstadoControl (MS2)"]:::control
+    C3["Control Remoto:\n🐘 PolizaCoberturaControl (MS1)"]:::control
+    E1[("Entity Local:\n🐘 SagaInstanceEntity\n(PostgreSQL MS3)")]:::entity
+    E2[("Entity Local:\n🐘 OrdenLiquidacionEntity\n(PostgreSQL MS3)")]:::entity
+    E3[("Entity Remota:\n🍃 ExpedienteSiniestroEntity\n(MongoDB MS2)")]:::entity
+    E4[("Entity Remota:\n🐘 ContratoPolizaEntity\n(PostgreSQL MS1)")]:::entity
+
+    B1 -->|1. Solicitar liquidación| C1
+    C1 -->|2. Crear instancia Saga| E1
+    C1 -->|3. Paso 1: Bloquear expediente| C2
+    C2 -->|Persistir estado| E3
+    C1 -->|4. Paso 2: Reservar cobertura| C3
+    C3 -->|Descontar techo anual| E4
+    C1 -->|5. Paso 3: Asentar orden de pago| E2
+    C1 -->|6. Compensar vía Kafka si ocurre fallo| C3
+    C1 -->|7. Compensar vía Kafka si ocurre fallo| C2
+    C1 -->|8. Emitir resultado final| B1
+```
+
+### Robustez CU10: Cobro Recurrente y Pago QR Idempotente
+```mermaid
+graph LR
+    classDef boundary fill:#E0F2FE,stroke:#0284C7,stroke-width:2px;
+    classDef control fill:#FEF3C7,stroke:#D97706,stroke-width:2px;
+    classDef entity fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
+
+    B1["Boundary:\n📱 CobroPrimaQRView"]:::boundary
+    B2["Boundary:\n🏦 PasarelaPagoBCBWebhook"]:::boundary
+    C1["Control:\n⚙️ PagoPrimaQRControl\n(Spring Boot)"]:::control
+    E1[("Entity Remota:\n⚡ IdempotencyRecordEntity\n(DynamoDB Local)")]:::entity
+    E2[("Entity Local:\n🐘 TransaccionPagoQREntity\n(PostgreSQL MS3)")]:::entity
+
+    B1 -->|1. Solicitar generación QR| C1
+    C1 -->|2. Crear payload QR EMV con Idempotency-Key| B1
+    B2 -->|3. Webhook confirmación de pago| C1
+    C1 -->|4. Validar llave de idempotencia| E1
+    C1 -->|5. Asentar cobro en contabilidad| E2
+    C1 -->|6. Actualizar llave a COMPLETED| E1
+    C1 -->|7. Retornar comprobante fiscal| B2
+```
+
+---
+
+## 3.3. Diagramas de secuencia UML 2.5+
+*(Cumpliendo estrictamente la norma ICONIX: todos los métodos operacionales se ubican en la Clase de Control).*
+
+### Secuencia CU06: Triaje de Emergencia SOS
 ```mermaid
 sequenceDiagram
     autonumber
@@ -348,7 +517,7 @@ sequenceDiagram
     activate CTRL
     CTRL->>CTRL: validarCoordenadasGeograficas()
     CTRL->>CTRL: calcularPrioridadTriajeGeoespacial(coordenadas, fotos)
-    CTRL->>REPO: buscarPeritoMasCercano(lat, lng, radioKm: 15)
+    CTRL->>REPO: buscarPeritoMasCercano(lat, lng, radioKm: 25)
     REPO->>DB: find({ ubicacion: { $nearSphere: { $geometry: Point } } })
     DB-->>REPO: peritoSeleccionado
     REPO-->>CTRL: peritoSeleccionado
@@ -365,49 +534,7 @@ sequenceDiagram
     BND-->>CLI: mostrarConfirmacionSiniestro("SIN-2026-00050", peritoAsignado)
 ```
 
----
-
-### 5.2 CU07: Inspeccionar Daños Offline en Terreno con Edge AI (TFLite)
-
-#### A. Ficha Técnica del Caso de Uso
-- **Identificador:** `CU07`
-- **Nombre:** Inspeccionar Daños Vehiculares Offline en Terreno con Edge AI Embebido.
-- **Objetivo:** Facilitar al perito técnico la inspección física de un vehículo siniestrado en zonas sin cobertura de internet, utilizando visión computacional local (TensorFlow Lite) para clasificar daños y persistiendo toda la evidencia en la base de datos local SQLite.
-- **Actores:** Perito de Campo (Iniciador), Agente Edge AI TFLite (Asistente Local).
-- **Precondiciones:** La App Móvil Flutter está instalada y contiene el modelo `damage_classifier.tflite` en sus assets; el celular se encuentra sin conexión de red.
-- **Flujo Nominal:**
-  1. El perito accede al formulario de inspección del siniestro en la App Flutter.
-  2. Apunta la cámara del teléfono hacia las partes dañadas del vehículo (parachoques, capó, puertas, faroles).
-  3. El objeto Control local invoca el motor de inferencia TensorFlow Lite sobre el buffer de la imagen en tiempo real.
-  4. El modelo clasifica el tipo de daño (ej. `Severe Bumper Dent`, confianza $94.2\%$) y calcula la estimación preliminar del baremo de reparación.
-  5. El perito añade observaciones en texto y confirma el peritaje.
-  6. El objeto Control genera un identificador universal `Idempotency-Key` (UUIDv4) y persiste el expediente completo en la base de datos local SQLite (`inspecciones_locales`), marcándolo en estado `EN_COLA_SQLITE`.
-- **Postcondiciones:** Registro pericial almacenado con integridad en el dispositivo móvil; ningún dato se pierde a pesar de la ausencia total de internet.
-
-#### B. Diagrama de Robustez ICONIX (Boundary-Control-Entity)
-```mermaid
-graph LR
-    classDef boundary fill:#E0F2FE,stroke:#0284C7,stroke-width:2px;
-    classDef control fill:#FEF3C7,stroke:#D97706,stroke-width:2px;
-    classDef entity fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
-
-    B1["Boundary:\n📷 CamaraPeritajeOfflineView"]:::boundary
-    B2["Boundary:\n📝 FormularioDanosOfflineView"]:::boundary
-
-    C1["Control:\n⚙️ PeritajeOfflineTFLiteControl\n(Flutter Dart Controller)"]:::control
-
-    E1[("Entity Local:\n💾 InspeccionOfflineSQLiteEntity\n(Tabla: inspecciones_locales)")]:::entity
-    E2[("Entity Local:\n🧠 ModeloTFLiteAsset\n(damage_classifier.tflite)")]:::entity
-
-    B1 -->|1. Capturar frames de cámara| C1
-    C1 -->|2. Inyectar imagen a tensores| E2
-    E2 -->|3. Retornar clases y confianza| C1
-    C1 -->|4. Proyectar predicciones en pantalla| B2
-    B2 -->|5. Confirmar peritaje con Idempotency-Key| C1
-    C1 -->|6. Guardar registro offline con estado PENDIENTE| E1
-```
-
-#### C. Diagrama de Secuencia UML 2.5+
+### Secuencia CU07: Inspección Offline con Inferencia TFLite
 ```mermaid
 sequenceDiagram
     autonumber
@@ -422,7 +549,7 @@ sequenceDiagram
     activate CTRL
     CTRL->>TFL: ejecutarInferenciaLocalTFLite(preprocessedImage)
     activate TFL
-    Note over TFL: Inferencia local en NPU/CPU sin conexión a internet (< 80ms)
+    Note over TFL: Inferencia local sin internet (< 80ms)
     TFL-->>CTRL: InferenciaResult { categoria: "DanoGraveParachoque", confianza: 0.942 }
     deactivate TFL
     
@@ -440,57 +567,7 @@ sequenceDiagram
     deactivate CTRL
 ```
 
----
-
-### 5.3 CU08: Sincronizar Expediente de Siniestro con Control de Idempotencia en DynamoDB
-
-#### A. Ficha Técnica del Caso de Uso
-- **Identificador:** `CU08`
-- **Nombre:** Sincronizar Expediente de Siniestro con Control de Idempotencia Distribuida en Amazon DynamoDB.
-- **Objetivo:** Transmitir a la nube los peritajes acumulados en SQLite tan pronto se recupere la conectividad, garantizando mediante DynamoDB que fallas de red, reintentos automáticos o duplicaciones de paquetes no generen registros duplicados en MongoDB ni afecten el estado contable.
-- **Actores:** Servicio de Sincronización Móvil (Iniciador Automático/Manual), Microservicio MS2 NestJS (Receptor), Amazon DynamoDB Local (Garante de Idempotencia).
-- **Precondiciones:** Existen 1 o más registros en la tabla SQLite con estado `EN_COLA_SQLITE`; se restablece la conexión a internet.
-- **Flujo Nominal:**
-  1. El servicio `ConnectivityService` de la App Flutter detecta conexión Wi-Fi/4G activa.
-  2. El objeto Control local lee los registros pendientes en SQLite y extrae la `Idempotency-Key` (UUIDv4) y el hash SHA-256 precalculado.
-  3. Envía una petición `POST /api/v1/siniestros/peritaje/sync` hacia MS2 con el encabezado `Idempotency-Key: <UUIDv4>`.
-  4. El `IdempotencyInterceptor` de NestJS intercepta la solicitud y consulta la tabla `IdempotencyRecords` en DynamoDB Local.
-  5. Al no existir la clave, DynamoDB inserta atómicamente el registro con estado `PROCESSING`.
-  6. El caso de uso en NestJS inserta el peritaje en MongoDB (`aegiscore_siniestros`).
-  7. DynamoDB actualiza el registro a estado `COMPLETED` almacenando el JSON de respuesta y el código `201 Created`.
-  8. La App móvil recibe la confirmación y actualiza la fila local en SQLite a estado `SINCRONIZADO_EN_NUBE`.
-- **Flujo Alternativo (Reintento por timeout / Pérdida momentánea de paquete ACK):**
-  - Si la red cae justo antes de que la App reciba el ACK, la App reintentará el envío con la misma `Idempotency-Key`.
-  - El interceptor consulta DynamoDB, detecta que la clave ya está en estado `COMPLETED` con el mismo hash SHA-256, y **retorna inmediatamente la respuesta previa cacheada (HTTP 200 / Cache HIT en $< 5\text{ ms}$)** sin reinsertar nada en MongoDB.
-- **Postcondiciones:** Datos periciales persistidos una sola vez en MongoDB; DynamoDB conserva la constancia de idempotencia; SQLite móvil refleja sincronización completada.
-
-#### B. Diagrama de Robustez ICONIX (Boundary-Control-Entity)
-```mermaid
-graph LR
-    classDef boundary fill:#E0F2FE,stroke:#0284C7,stroke-width:2px;
-    classDef control fill:#FEF3C7,stroke:#D97706,stroke-width:2px;
-    classDef entity fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
-
-    B1["Boundary:\n🔄 ColaSincronizacionOfflineView"]:::boundary
-    B2["Boundary:\n🌐 SiniestroSyncRestController\n(MS2 NestJS)"]:::boundary
-
-    C1["Control:\n⚙️ SyncIdempotentControl\n(NestJS CQRS UseCase)"]:::control
-
-    E1[("Entity Local:\n💾 InspeccionSQLite\n(Móvil)")]:::entity
-    E2[("Entity Remota:\n⚡ IdempotencyRecordEntity\n(DynamoDB Local)")]:::entity
-    E3[("Entity Remota:\n🍃 ExpedienteSiniestroEntity\n(MongoDB)")]:::entity
-
-    B1 -->|1. Leer cola SQLite pendiente| E1
-    B1 -->|2. POST sync con Idempotency-Key| B2
-    B2 -->|3. Interceptar y verificar llave y hash| C1
-    C1 -->|4. Validar o registrar llave atómica| E2
-    C1 -->|5. Persistir peritaje validado| E3
-    C1 -->|6. Actualizar llave a COMPLETED| E2
-    C1 -->|7. Retornar 201 Created| B1
-    B1 -->|8. Marcar registro como SINCRONIZADO| E1
-```
-
-#### C. Diagrama de Secuencia UML 2.5+
+### Secuencia CU08: Sincronización Idempotente con DynamoDB
 ```mermaid
 sequenceDiagram
     autonumber
@@ -503,7 +580,7 @@ sequenceDiagram
 
     PER->>VIEW: presionarBotonSincronizarCola()
     VIEW->>SQL: obtenerRegistrosPendientes(estado: "EN_COLA_SQLITE")
-    SQL-->>VIEW: [ Registro REC-2026-00050, Key: "fe1b51e8-e627-4b87-abbc-99e...", Hash: "181a77d7..." ]
+    SQL-->>VIEW: [ Registro REC-2026-00050, Key: "fe1b51e8-...", Hash: "181a77d7..." ]
     
     VIEW->>REST: POST /api/v1/siniestros/peritaje/sync<br/>Headers: [ Idempotency-Key, Content-Type ]<br/>Body: PayloadPeritajeJSON
     activate REST
@@ -528,62 +605,7 @@ sequenceDiagram
     VIEW-->>PER: mostrarNotificacionExito("TODO AL DÍA CON DYNAMODB Y MONGO")
 ```
 
----
-
-### 5.4 CU09: Liquidar y Pagar Indemnización de Siniestro (Saga Transversal en 3 Microservicios)
-
-#### A. Ficha Técnica del Caso de Uso
-- **Identificador:** `CU09`
-- **Nombre:** Liquidar y Pagar Indemnización de Siniestro mediante Transacción Transversal Saga Orquestada con Compensación Semántica.
-- **Objetivo:** Orquestar de manera consistente el cierre y desembolso económico de un siniestro aprobado a través de los microservicios de Siniestros (MS2), Pólizas (MS1) y Actuarial (MS3), asegurando que si algún paso de cobro o autorización bancaria falla, todos los recursos reservados sean automáticamente compensados (rollback semántico).
-- **Actores:** Ajustador de Siniestros / Director Financiero (Iniciador), Orquestador Saga (MS3 Spring Boot), MS1 PHP Laravel (Pólizas), MS2 NestJS (Siniestros).
-- **Precondiciones:** El siniestro se encuentra en estado `PERITADO_APROBADO`; el asegurado cuenta con póliza vigente; la reserva técnica tiene fondos disponibles.
-- **Flujo Nominal (Camino Exitoso):**
-  1. El ajustador ingresa a la vista de liquidación e ingresa el ID del siniestro (`SIN-2026-001`) y el monto tasado ($1,200.00\text{ BOB}$).
-  2. El `SagaLiquidacionOrchestratorControl` (MS3) crea e inicializa el registro de la Saga con estado `INICIADA` en PostgreSQL.
-  3. **Paso 1 (MS2 NestJS):** El orquestador envía comando para cambiar el estado del expediente en MongoDB a `EN_PROCESO_LIQUIDACION`. MS2 confirma exitosamente.
-  4. **Paso 2 (MS1 PHP):** El orquestador solicita bloquear y reservar la cobertura de la póliza en PostgreSQL de MS1. MS1 descuenta temporalmente la cobertura anual y confirma.
-  5. **Paso 3 (MS3 Spring Boot):** El orquestador calcula el deducible, debita la reserva actuarial, genera la orden contable de pago y emite la transferencia bancaria.
-  6. El orquestador actualiza la instancia de la Saga a estado `EXITOSA_COMPLETADA` y notifica a la interfaz.
-- **Flujo de Compensación Semántica (Rollback ante Fallo):**
-  - Si en el Paso 3 el banco rechaza la transferencia o se detecta insuficiencia en la reserva actuarial:
-  - El orquestador marca la Saga en estado `COMPENSANDO`.
-  - Publica el evento `SagaCompensatePolicyCoverageEvent` en Apache Kafka. MS1 consume el evento y desbloquea los \$1,200.00 BOB reintegrándolos al límite de la póliza.
-  - Publica el evento `SagaRevertClaimStatusEvent` en Apache Kafka. MS2 consume el evento y revierte el expediente en MongoDB a `PENDIENTE_REVISION`.
-  - El orquestador actualiza el estado de la Saga a `COMPENSADA_RECHAZADA` y reporta la causa exacta del rechazo a la interfaz de administración.
-- **Postcondiciones:** Consistencia eventual absoluta garantizada sin datos huérfanos ni saldos bloqueados indebidamente.
-
-#### B. Diagrama de Robustez ICONIX (Boundary-Control-Entity)
-```mermaid
-graph LR
-    classDef boundary fill:#E0F2FE,stroke:#0284C7,stroke-width:2px;
-    classDef control fill:#FEF3C7,stroke:#D97706,stroke-width:2px;
-    classDef entity fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
-
-    B1["Boundary:\n🖥️ LiquidacionSiniestroAdminView"]:::boundary
-    
-    C1["Control Orquestador:\n⚙️ SagaLiquidacionOrchestratorControl\n(Spring Boot 3 Hexagonal)"]:::control
-    C2["Control Remoto:\n🦁 ReclamoEstadoControl (MS2)"]:::control
-    C3["Control Remoto:\n🐘 PolizaCoberturaControl (MS1)"]:::control
-
-    E1[("Entity Local:\n🐘 SagaInstanceEntity\n(PostgreSQL MS3)")]:::entity
-    E2[("Entity Local:\n🐘 OrdenLiquidacionEntity\n(PostgreSQL MS3)")]:::entity
-    E3[("Entity Remota:\n🍃 ExpedienteSiniestroEntity\n(MongoDB MS2)")]:::entity
-    E4[("Entity Remota:\n🐘 ContratoPolizaEntity\n(PostgreSQL MS1)")]:::entity
-
-    B1 -->|1. Solicitar liquidación| C1
-    C1 -->|2. Crear instancia Saga| E1
-    C1 -->|3. Paso 1: Bloquear expediente| C2
-    C2 -->|Persistir estado| E3
-    C1 -->|4. Paso 2: Reservar cobertura| C3
-    C3 -->|Descontar techo anual| E4
-    C1 -->|5. Paso 3: Asentar orden de pago| E2
-    C1 -->|6. Compensar vía Kafka si ocurre fallo| C3
-    C1 -->|7. Compensar vía Kafka si ocurre fallo| C2
-    C1 -->|8. Emitir resultado final| B1
-```
-
-#### C. Diagrama de Secuencia UML 2.5+
+### Secuencia CU09: Liquidación Saga Transversal y Rollback Semántico
 ```mermaid
 sequenceDiagram
     autonumber
@@ -635,52 +657,7 @@ sequenceDiagram
     deactivate SAGA
 ```
 
----
-
-### 5.5 CU10: Procesar Cobro Recurrente de Primas y Pago QR Idempotente
-
-#### A. Ficha Técnica del Caso de Uso
-- **Identificador:** `CU10`
-- **Nombre:** Procesar Cobro Recurrente de Primas de Seguro con Código QR e Idempotencia Financiera.
-- **Objetivo:** Permitir al asegurado realizar el pago de sus cuotas mensuales de seguro mediante código QR interoperable (estándar BCB / EMVCo), asegurando que reintentos de pago o problemas de conexión en la pasarela bancaria no dupliquen asientos contables ni cobros en la cuenta del cliente.
-- **Actores:** Asegurado (Pagador), Pasarela de Pagos QR BCB (Entidad Financiera), Microservicio MS3 Spring Boot (Gestor de Pagos).
-- **Precondiciones:** La póliza posee cuotas devengadas pendientes de cobro; el cliente cuenta con app bancaria con soporte QR.
-- **Flujo Nominal:**
-  1. El cliente solicita pagar su cuota pendiente de prima en la aplicación móvil o portal web.
-  2. El `PagoPrimaQRControl` genera la imagen y código string QR bajo estándar EMV con una clave `Idempotency-Key` única y un tiempo de expiración de 15 minutos.
-  3. El asegurado escanea el código y confirma el débito en su aplicación bancaria.
-  4. La entidad bancaria envía el webhook de notificación de pago a MS3 con el header `Idempotency-Key`.
-  5. MS3 valida en DynamoDB Local que el pago no haya sido procesado con anterioridad.
-  6. Registra atómicamente el ingreso en la tabla `pagos_qr_registro` de PostgreSQL.
-  7. Publica el evento `PagoPrimaConfirmadoEvent` hacia MS1 (PHP) para extender la vigencia de la póliza por 30 días adicionales.
-  8. Retorna HTTP 200 con el comprobante fiscal electrónico al cliente.
-- **Postcondiciones:** Transacción registrada en PostgreSQL; clave asegurada en DynamoDB; cobertura de póliza extendida en MS1.
-
-#### B. Diagrama de Robustez ICONIX (Boundary-Control-Entity)
-```mermaid
-graph LR
-    classDef boundary fill:#E0F2FE,stroke:#0284C7,stroke-width:2px;
-    classDef control fill:#FEF3C7,stroke:#D97706,stroke-width:2px;
-    classDef entity fill:#DCFCE7,stroke:#16A34A,stroke-width:2px;
-
-    B1["Boundary:\n📱 CobroPrimaQRView"]:::boundary
-    B2["Boundary:\n🏦 PasarelaPagoBCBWebhook"]:::boundary
-
-    C1["Control:\n⚙️ PagoPrimaQRControl\n(Spring Boot Hexagonal UseCase)"]:::control
-
-    E1[("Entity Remota:\n⚡ IdempotencyRecordEntity\n(DynamoDB Local)")]:::entity
-    E2[("Entity Local:\n🐘 TransaccionPagoQREntity\n(PostgreSQL MS3)")]:::entity
-
-    B1 -->|1. Solicitar generación QR| C1
-    C1 -->|2. Crear payload QR EMV con Idempotency-Key| B1
-    B2 -->|3. Webhook confirmación de pago| C1
-    C1 -->|4. Validar llave de idempotencia en DynamoDB| E1
-    C1 -->|5. Asentar cobro en contabilidad| E2
-    C1 -->|6. Actualizar llave a COMPLETED| E1
-    C1 -->|7. Retornar comprobante fiscal| B2
-```
-
-#### C. Diagrama de Secuencia UML 2.5+
+### Secuencia CU10: Cobro Recurrente y Pago QR Idempotente
 ```mermaid
 sequenceDiagram
     autonumber
@@ -699,7 +676,6 @@ sequenceDiagram
     CTRL-->>VIEW: ImagenYStringQR { qrData: "00020101021226...", idempotencyKey: "c9b142-..." }
     deactivate CTRL
 
-    Note over CLI,VIEW: El cliente escanea el QR desde su banco y autoriza el débito
     CLI->>CTRL: POST /api/v1/actuarial/pagos/qr/confirmar (Webhook Bancario con Idempotency-Key)
     activate CTRL
     
@@ -720,119 +696,332 @@ sequenceDiagram
 
 ---
 
-## 6. Evidencias de Ejecución, Pruebas y Resiliencia en Entorno Real
+## 3.4. Diagrama de clases UML
+Detalla los tipos de datos, visibilidad y métodos de los componentes de código implementados:
 
-### 6.1 Pruebas en Dispositivo Móvil Físico (Android real RMX3231)
-Durante la fase de verificación en campo, la aplicación móvil de peritajes (`frontend/app-peritos-flutter/`) fue desplegada y ejecutada en un teléfono inteligente físico **Android (RMX3231)**, conectado a la estación de trabajo y simulando condiciones de operación real y pérdida de cobertura.
+```mermaid
+classDiagram
+    class SiniestroEmergencyControl {
+        +procesarReporteEmergencia(dto: ReporteEmergenciaDto): ExpedienteDto
+        +validarCoordenadasGeograficas(lat: Double, lng: Double): Boolean
+        +calcularPrioridadTriajeGeoespacial(coords: GeoJSON, fotos: List): String
+        +notificarPeritoMasCercano(peritoId: String, expedienteId: String): Void
+    }
 
-#### 📸 Evidencia 1: Modo Desconectado y Encolamiento Local SQLite (Sin Internet)
-En la primera prueba, se interrumpió intencionalmente la conectividad con el microservicio MS2. La aplicación retuvo el registro pericial de forma 100% segura en la base de datos local **SQLite**, generando de manera anticipada la `Idempotency-Key: fe1b51e8-e627-4b87-abbc-99e...` junto a su correspondiente firma criptográfica `SHA-256: 181a77d7ed49ccbaad6f850552ef6182930...`.
+    class PeritajeOfflineTFLiteControl {
+        -tfliteInterpreter: Interpreter
+        +capturarFotografiasEvidencia(imageBytes: Uint8List): FotoMetadata
+        +ejecutarInferenciaLocalTFLite(inputTensor: Float32List): InferenciaResult
+        +generarIdempotencyKeyUUIDv4(): UUID
+        +persistirInspeccionLocal(datos: InspeccionLocal): Long
+    }
+
+    class SyncIdempotentControl {
+        -dynamoClient: DynamoDBClient
+        -mongoRepo: SiniestroMongoRepository
+        +extraerLotePendienteSQLite(): List~InspeccionSQLite~
+        +computarSha256Payload(body: Object): String
+        +adquirirBloqueoIdempotenteDynamoDB(key: UUID, hash: String): Boolean
+        +sincronizarConMS2Backend(payload: SyncDto): SyncResult
+        +marcarSincronizadoSQLite(key: UUID): Void
+    }
+
+    class SagaLiquidacionOrchestratorControl {
+        -kafkaTemplate: KafkaTemplate
+        -sagaRepo: SagaInstanceRepository
+        -ordenLiquidacionRepo: OrdenLiquidacionRepository
+        +iniciarSagaLiquidacion(cmd: LiquidarSiniestroCmd): SagaResult
+        +solicitarBloqueoExpedienteMS2(siniestroId: String): Boolean
+        +solicitarReservaCoberturaMS1(polizaId: String, monto: BigDecimal): Boolean
+        +calcularMontoIndemnizableYDesembolso(): LiquidacionDto
+        +ejecutarRollbackSemantico(causaFallo: String): Void
+    }
+
+    class PagoPrimaQRControl {
+        -idempotencyAdapter: IdempotencyAdapter
+        -pagoRepo: PagoQRRepository
+        +generarCobroQREMV(polizaId: String, monto: BigDecimal): QRPayload
+        +validarIdempotenciaPago(key: UUID, hash: String): Boolean
+        +asentarTransaccionContable(polizaId: String, monto: BigDecimal): TransaccionDto
+        +notificarRenovacionPolizaMS1(polizaId: String): Void
+    }
+
+    SiniestroEmergencyControl ..> SyncIdempotentControl : integra expedientes
+    PeritajeOfflineTFLiteControl ..> SyncIdempotentControl : suministra cola offline
+    SagaLiquidacionOrchestratorControl ..> SiniestroEmergencyControl : bloquea siniestro
+    PagoPrimaQRControl ..> SagaLiquidacionOrchestratorControl : comparte contabilidad
+```
+
+---
+
+## 3.5. Diseño de la base de datos
+La persistencia políglota del Perfil B distribuye responsabilidades entre tres motores:
 
 ```
-========================================================================================
-EVIDENCIA DE ENCOLAMIENTO OFFLINE EN DISPOSITIVO FÍSICO RMX3231:
-- Pantalla: Cola de Sincronización Idempotente
-- Registros Pendientes: 1 Registro
-- Identificador Local: REC-2026-00050 (Monto Estimado: 1.200,00 BOB)
-- Almacenamiento: SQLite Local (sqflite) en almacenamiento interno del dispositivo.
-- Diagnóstico en Pantalla: "Aviso de Conexión: Backend NestJS no responde en 8002.
-  Seguridad Offline: El registro se mantuvo en SQLite local sin perderse."
-========================================================================================
++----------------------------------------------------------------------------------------------------+
+| DISTRIBUCIÓN DE PERSISTENCIA POLÍGLOTA — CÉLULA PERFIL B                                           |
++-------------------+----------------------------+-----------------------+---------------------------+
+| Motor de BD       | Base de Datos / Esquema    | Entidades Almacenadas | Índices Críticos          |
++-------------------+----------------------------+-----------------------+---------------------------+
+| MongoDB 7         | aegiscore_siniestros       | expedientes, peritajes| 2dsphere (coordenadasGPS) |
+| Amazon DynamoDB   | (Local / AWS us-east-1)    | IdempotencyRecords    | Partition Key: key (UUID) |
+| PostgreSQL 16     | aegiscore_erp              | liquidaciones, pagos  | PK (id_liq), FK (poliza)  |
+| SQLite Local      | inspecciones.db (Móvil)    | inspecciones_locales  | idx_estado_sync           |
++-------------------+----------------------------+-----------------------+---------------------------+
 ```
 
+### 1. MongoDB 7 (Colección `expedientes_siniestros`):
+```json
+{
+  "_id": "SIN-2026-00050",
+  "poliza_id": "POL-8841",
+  "coordenadas": {
+    "type": "Point",
+    "coordinates": [-63.1812, -17.7833]
+  },
+  "estado": "PENDIENTE_PERITAJE",
+  "severidad_triaje": "GRAVE",
+  "perito_asignado": "PER-099",
+  "peritajes": [
+    {
+      "idempotency_key": "fe1b51e8-e627-4b87-abbc-99e55a30129a",
+      "monto_estimado": 1200.00,
+      "tflite_deteccion": "DanoGraveParachoque",
+      "fotos": ["s3://aegiscore-evidencias/choque_1.jpg"]
+    }
+  ]
+}
+```
+*Índice geoespacial obligatorio:* `db.expedientes_siniestros.createIndex({ coordenadas: "2dsphere" })`
+
+### 2. Amazon DynamoDB Local (Tabla `IdempotencyRecords`):
+- **Partition Key (`PK`):** `idempotency_key` (String, UUIDv4).
+- **Atributos:** `request_hash` (String SHA-256), `status` (`PROCESSING` | `COMPLETED`), `response_code` (Number), `response_body` (String JSON), `ttl` (Number Epoch UNIX).
+
+### 3. PostgreSQL 16 (Tabla `liquidaciones_siniestro`):
+```sql
+CREATE TABLE liquidaciones_siniestro (
+    id_liquidacion VARCHAR(36) PRIMARY KEY,
+    siniestro_id VARCHAR(50) NOT NULL,
+    poliza_id VARCHAR(50) NOT NULL,
+    monto_bruto NUMERIC(12,2) NOT NULL,
+    deducible_aplicado NUMERIC(12,2) NOT NULL,
+    monto_neto NUMERIC(12,2) NOT NULL,
+    estado_pago VARCHAR(20) NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 3.6. Diseño de interfaces de usuario
+Las interfaces móviles de la App Flutter (`frontend/app-peritos-flutter/`) fueron diseñadas siguiendo el sistema de diseño oficial **"Executive Precision"** (tokens W3C en `frontend/design-system/`):
+
+1. **Pantalla SOS Móvil (`SiniestroSosMobileView`):** Botón flotante de alta visibilidad, visualizador de mapa satelital con geolocalización instantánea y carrusel de carga de fotos con indicador de cobertura.
+2. **Pantalla de Cámara con Inferencia TFLite (`CamaraPeritajeOfflineView`):** Visor de cámara en tiempo real con bounding boxes superpuestos en color verde esmeralda y etiqueta con porcentaje de confianza de daño estimado.
+3. **Pantalla de Cola de Sincronización Idempotente (`ColaSincronizacionOfflineView`):** Listado de expedientes encolados localmente en SQLite, visualización de la llave `Idempotency-Key` y hash SHA-256, diagnóstico de conexión en vivo y botón de sincronización manual/automática.
+
+---
+
+# CAPÍTULO IV. DESARROLLO E IMPLEMENTACIÓN
+
+## 4.1. Herramientas y tecnologías utilizadas
+- **Móvil (Cliente de Peritaje):** Flutter 3.24 / Dart 3.5, `sqflite` (persistencia local SQLite), `tflite_flutter` (LiteRT On-Device), `geolocator`, `connectivity_plus`, `dio`.
+- **Backend Reclamos y Triaje (MS2):** NestJS 10, TypeScript 5.3, `@nestjs/cqrs`, `@nestjs/mongoose`, `@aws-sdk/client-dynamodb`, `class-validator`.
+- **Backend Actuarial y Saga (MS3):** Java 21 LTS, Spring Boot 3.3, Spring Data JPA, Spring Kafka, AWS SDK for Java v2 (DynamoDB Client).
+- **Persistencia Políglota:** MongoDB 7.0 Community, Amazon DynamoDB Local v2.5, PostgreSQL 16.3 Alpine.
+- **Mensajería y Eventos:** Apache Kafka 3.7 (Confluent Platform) con Zookeeper/KRaft.
+- **Contenedores y Red:** Docker Desktop 27, Docker Compose v2.
+
+---
+
+## 4.2. Diseño de la arquitectura del sistema
+La célula Perfil B se rige por una arquitectura distribuida en 4 niveles con acoplamiento mínimo:
+
+```mermaid
+flowchart TB
+    subgraph N1["Nivel 1: Frontend Móvil"]
+        FLUTTER["📱 App Flutter (SQLite + TFLite)"]
+    end
+    subgraph N2["Nivel 2: Microservicios Core"]
+        MS2["🦁 MS2 NestJS (Clean Architecture + CQRS)"]
+        MS3["☕ MS3 Spring Boot (Arquitectura Hexagonal)"]
+    end
+    subgraph N3["Nivel 3: Persistencia Políglota"]
+        MONGO[("🍃 MongoDB 7 (Expedientes)")]
+        DYNAMO[("⚡ DynamoDB Local (Idempotencia)")]
+        PG[("🐘 PostgreSQL 16 (Transacciones)")]
+    end
+    subgraph N4["Nivel 4: Mensajería Saga"]
+        KAFKA["📨 Apache Kafka Broker"]
+    end
+
+    FLUTTER -->|"HTTP POST + Idempotency-Key"| MS2
+    FLUTTER -->|"Lectura QR"| MS3
+    MS2 --> MONGO
+    MS2 --> DYNAMO
+    MS3 --> PG
+    MS3 --> DYNAMO
+    MS3 <-->|"Orquestación & Rollback"| KAFKA
+```
+
+- **Clean Architecture + CQRS en MS2:** La capa `domain/` no depende de Mongoose ni de ningún framework. Los comandos de escritura mutan MongoDB y las consultas leen proyecciones directas.
+- **Arquitectura Hexagonal en MS3:** El núcleo actuarial reside en `domain/` sin dependencias. Los adaptadores web (`adapters/in/web`) y de mensajería (`adapters/in/kafka`) se comunican exclusivamente a través de puertos de entrada (`ports/in/`).
+
+---
+
+## 4.3. Implementación de la base de datos
+1. **Esquema Relacional PostgreSQL:** Ejecutado mediante migraciones Flyway/JPA en el arranque de Spring Boot (`V1__init_actuarial_schema.sql`).
+2. **Esquema Documental MongoDB:** Inicializado con colecciones `expedientes_siniestros` y `peritos_guardia` mediante scripts en `infra/mongo-init/` con índice geoespacial activado.
+3. **Tabla DynamoDB Local:** Creada programáticamente al inicio del servicio con clave de partición simple `idempotency_key` y throughput aprovisionado de lectura/escritura en memoria.
+
+---
+
+## 4.4. Desarrollo de los módulos del sistema
+- **Módulo de Inferencia Edge AI (`flutter`):** La clase `DamageClassifierService` inicializa el intérprete con 4 hilos en CPU/NPU, normaliza el tensor de entrada a $224 \times 224 \times 3$ y extrae la clase dominante con su probabilidad.
+- **Módulo de Idempotencia (`nestjs`):** El interceptor `IdempotencyInterceptor` extrae la cabecera `Idempotency-Key`, computa el hash criptográfico `crypto.createHash('sha256').update(JSON.stringify(req.body)).digest('hex')` y ejecuta el condicional de inserción o lectura en DynamoDB.
+- **Módulo Orquestador Saga (`spring-boot`):** La clase `SagaLiquidacionOrchestrator` implementa la máquina de estados con métodos `@Transactional` y publica eventos en tópicos específicos de Kafka ante fallos en cualquier microservicio.
+
+---
+
+## 4.5. Integración de componentes
+La comunicación inter-servicio respeta estrictamente los contratos congelados:
+- `contracts/idempotency-header.spec.json`: Formato estándar del header `Idempotency-Key` y códigos de retorno `X-Cache-Lookup: HIT / MISS`.
+- `contracts/saga-events.schema.json`: Esquema JSON Schema para los eventos de bloqueo de cobertura, confirmación de estado y reversión semántica.
+
+---
+
+# CAPÍTULO V. PRUEBAS Y RESULTADOS
+
+## 5.1. Plan de pruebas
+El plan de aseguramiento de calidad (QA) abarcó tres niveles de verificación:
+1. **Pruebas Unitarias de Lógica y Dominio:** Verificación aislada de cálculos actuariales, generadores criptográficos de hash y máquinas de estado sin dependencias externas.
+2. **Pruebas de Integración y Persistencia Políglota:** Ejecución de suites con contenedores Docker activos para validar consultas MongoDB `2dsphere`, locks atómicos en DynamoDB y commits relacionales en PostgreSQL.
+3. **Pruebas en Hardware Real y Simulación de Caída de Red:** Validación en campo con teléfono físico Android para verificar el encolamiento local y la posterior sincronización.
+
+---
+
+## 5.2. Pruebas funcionales
+Se validó la ejecución correcta de las reglas de negocio de los 5 casos de uso:
+- Detección de fotos nulas en SOS.
+- Despacho radial de peritos a menos de 25 km.
+- Clasificación de daños con más del 90% de confianza en TFLite.
+- Descuento exacto del 10% de deducible en liquidaciones.
+- Expiración de códigos QR a los 15 minutos.
+
+---
+
+## 5.3. Pruebas de integración
+Se probó la interacción transversal entre microservicios:
+- **Prueba de Transacción Saga:** Confirmación de bloqueo en MS1 (PHP), cambio de estado en MS2 (NestJS) y generación de orden de desembolso en MS3 (Spring Boot).
+- **Prueba de Compensación Semántica (Rollback):** Inyección forzada de error en el desembolso bancario; verificación de la reversión automática de saldos en la póliza en PHP y restauración del expediente en MongoDB.
+
+---
+
+## 5.4. Corrección de errores
+Durante la fase de estabilización se detectaron y corrigieron los siguientes hallazgos:
+1. **Problema de serialización en MongoDB:** El formato de coordenadas GeoJSON requería estrictamente el orden `[longitud, latitud]` y no `[latitud, longitud]`. Se corrigió el mapper del comando en MS2.
+2. **Replay Cache Miss por formato de JSON:** Espacios en blanco variables en el body provocaban un hash SHA-256 diferente ante reintentos. Se implementó una normalización canónica del JSON antes de hashear.
+3. **Timeout de red en el móvil:** Cuando el servidor estaba apagado, la app bloqueaba el hilo principal. Se configuró un timeout de 4 segundos en Dio con degradación elegante a SQLite.
+
+---
+
+## 5.5. Resultados de las pruebas
+
+### Resultados Automatizados en MS3 Spring Boot (`mvn test`)
+- **Total Pruebas Ejecutadas:** 12
+- **Pruebas Fallidas:** 0
+- **Errores:** 0
+- **Tiempo de Ejecución:** 8.614 segundos (**100% Exitoso**)
+
+### Resultados Automatizados en Flutter Mobile (`flutter test`)
+- **Total Pruebas Ejecutadas:** 6
+- **Pruebas Fallidas:** 0
+- **Tiempo de Ejecución:** 6.120 segundos (**100% Exitoso**)
+
+---
+
+## 5.6. Casos de prueba
+
+```
++-------------------------------------------------------------------------------------------------------+
+| MATRIZ DE CASOS DE PRUEBA FORMALES — CÉLULA PERFIL B                                                  |
++-------+--------------------+----------------------------------+---------------------+-----------------+
+| ID CP | Caso de Uso        | Procedimiento / Entrada          | Resultado Esperado  | Estado Obtenido |
++-------+--------------------+----------------------------------+---------------------+-----------------+
+| CP-01 | CU06: SOS Triaje   | Reporte con GPS (-17.78, -63.18) | Asigna perito <25km | EXITOSO (PASS)  |
+| CP-02 | CU07: Edge AI      | Imagen de capó abollado sin red  | Inferencia local    | EXITOSO (PASS)  |
+| CP-03 | CU08: Idempotencia | Reenvío de key idéntica 10 veces | Cache HIT en < 5ms  | EXITOSO (PASS)  |
+| CP-04 | CU08: Offline Sync | Recuperación de señal 4G         | Sincroniza a Mongo  | EXITOSO (PASS)  |
+| CP-05 | CU09: Saga Rollback| Fallo simulado en banco (Paso 3) | Reversión en MS1/MS2| EXITOSO (PASS)  |
+| CP-06 | CU10: Pago QR      | Escaneo y webhook bancario       | Pago registrado     | EXITOSO (PASS)  |
++-------+--------------------+----------------------------------+---------------------+-----------------+
+```
+
+### Evidencias Reales en Dispositivo Físico Android (RMX3231)
+
+#### 📸 Evidencia 1: Modo Desconectado y Encolamiento Local SQLite (Sin Red)
 ![Cola Offline SQLite en Teléfono Físico](docs/evidencias-perfil-b/01_flutter_offline_cola_sqlite.png)
+*Descripción:* Ante la desconexión del backend, el registro `REC-2026-00050` permanece intacto en SQLite local con su `Idempotency-Key` y hash SHA-256 precalculados.
 
----
-
-#### 📸 Evidencia 2: Restablecimiento de Red y Sincronización Idempotente en DynamoDB y MongoDB
-Al reconectar el microservicio MS2 y accionar el botón de sincronización, la cola procesó el paquete pendiente. El interceptor validó la llave contra **Amazon DynamoDB Local**, persistió el siniestro en **MongoDB 7** y devolvió el acuse de recibo. El registro cambió su estado local a `SINCRONIZADO EN NUBE`.
-
-```
-========================================================================================
-EVIDENCIA DE SINCRONIZACIÓN EXITOSA EN NUBE:
-- Estado del Tab: Sincronizados (1) | En Cola SQLite (0)
-- Indicador Visual: Banner Verde "TODO AL DÍA CON DYNAMODB Y MONGO"
-- Métricas Reportadas:
-  * Guardados en MongoDB: 1
-  * Replay Cache HIT en DynamoDB: 0 (Primer procesamiento registrado)
-  * Registro: REC-2026-00050 sincronizado con éxito.
-========================================================================================
-```
-
+#### 📸 Evidencia 2: Restablecimiento de Red y Sincronización Exitosa
 ![Sincronización Exitosa en DynamoDB y MongoDB](docs/evidencias-perfil-b/02_flutter_sincronizado_dynamodb_mongo.png)
+*Descripción:* Al pulsar sincronizar con el backend activo, el registro se transmite y DynamoDB garantiza que no se produzcan duplicados (`Guardados en MongoDB: 1`, `Replay Cache HIT: 0`).
 
 ---
 
-### 6.2 Resultados de Suites de Pruebas Automatizadas
+# CAPÍTULO VI. CONCLUSIONES Y RECOMENDACIONES
 
-La célula de desarrollo del **Perfil B** cuenta con cobertura completa de pruebas automatizadas unitarias, de integración y de resiliencia:
+## 6.1. Conclusiones
+1. **Rigor Metodológico ICONIX:** Se logró una trazabilidad absoluta desde los requisitos del Perfil B hasta las clases y tablas, asignando cada método operacional a su respectiva clase de Control.
+2. **Resiliencia Offline Comprobada:** La combinación de **SQLite + TensorFlow Lite embebido** garantiza que los peritos operen sin interrupciones en cualquier punto del territorio nacional sin depender de la señal celular.
+3. **Idempotencia de Grado Financiero:** El protocolo de idempotencia sobre **Amazon DynamoDB Local** resolvió el riesgo crítico de cobros y expedientes duplicados, con tiempos de respuesta en caché inferiores a los 5 milisegundos.
+4. **Consistencia Transaccional Distribuida:** El patrón **Saga Orquestado** sobre Kafka resolvió de manera elegante la consistencia eventual entre los tres microservicios políglotas (NestJS, PHP y Spring Boot), garantizando compensación semántica automática ante contingencias.
 
-#### A. Microservicio MS3 Spring Boot 3 (`mvn test`)
-Ejecutado con Java 21 LTS y Maven Wrapper. Cobertura del 100% en los casos de uso actuariales, orquestador Saga y cobro QR:
-```
-[INFO] -------------------------------------------------------
-[INFO]  T E S T S
-[INFO] -------------------------------------------------------
-[INFO] Running com.aegiscore.actuarial.LiquidarSiniestroSagaUseCaseTest
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.842 s - in ...
-[INFO] Running com.aegiscore.actuarial.PagoQRIdempotenteUseCaseTest
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.912 s - in ...
-[INFO] Running com.aegiscore.actuarial.CalculoReservaMatematicaTest
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.431 s - in ...
-[INFO] 
-[INFO] Results:
-[INFO] 
-[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
-[INFO] 
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS (Total time: 8.614 s)
-[INFO] ------------------------------------------------------------------------
-```
-
-#### B. App Móvil Flutter (`flutter test`)
-Pruebas automáticas del repositorio SQLite local, generador de idempotencia y motor de inferencia Edge AI:
-```
-00:01 +0: test/test_offline_sqlite_repository.dart: Inserción y consulta local en SQLite
-00:02 +1: test/test_offline_sqlite_repository.dart: Transición de estado EN_COLA a SINCRONIZADO
-00:03 +2: test/test_idempotency_service.dart: Generación determinística de Hash SHA-256
-00:04 +3: test/test_idempotency_service.dart: Inyección de encabezado Idempotency-Key UUIDv4
-00:05 +4: test/test_tflite_edge_ai.dart: Carga de modelo cuantizado damage_classifier.tflite
-00:06 +5: test/test_tflite_edge_ai.dart: Clasificación de abolladura con confianza > 0.90
-00:06 +6: All tests passed!
-```
+## 6.2. Recomendaciones
+1. **Despliegue Multi-Zona:** En entornos productivos de alta demanda, desplegar DynamoDB Global Tables y réplicas de lectura de MongoDB en múltiples zonas de disponibilidad.
+2. **Re-entrenamiento Continuo de Edge AI:** Implementar un pipeline MLOps federado que permita actualizar el modelo `.tflite` en los dispositivos móviles cuando se incorporen nuevas marcas vehiculares al mercado.
+3. **Monitoreo de Kafka Lag:** Configurar alertas Prometheus/Grafana sobre el retardo (consumer lag) de los tópicos de compensación Saga.
 
 ---
 
-### 6.3 Verificación de Idempotencia Sub-milisegundo y Prevención de Duplicidad
-
-Para certificar el comportamiento de la capa de idempotencia bajo alta concurrencia y pérdidas de paquete, se ejecutó una prueba de estrés enviando el mismo payload pericial 10 veces consecutivas con la misma cabecera `Idempotency-Key`:
-
-```
-+------------------------------------------------------------------------------------------+
-| RESULTADO DE PRUEBA DE REINTENTOS CONCURRENTES (DYNAMODB LOCAL IDEMPOTENCY)              |
-+----+--------------------------------------+-------------+--------------+-----------------+
-| N° | Idempotency-Key                      | Estado HTTP | Latencia     | Acción Ejecutada|
-+----+--------------------------------------+-------------+--------------+-----------------+
-| 1  | fe1b51e8-e627-4b87-abbc-99e55...     | 201 Created | 48.2 ms      | Insert MongoDB  |
-| 2  | fe1b51e8-e627-4b87-abbc-99e55...     | 200 OK      | 3.1 ms (HIT) | Retorno Cache   |
-| 3  | fe1b51e8-e627-4b87-abbc-99e55...     | 200 OK      | 2.8 ms (HIT) | Retorno Cache   |
-| 4  | fe1b51e8-e627-4b87-abbc-99e55...     | 200 OK      | 2.9 ms (HIT) | Retorno Cache   |
-| 5  | fe1b51e8-e627-4b87-abbc-99e55...     | 200 OK      | 3.0 ms (HIT) | Retorno Cache   |
-| 10 | fe1b51e8-e627-4b87-abbc-99e55...     | 200 OK      | 2.7 ms (HIT) | Retorno Cache   |
-+----+--------------------------------------+-------------+--------------+-----------------+
-| CONCLUSIÓN: Cero inserciones duplicadas en MongoDB; respuesta cacheada en < 3.2 ms.      |
-+------------------------------------------------------------------------------------------+
-```
+# 7. BIBLIOGRAFÍA
+1. **Rosenberg, D., & Stephens, M.** (2007). *Use Case Driven Object Modeling with UML: Theory and Practice (The ICONIX Process)*. Apress.
+2. **Martin, R. C.** (2017). *Clean Architecture: A Craftsman's Guide to Software Structure and Design*. Prentice Hall.
+3. **Richardson, C.** (2018). *Microservices Patterns: With examples in Java*. Manning Publications.
+4. **Evans, E.** (2003). *Domain-Driven Design: Tackling Complexity in the Heart of Software*. Addison-Wesley.
+5. **Object Management Group (OMG).** (2017). *Unified Modeling Language (UML) Specification Version 2.5.1*. OMG Document formal/2017-12-05.
+6. **Sparx Systems.** (2024). *Enterprise Architect User Guide: XMI Import and Export (Version 17.2)*. Sparx Systems Pty Ltd.
 
 ---
 
-## 7. Conclusiones y Trazabilidad Arquitectónica
+# 8. ANEXOS
 
-1. **Cumplimiento Estricto de la Metodología ICONIX:** Los 5 casos de uso correspondientes al **Perfil B (`CU06` a `CU10`)** mantienen una correspondencia biunívoca entre sus requisitos funcionales, sus diagramas de robustez (Boundary, Control, Entity) y sus diagramas de secuencia UML 2.5+, garantizando que **todas las operaciones de negocio residan explícitamente en métodos de la clase de Control**.
-2. **Resiliencia Operativa Offline-First y Edge AI:** Se demostró mediante pruebas en dispositivos físicos reales que la solución opera de manera ininterrumpida sin conexión de red. La combinación de **SQLite local + TensorFlow Lite embebido** dota al perito de autonomía operativa absoluta, preservando los datos hasta su sincronización.
-3. **Garantía Categórica de Idempotencia:** La integración del protocolo universal `Idempotency-Key` respaldado por **Amazon DynamoDB Local** elimina el riesgo de cobros dobles, pagos duplicados o expedientes redundantes ante reintentos de red, ofreciendo tiempos de respuesta de consulta de caché inferiores a los 5 milisegundos.
-4. **Consistencia Transaccional Distribuida (Saga):** La orquestación en **Spring Boot 3** asistida por eventos asíncronos en **Apache Kafka** resolvió con éxito la problemática de coordinar tres microservicios políglotas (NestJS, PHP, Spring Boot) ante liquidaciones complejas, garantizando rollback semántico integral ante fallas financieras o de conectividad.
-5. **Alineación con los Criterios Académicos:** La arquitectura implementada satisface con creces las pautas del 2do Parcial de Ingeniería de Software II de la FICCT - UAGRM, combinando solidez teórica, rigor metodológico y código funcional de grado de producción.
+### Anexo A: Guía de Importación y Edición en Enterprise Architect 17.2
+Para abrir, explorar y editar todos los diagramas del Perfil B en **Sparx Systems Enterprise Architect v17.2**, siga estos pasos:
+1. Abra **Enterprise Architect 17.2** y cree un nuevo proyecto o abra uno existente (`.qea` o `.feap`).
+2. En el panel **Browser**, seleccione el nodo raíz del proyecto.
+3. Vaya a la cinta de opciones superior: **Publish > Model Exchange > Import Package from XMI** (o presione `Ctrl + Alt + I`).
+4. En el campo *Filename*, seleccione el archivo:  
+   `docs-iconix-uml/enterprise-architect/aegiscore-perfil-b-ea17.xml` (o `.xmi`).
+5. Marque las opciones:  
+   - ☑ *Import Diagrams*  
+   - ☑ *Treat imported Datatypes as external*  
+   - ☑ *Import using XMI 2.1*
+6. Haga clic en **Import**. Enterprise Architect recreará automáticamente la estructura completa de paquetes, las clases con estereotipos `<<boundary>>`, `<<control>>`, `<<entity>>`, los métodos operacionales y los 11 diagramas visuales (Casos de Uso, Robustez y Secuencia UML 2.5+).
+
+### Anexo B: Especificación del Encabezado de Idempotencia (`idempotency-header.spec.json`)
+```json
+{
+  "header": "Idempotency-Key",
+  "format": "uuid-v4",
+  "storage": "Amazon DynamoDB",
+  "table": "IdempotencyRecords",
+  "hash_algorithm": "SHA-256",
+  "ttl_seconds": 120,
+  "cache_hit_header": "X-Cache-Lookup: HIT"
+}
+```
 
 ---
 *Documento elaborado conforme al estándar formal de defensa de proyectos de la Universidad Autónoma Gabriel René Moreno (UAGRM) — Noviembre 2026.*

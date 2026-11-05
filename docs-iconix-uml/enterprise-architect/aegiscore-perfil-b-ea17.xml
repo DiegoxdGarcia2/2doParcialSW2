@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xmi:XMI xmlns:uml="http://schema.omg.org/spec/UML/2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1">
+  <xmi:Documentation exporter="Enterprise Architect" exporterVersion="17.2" name="AegisCore_AI_Perfil_B_ICONIX"/>
+  <uml:Model xmi:type="uml:Model" name="EA_Model_AegisCore_Perfil_B" visibility="public">
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_ASEGURADO" name="Cliente Asegurado" visibility="public"/>
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_PERITO" name="Perito de Campo" visibility="public"/>
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_AJUSTADOR" name="Ajustador de Siniestros" visibility="public"/>
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_KAFKA" name="Broker Apache Kafka (Saga)" visibility="public"/>
+    <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_USECASES" name="01_Casos_de_Uso_Perfil_B">
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC06" name="CU06: Reportar Siniestro Vial SOS con Triaje Automático" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC07" name="CU07: Inspeccionar Daños Offline en Terreno con Edge AI" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC08" name="CU08: Sincronizar Expediente con Idempotencia en DynamoDB" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC09" name="CU09: Liquidar y Pagar Indemnización de Siniestro (Saga Transversal)" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC10" name="CU10: Procesar Cobro Recurrente de Primas y Pago QR Idempotente" visibility="public"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_ICONIX" name="02_Analisis_y_Diseno_ICONIX_BCE">
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU06" name="CU06_Siniestro_SOS_Triaje">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU06_1" name="SiniestroSosMobileView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU06_1_8835" name="presionarBotonSOS()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU06_1_68735" name="mostrarConfirmacionSiniestro()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU06_2" name="PushNotificationGateway" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU06_2_49516" name="despacharAlertaPerito()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU06_1" name="SiniestroEmergencyControl" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU06_1_88765" name="procesarReporteEmergencia(ReporteEmergenciaDto)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU06_1_93679" name="validarCoordenadasGeograficas()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU06_1_18998" name="calcularPrioridadTriajeGeoespacial(coordenadas, fotos)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU06_1_78852" name="notificarPeritoMasCercano(peritoId, expedienteId)"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU06_1" name="ExpedienteSiniestroEntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU06_1_19692" name="idExpediente"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU06_1_23756" name="coordenadasGPS"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU06_1_91070" name="severidad"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU06_1_36449" name="estado"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU06_2" name="PeritoGuardiaEntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU06_2_55377" name="idPerito"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU06_2_75410" name="nombre"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU06_2_89181" name="ubicacionGPS"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU06_2_65043" name="disponible"/>
+        </packagedElement>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU07" name="CU07_Inspeccion_Offline_EdgeAI">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU07_1" name="CamaraPeritajeOfflineView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU07_1_13396" name="enfocarParteDanada()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU07_1_67248" name="renderizarOverlayDeteccion()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU07_2" name="FormularioDanosOfflineView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU07_2_13486" name="completarBaremo()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU07_2_79988" name="guardarInspeccion()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU07_1" name="PeritajeOfflineTFLiteControl" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU07_1_72389" name="capturarFotografiasEvidencia(cameraImageBytes)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU07_1_14295" name="ejecutarInferenciaLocalTFLite(preprocessedImage)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU07_1_57365" name="generarIdempotencyKeyUUIDv4()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU07_1_90861" name="persistirInspeccionLocal(DatosPeritaje)"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU07_1" name="InspeccionOfflineSQLiteEntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU07_1_54973" name="localId"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU07_1_97342" name="idempotencyKey"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU07_1_65530" name="hashSHA256"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU07_1_36449" name="estado"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU07_2" name="ModeloTFLiteQuantized" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU07_2_79433" name="assetPath"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU07_2_23496" name="tamanoBytes"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU07_2_33614" name="inputShape"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU07_2_25219" name="confidenceScore"/>
+        </packagedElement>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU08" name="CU08_Sincronizacion_Idempotencia_DynamoDB">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU08_1" name="ColaSincronizacionOfflineView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU08_1_73878" name="presionarBotonSincronizarCola()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU08_1_92322" name="actualizarUIConResultado()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU08_2" name="SiniestrosSyncRestController" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU08_2_37297" name="recibirLoteSincronizacion(IdempotencyKey, Payload)"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU08_1" name="SyncIdempotentControl" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU08_1_52490" name="extraerLotePendienteSQLite()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU08_1_7721" name="computarSha256Payload()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU08_1_84496" name="adquirirBloqueoIdempotenteDynamoDB(idempotencyKey, hash)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU08_1_28460" name="sincronizarConMS2Backend(payload)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU08_1_19678" name="marcarSincronizadoSQLite(idempotencyKey)"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU08_1" name="IdempotencyRecordEntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU08_1_97342" name="idempotencyKey"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU08_1_11520" name="requestHashSHA256"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU08_1_24085" name="status"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU08_1_63270" name="ttl"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU08_1_72130" name="responseBody"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU08_2" name="ExpedienteSiniestroDocument" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU08_2_19692" name="idExpediente"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU08_2_78938" name="fotosPericiales"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU08_2_28821" name="estadoSync"/>
+        </packagedElement>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU09" name="CU09_Liquidacion_Saga_Transversal">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU09_1" name="LiquidacionSiniestroAdminView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU09_1_17881" name="autorizarLiquidacionSiniestro()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU09_1_7703" name="mostrarEstadoSaga()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU09_1" name="SagaLiquidacionOrchestratorControl" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU09_1_82248" name="iniciarSagaLiquidacion(siniestroId, monto)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU09_1_1548" name="solicitarBloqueoExpedienteMS2(siniestroId)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU09_1_47803" name="solicitarReservaCoberturaMS1(polizaId, monto)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU09_1_19305" name="calcularMontoIndemnizableYDesembolso()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU09_1_16495" name="ejecutarRollbackSemantico(causaFallo)"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU09_2" name="ReclamoEstadoControl_MS2" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU09_2_14682" name="bloquearSiniestro()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU09_2_68809" name="revertirEstadoSiniestro()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU09_3" name="PolizaCoberturaControl_MS1" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU09_3_95678" name="reservarCobertura()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU09_3_40605" name="liberarCobertura()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU09_1" name="SagaInstanceEntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_1_29943" name="sagaId"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_1_23330" name="siniestroId"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_1_18861" name="estadoSaga"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_1_50389" name="pasoActual"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_1_97177" name="fechaCreacion"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU09_2" name="OrdenLiquidacionEntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_2_92975" name="idLiquidacion"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_2_66038" name="montoBruto"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_2_72167" name="deducible"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_2_27132" name="montoNeto"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU09_3" name="ContratoPolizaEntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_3_85965" name="polizaId"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_3_39992" name="limiteAnual"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU09_3_7843" name="coberturaDisponible"/>
+        </packagedElement>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU10" name="CU10_Cobro_Recurrente_PagoQR">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU10_1" name="CobroPrimaQRView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU10_1_77458" name="solicitarGeneracionQR()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU10_1_90715" name="mostrarComprobanteFiscal()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU10_2" name="PasarelaPagoBCBWebhook" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU10_2_50549" name="recibirConfirmacionPago(IdempotencyKey, CallbackData)"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU10_1" name="PagoPrimaQRControl" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU10_1_56497" name="generarCobroQREMV(polizaId, monto, expiraMinutos)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU10_1_80936" name="validarIdempotenciaPago(idempotencyKey, hash)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU10_1_15885" name="asentarTransaccionContable(polizaId, monto)"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU10_1_61297" name="notificarRenovacionPolizaMS1(polizaId)"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU10_1" name="TransaccionPagoQREntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU10_1_94613" name="idTransaccion"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU10_1_85965" name="polizaId"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU10_1_49820" name="montoBOB"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU10_1_14604" name="estadoPago"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU10_1_13312" name="emvQRString"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU10_2" name="IdempotencyRecordEntity_Pagos" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU10_2_97342" name="idempotencyKey"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU10_2_14440" name="comprobanteFiscal"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU10_2_24085" name="status"/>
+        </packagedElement>
+      </packagedElement>
+    </packagedElement>
+  </uml:Model>
+  <xmi:Extension extender="Enterprise Architect" extenderID="6.5">
+    <elements>
+      <element xmi:idref="EAID_B_CU06_1" name="SiniestroSosMobileView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_B_CU06_2" name="PushNotificationGateway" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU06_1" name="SiniestroEmergencyControl" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU06_1" name="ExpedienteSiniestroEntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU06_2" name="PeritoGuardiaEntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_B_CU07_1" name="CamaraPeritajeOfflineView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_B_CU07_2" name="FormularioDanosOfflineView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU07_1" name="PeritajeOfflineTFLiteControl" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU07_1" name="InspeccionOfflineSQLiteEntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU07_2" name="ModeloTFLiteQuantized" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_B_CU08_1" name="ColaSincronizacionOfflineView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_B_CU08_2" name="SiniestrosSyncRestController" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU08_1" name="SyncIdempotentControl" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU08_1" name="IdempotencyRecordEntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU08_2" name="ExpedienteSiniestroDocument" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_B_CU09_1" name="LiquidacionSiniestroAdminView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU09_1" name="SagaLiquidacionOrchestratorControl" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_C_CU09_2" name="ReclamoEstadoControl_MS2" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_C_CU09_3" name="PolizaCoberturaControl_MS1" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU09_1" name="SagaInstanceEntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU09_2" name="OrdenLiquidacionEntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU09_3" name="ContratoPolizaEntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_B_CU10_1" name="CobroPrimaQRView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_B_CU10_2" name="PasarelaPagoBCBWebhook" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU10_1" name="PagoPrimaQRControl" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU10_1" name="TransaccionPagoQREntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU10_2" name="IdempotencyRecordEntity_Pagos" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+    </elements>
+    <diagrams>
+      <diagram xmi:id="EAID_DIAG_UC" name="Diagrama de Casos de Uso Perfil B (CU06-CU10)">
+        <properties type="Use Case" name="Diagrama de Casos de Uso Perfil B"/>
+        <elements>
+          <element subject="EAID_UC06" geometry="Left=300;Top=50;Right=560;Bottom=120;"/>
+          <element subject="EAID_UC07" geometry="Left=300;Top=140;Right=560;Bottom=210;"/>
+          <element subject="EAID_UC08" geometry="Left=300;Top=230;Right=560;Bottom=300;"/>
+          <element subject="EAID_UC09" geometry="Left=300;Top=320;Right=560;Bottom=390;"/>
+          <element subject="EAID_UC10" geometry="Left=300;Top=410;Right=560;Bottom=480;"/>
+          <element subject="EAID_ACT_ASEGURADO" geometry="Left=60;Top=60;Right=130;Bottom=170;"/>
+          <element subject="EAID_ACT_PERITO" geometry="Left=60;Top=220;Right=130;Bottom=330;"/>
+          <element subject="EAID_ACT_AJUSTADOR" geometry="Left=60;Top=380;Right=130;Bottom=490;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_CU06" name="Robustez BCE - CU06: CU06_Siniestro_SOS_Triaje">
+        <properties type="Analysis" name="Robustez BCE CU06"/>
+        <elements>
+          <element subject="EAID_B_CU06_1" geometry="Left=50;Top=80;Right=210;Bottom=160;"/>
+          <element subject="EAID_B_CU06_2" geometry="Left=50;Top=190;Right=210;Bottom=270;"/>
+          <element subject="EAID_C_CU06_1" geometry="Left=300;Top=100;Right=520;Bottom=190;"/>
+          <element subject="EAID_E_CU06_1" geometry="Left=600;Top=80;Right=780;Bottom=160;"/>
+          <element subject="EAID_E_CU06_2" geometry="Left=600;Top=190;Right=780;Bottom=270;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_CU07" name="Robustez BCE - CU07: CU07_Inspeccion_Offline_EdgeAI">
+        <properties type="Analysis" name="Robustez BCE CU07"/>
+        <elements>
+          <element subject="EAID_B_CU07_1" geometry="Left=50;Top=80;Right=210;Bottom=160;"/>
+          <element subject="EAID_B_CU07_2" geometry="Left=50;Top=190;Right=210;Bottom=270;"/>
+          <element subject="EAID_C_CU07_1" geometry="Left=300;Top=100;Right=520;Bottom=190;"/>
+          <element subject="EAID_E_CU07_1" geometry="Left=600;Top=80;Right=780;Bottom=160;"/>
+          <element subject="EAID_E_CU07_2" geometry="Left=600;Top=190;Right=780;Bottom=270;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_CU08" name="Robustez BCE - CU08: CU08_Sincronizacion_Idempotencia_DynamoDB">
+        <properties type="Analysis" name="Robustez BCE CU08"/>
+        <elements>
+          <element subject="EAID_B_CU08_1" geometry="Left=50;Top=80;Right=210;Bottom=160;"/>
+          <element subject="EAID_B_CU08_2" geometry="Left=50;Top=190;Right=210;Bottom=270;"/>
+          <element subject="EAID_C_CU08_1" geometry="Left=300;Top=100;Right=520;Bottom=190;"/>
+          <element subject="EAID_E_CU08_1" geometry="Left=600;Top=80;Right=780;Bottom=160;"/>
+          <element subject="EAID_E_CU08_2" geometry="Left=600;Top=190;Right=780;Bottom=270;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_CU09" name="Robustez BCE - CU09: CU09_Liquidacion_Saga_Transversal">
+        <properties type="Analysis" name="Robustez BCE CU09"/>
+        <elements>
+          <element subject="EAID_B_CU09_1" geometry="Left=50;Top=80;Right=210;Bottom=160;"/>
+          <element subject="EAID_C_CU09_1" geometry="Left=300;Top=100;Right=520;Bottom=190;"/>
+          <element subject="EAID_C_CU09_2" geometry="Left=300;Top=220;Right=520;Bottom=310;"/>
+          <element subject="EAID_C_CU09_3" geometry="Left=300;Top=340;Right=520;Bottom=430;"/>
+          <element subject="EAID_E_CU09_1" geometry="Left=600;Top=80;Right=780;Bottom=160;"/>
+          <element subject="EAID_E_CU09_2" geometry="Left=600;Top=190;Right=780;Bottom=270;"/>
+          <element subject="EAID_E_CU09_3" geometry="Left=600;Top=300;Right=780;Bottom=380;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_CU010" name="Robustez BCE - CU010: CU10_Cobro_Recurrente_PagoQR">
+        <properties type="Analysis" name="Robustez BCE CU010"/>
+        <elements>
+          <element subject="EAID_B_CU10_1" geometry="Left=50;Top=80;Right=210;Bottom=160;"/>
+          <element subject="EAID_B_CU10_2" geometry="Left=50;Top=190;Right=210;Bottom=270;"/>
+          <element subject="EAID_C_CU10_1" geometry="Left=300;Top=100;Right=520;Bottom=190;"/>
+          <element subject="EAID_E_CU10_1" geometry="Left=600;Top=80;Right=780;Bottom=160;"/>
+          <element subject="EAID_E_CU10_2" geometry="Left=600;Top=190;Right=780;Bottom=270;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU06" name="CU06: Secuencia Triaje y Asignación Pericial SOS">
+        <properties type="Sequence" name="CU06: Secuencia Triaje y Asignación Pericial SOS"/>
+        <elements>
+          <element name="Cliente Asegurado" geometry="Left=50;Top=40;Right=180;Bottom=450;"/>
+          <element name="SiniestroSosMobileView" geometry="Left=220;Top=40;Right=350;Bottom=450;"/>
+          <element name="SiniestroEmergencyControl" geometry="Left=390;Top=40;Right=520;Bottom=450;"/>
+          <element name="ExpedienteSiniestroEntity" geometry="Left=560;Top=40;Right=690;Bottom=450;"/>
+          <element name="PushNotificationGateway" geometry="Left=730;Top=40;Right=860;Bottom=450;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU07" name="CU07: Secuencia Inspección Offline con Inferencia TFLite">
+        <properties type="Sequence" name="CU07: Secuencia Inspección Offline con Inferencia TFLite"/>
+        <elements>
+          <element name="Perito de Campo" geometry="Left=50;Top=40;Right=180;Bottom=450;"/>
+          <element name="CamaraPeritajeOfflineView" geometry="Left=220;Top=40;Right=350;Bottom=450;"/>
+          <element name="PeritajeOfflineTFLiteControl" geometry="Left=390;Top=40;Right=520;Bottom=450;"/>
+          <element name="ModeloTFLiteQuantized" geometry="Left=560;Top=40;Right=690;Bottom=450;"/>
+          <element name="InspeccionOfflineSQLiteEntity" geometry="Left=730;Top=40;Right=860;Bottom=450;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU08" name="CU08: Secuencia Sincronización Idempotente con DynamoDB">
+        <properties type="Sequence" name="CU08: Secuencia Sincronización Idempotente con DynamoDB"/>
+        <elements>
+          <element name="Perito de Campo" geometry="Left=50;Top=40;Right=180;Bottom=450;"/>
+          <element name="ColaSincronizacionOfflineView" geometry="Left=220;Top=40;Right=350;Bottom=450;"/>
+          <element name="SiniestrosSyncRestController" geometry="Left=390;Top=40;Right=520;Bottom=450;"/>
+          <element name="SyncIdempotentControl" geometry="Left=560;Top=40;Right=690;Bottom=450;"/>
+          <element name="IdempotencyRecordEntity" geometry="Left=730;Top=40;Right=860;Bottom=450;"/>
+          <element name="ExpedienteSiniestroDocument" geometry="Left=900;Top=40;Right=1030;Bottom=450;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU09" name="CU09: Secuencia Liquidación Saga Transversal y Rollback">
+        <properties type="Sequence" name="CU09: Secuencia Liquidación Saga Transversal y Rollback"/>
+        <elements>
+          <element name="Ajustador de Siniestros" geometry="Left=50;Top=40;Right=180;Bottom=450;"/>
+          <element name="LiquidacionSiniestroAdminView" geometry="Left=220;Top=40;Right=350;Bottom=450;"/>
+          <element name="SagaLiquidacionOrchestratorControl" geometry="Left=390;Top=40;Right=520;Bottom=450;"/>
+          <element name="ReclamoEstadoControl_MS2" geometry="Left=560;Top=40;Right=690;Bottom=450;"/>
+          <element name="PolizaCoberturaControl_MS1" geometry="Left=730;Top=40;Right=860;Bottom=450;"/>
+          <element name="OrdenLiquidacionEntity" geometry="Left=900;Top=40;Right=1030;Bottom=450;"/>
+          <element name="Broker Apache Kafka (Saga)" geometry="Left=1070;Top=40;Right=1200;Bottom=450;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU10" name="CU10: Secuencia Cobro Recurrente y Pago QR Idempotente">
+        <properties type="Sequence" name="CU10: Secuencia Cobro Recurrente y Pago QR Idempotente"/>
+        <elements>
+          <element name="Cliente Asegurado" geometry="Left=50;Top=40;Right=180;Bottom=450;"/>
+          <element name="CobroPrimaQRView" geometry="Left=220;Top=40;Right=350;Bottom=450;"/>
+          <element name="PagoPrimaQRControl" geometry="Left=390;Top=40;Right=520;Bottom=450;"/>
+          <element name="PasarelaPagoBCBWebhook" geometry="Left=560;Top=40;Right=690;Bottom=450;"/>
+          <element name="IdempotencyRecordEntity_Pagos" geometry="Left=730;Top=40;Right=860;Bottom=450;"/>
+          <element name="TransaccionPagoQREntity" geometry="Left=900;Top=40;Right=1030;Bottom=450;"/>
+        </elements>
+      </diagram>
+    </diagrams>
+  </xmi:Extension>
+</xmi:XMI>
