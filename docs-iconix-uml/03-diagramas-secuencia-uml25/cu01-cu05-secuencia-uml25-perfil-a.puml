@@ -1,0 +1,197 @@
+@startuml Secuencia_UML25_Perfil_A_AegisCore
+!theme plain
+autonumber
+skinparam roundcorner 8
+
+title Metodología ICONIX — Diagramas de Secuencia UML 2.5+\nMétodos Operacionales Explícitos en Clases de Control (Perfil A: CU01 a CU05 + Saga CU09)
+
+' ==============================================================================
+' DIAGRAMA 1: CU01 - Iniciar Sesión Único Multi-Aplicación (SSO) y Control de Roles
+' ==============================================================================
+== CU01: Single Sign-On Federado (Keycloak OIDC + PKCE + DynamoDB) ==
+
+actor "Usuario / Asegurado" as user_cu01
+participant "ssoView : LoginUnificadoSSOView" as b_sso <<boundary>>
+participant "authCtrl : AuthOIDCController" as c_auth <<control>>
+database "dynamoSSO : SesionUnificadaToken" as e_dynamo_sso <<entity>>
+database "pgUser : UsuarioRol" as e_pg_user <<entity>>
+
+user_cu01 -> b_sso : iniciarLoginFederadoOIDC(email, rol)
+b_sso -> b_sso : generarParPKCE_S256(code_verifier, code_challenge)
+b_sso -> c_auth : autenticarUsuarioOIDC(email, rol, code_verifier)
+activate c_auth
+c_auth -> c_auth : validarTokenJwtRS256(accessToken)
+c_auth -> e_dynamo_sso : registrarSesionUnificadaDynamoDB(sessionId, sub, rol, ttl)
+e_dynamo_sso --> c_auth : PutItem OK (latency < 5ms)
+c_auth -> e_pg_user : sincronizarUsuarioRolPostgreSQL(keycloakSub, email, rol)
+e_pg_user --> c_auth : usuarioRolId
+c_auth --> b_sso : TokenOIDCResponse(access_token_RS256, session_id, claims)
+deactivate c_auth
+b_sso --> user_cu01 : Sesión SSO activa en React PWA (:3000) y Angular BI (:4200)
+
+
+' ==============================================================================
+' DIAGRAMA 2: CU02 - Consultar Estado Unificado (Federación GraphQL)
+' ==============================================================================
+== CU02: Consultar Estado Unificado de Pólizas, Vehículos y Siniestros (GraphQL) ==
+
+actor "Cliente Asegurado" as user_cu02
+participant "resumenView : ResumenCoberturaClienteView" as b_resumen <<boundary>>
+participant "fedResolver : ApolloFederationResolver" as c_resolver <<control>>
+database "pgPolizas : Poliza & Cliente" as e_pg_pol <<entity>>
+database "dynamoCache : CacheCoberturaActiva" as e_dynamo_cache <<entity>>
+database "mongoSin : ExpedienteSiniestro" as e_mongo_sin <<entity>>
+
+user_cu02 -> b_resumen : abrirDashboardAsegurado(clienteId)
+b_resumen -> c_resolver : resolverResumenUnificadoAsegurado(clienteId)
+activate c_resolver
+c_resolver -> e_pg_pol : findClienteYPolizasActivas(clienteId)
+e_pg_pol --> c_resolver : Cliente + Poliza[] + Cobertura[] + FacturaNotaVenta[]
+c_resolver -> c_resolver : consultarOActualizarCacheCoberturaActiva(clienteId, saldoTotal)
+c_resolver -> e_dynamo_cache : getItemOrPutItem(clienteId, totalSaldoCoberturaDisponible)
+e_dynamo_cache --> c_resolver : CacheHit (latency = 1.8ms)
+c_resolver -> c_resolver : federarExpedientesSiniestrosMongoDB(numerosPoliza)
+c_resolver -> e_mongo_sin : findExpedientesPorPolizas(numerosPoliza)
+e_mongo_sin --> c_resolver : ExpedienteSiniestro[] (con triajeIa y peritajeCampo)
+c_resolver --> b_resumen : ResumenUnificadoPayload (1 sola respuesta GraphQL)
+deactivate c_resolver
+b_resumen --> user_cu02 : Renderizar Pólizas PG + Siniestros Mongo + Caché DynamoDB
+
+
+' ==============================================================================
+' DIAGRAMA 3: CU03 - Gestionar Catálogo de Planes, Coberturas (FK) y Clientes DDD
+' ==============================================================================
+== CU03: Gestionar Catálogo de Planes de Seguro, Coberturas (FK) y Clientes (DDD) ==
+
+actor "Administrador Comercial" as admin_cu03
+participant "catalogoView : GestionCatalogoSegurosView" as b_cat <<boundary>>
+participant "catalogoSvc : CatalogoPolizaApplicationService" as c_cat <<control>>
+database "pgPlan : PlanSeguro" as e_plan <<entity>>
+database "pgCob : Cobertura" as e_cob <<entity>>
+database "pgCli : Cliente" as e_cli <<entity>>
+
+admin_cu03 -> b_cat : abrirGestionCatalogo()
+b_cat -> c_cat : listarPlanesSeguro(soloActivos=true)
+activate c_cat
+c_cat -> e_plan : findAllWithCoberturasJOIN()
+e_plan --> c_cat : PlanSeguro[]
+c_cat --> b_cat : CatalogoPlanesDTO[]
+deactivate c_cat
+
+admin_cu03 -> b_cat : enviarFormularioNuevoPlan(datosPlanDTO)
+b_cat -> c_cat : registrarPlanSeguroDDD(datosPlanDTO)
+activate c_cat
+c_cat -> e_plan : saveAggregateRoot(PlanSeguro)
+e_plan --> c_cat : planIdGenerado
+c_cat -> c_cat : agregarCoberturaAPlan(planIdGenerado, coberturaDTO)
+c_cat -> e_cob : insertCoberturaConFK(plan_id, Cobertura)
+e_cob --> c_cat : coberturaIdGenerado
+c_cat --> b_cat : PlanSeguroCreadoResponse
+deactivate c_cat
+
+admin_cu03 -> b_cat : enviarFormularioNuevoCliente(datosClienteDTO)
+b_cat -> c_cat : registrarClienteDDD(datosClienteDTO)
+activate c_cat
+c_cat -> e_cli : saveAggregateRoot(Cliente)
+e_cli --> c_cat : clienteIdGenerado
+c_cat --> b_cat : ClienteRegistradoResponse
+deactivate c_cat
+
+
+' ==============================================================================
+' DIAGRAMA 4: CU04 - Cotizar y Emitir Póliza con Validación por IA Local Web
+' ==============================================================================
+== CU04: Cotizar y Emitir Póliza en Línea con Validación por IA Local Web (ONNX/TF.js) ==
+
+actor "Cliente Asegurado" as user_cu04
+participant "cotizadorView : CotizadorInscripcionWebView" as b_cot <<boundary>>
+participant "iaLocalCtrl : ValidadorNitidezLocalWebControl" as c_ia_web <<control>>
+participant "emisionCtrl : EmisionPolizaGraphQLController" as c_emision <<control>>
+database "pgPoliza : Poliza" as e_poliza_cu04 <<entity>>
+
+user_cu04 -> b_cot : ingresarDatosVehiculoYAdjuntarDocumento(imagenRUAT)
+b_cot -> c_ia_web : validarNitidez(pixelsRgba, width, height)
+activate c_ia_web
+c_ia_web -> c_ia_web : aplicarKernelConvolucionalLaplaciano3x3()
+c_ia_web -> c_ia_web : calcularVarianzaYNormalizarScore()
+c_ia_web --> b_cot : ResultadoValidacionNitidezLocal(esValidoTfJs=true, score=0.91, token)
+deactivate c_ia_web
+
+user_cu04 -> b_cot : solicitarCotizacionEnLinea()
+b_cot -> c_emision : cotizarPolizaEnLinea(CotizarPolizaInputDTO)
+activate c_emision
+c_emision --> b_cot : CotizacionResultado(primaAnual, primaMensual, descuento)
+deactivate c_emision
+
+user_cu04 -> b_cot : confirmarEmisionPoliza()
+b_cot -> c_emision : insertarPoliza(EmitirPolizaInputDTO, tokenValidacionNitidezLocal, Idempotency-Key)
+activate c_emision
+c_emision -> c_emision : validarNitidez(tokenValidacionNitidezLocal)
+c_emision -> e_poliza_cu04 : saveAggregate(Poliza, BienAseguradoVehiculo)
+e_poliza_cu04 --> c_emision : PolizaPersistida (POL-2026-AUT-...)
+c_emision --> b_cot : PolizaEmitidaResponse
+deactivate c_emision
+b_cot --> user_cu04 : Mostrar certificado de póliza activa
+
+
+' ==============================================================================
+' DIAGRAMA 5: CU05 - Contratar Póliza por WhatsApp y Emitir Factura PDF (n8n)
+' ==============================================================================
+== CU05: Contratar Póliza por WhatsApp y Emitir Factura Fiscal PDF (n8n) ==
+
+actor "Cliente Asegurado" as user_cu05
+participant "waBot : BotConversacionalWhatsAppPoliza" as b_wa <<boundary>>
+participant "n8nCtrl : WebhookTriggerN8N" as c_n8n <<control>>
+participant "pedidoSvc : RecepcionPedidoService" as c_pedido <<control>>
+participant "facturaSvc : FacturacionService" as c_factura <<control>>
+database "pgPol : Poliza" as e_pol_cu05 <<entity>>
+database "pgFac : FacturaNotaVenta" as e_fac_cu05 <<entity>>
+
+user_cu05 -> b_wa : enviarSolicitudPolizaWhatsApp(ci, placa, marca, modelo, valor)
+b_wa -> c_n8n : dispararWebhookContratacion(payloadWhatsAppJSON)
+activate c_n8n
+c_n8n -> c_pedido : procesarPedidoPolizaWhatsApp(payloadNormalizado)
+activate c_pedido
+c_pedido -> e_pol_cu05 : savePolizaCanalWhatsApp(Poliza)
+e_pol_cu05 --> c_pedido : polizaEmitida
+c_pedido -> c_factura : generarFacturaNotaVentaPDF(polizaEmitida, cliente, tipoComprobante)
+activate c_factura
+c_factura -> c_factura : compilarBinarioPDF14YCalcularSHA256()
+c_factura -> e_fac_cu05 : saveFactura(FacturaNotaVenta, hashDigitalSha256)
+e_fac_cu05 --> c_factura : facturaPersistida (FAC-2026-...)
+c_factura --> c_pedido : FacturaGeneradaDTO(url_pdf, hash_digital_sha256)
+deactivate c_factura
+c_pedido --> c_n8n : PedidoPolizaWhatsAppResponse(poliza, factura, url_pdf)
+deactivate c_pedido
+c_n8n -> b_wa : enviarMensajeConfirmacionYAdjuntoPDF(url_pdf, hash_digital_sha256)
+deactivate c_n8n
+b_wa --> user_cu05 : Recibe Póliza + Factura PDF en WhatsApp
+
+
+' ==============================================================================
+' DIAGRAMA 6: APOYO CU09 - Paso 2 Saga Descuento y Rollback de Cobertura en MS1
+' ==============================================================================
+== Apoyo CU09 en MS1 PHP: Descuento y Compensación (Rollback) de Cobertura Anual ==
+
+participant "sagaOrch : SagaLiquidacionOrchestrator (MS3)" as c_saga_ms3 <<control>>
+participant "coberturaSvc : PolizaCoberturaService (MS1 PHP)" as c_cob_ms1 <<control>>
+database "pgPolizaSaga : Poliza (PostgreSQL)" as e_pg_saga <<entity>>
+
+c_saga_ms3 -> c_cob_ms1 : descontarTechoAnualPoliza(polizaId, montoIndemnizacion, reclamoId)
+activate c_cob_ms1
+c_cob_ms1 -> e_pg_saga : updateSaldoCoberturaRestante(saldoActual - montoIndemnizacion)
+e_pg_saga --> c_cob_ms1 : nuevoSaldoRestante
+c_cob_ms1 --> c_saga_ms3 : CoberturaPolizaDescontadaEvent(nuevoSaldoRestante)
+deactivate c_cob_ms1
+
+alt Fallo Actuarial en MS3 (Excede Reserva Técnica) -> Rollback Saga
+    c_saga_ms3 -> c_cob_ms1 : compensarCoberturaSaga(polizaId, montoIndemnizacion, motivoFallo)
+    activate c_cob_ms1
+    c_cob_ms1 -> e_pg_saga : restituirSaldoCobertura(saldoActual + montoIndemnizacion)
+    e_pg_saga --> c_cob_ms1 : saldoRestituidoOriginal
+    c_cob_ms1 --> c_saga_ms3 : CoberturaRestituidaEvent(saldoRestituidoOriginal)
+    deactivate c_cob_ms1
+end
+
+@enduml
+

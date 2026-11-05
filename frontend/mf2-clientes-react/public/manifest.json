@@ -1,0 +1,11 @@
+{
+  "name": "AegisCore AI — Portal Comercial & IA Local Web (React PWA)",
+  "short_name": "AegisCore PWA",
+  "description": "Portal de Autoservicio y Cotización Comercial con GraphQL, soporte Offline e IA Local en el navegador (TensorFlow.js / ONNX Runtime Web).",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#005C55",
+  "orientation": "portrait-primary"
+}
+

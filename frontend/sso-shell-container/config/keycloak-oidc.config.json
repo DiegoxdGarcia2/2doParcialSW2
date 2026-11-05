@@ -1,0 +1,37 @@
+{
+  "realm": "aegiscore",
+  "authServerUrl": "http://localhost:8080",
+  "issuer": "http://localhost:8080/realms/aegiscore",
+  "clientId": "aegiscore-frontend-sso",
+  "resourceServerClientId": "aegiscore-api-gateway",
+  "publicClient": true,
+  "sslRequired": "external",
+  "pkceMethod": "S256",
+  "signatureAlgorithm": "RS256",
+  "sessionPersistence": {
+    "dynamodbTable": "SesionesSSO",
+    "postgresTable": "usuario",
+    "ttlSeconds": 7200
+  },
+  "registeredFrontends": [
+    {
+      "id": "mf1-admin-angular",
+      "name": "Portal ERP Administrativo, Visor IA & Consola Voz MCP (Angular 17+)",
+      "url": "http://localhost:4200",
+      "allowedRoles": ["ADMIN", "ACTUARIO", "AJUSTADOR"]
+    },
+    {
+      "id": "mf2-clientes-react",
+      "name": "Portal de Autoservicio, Cotizador GraphQL & IA Local Web (React 18+ PWA)",
+      "url": "http://localhost:3000",
+      "allowedRoles": ["CLIENTE", "ADMIN", "ACTUARIO", "AJUSTADOR"]
+    },
+    {
+      "id": "app-peritos-flutter",
+      "name": "App Móvil Peritos 100% Offline SQLite + Agente TFLite (Flutter)",
+      "url": "aegiscore-peritos://login-callback",
+      "allowedRoles": ["PERITO", "ADMIN", "AJUSTADOR"]
+    }
+  ]
+}
+

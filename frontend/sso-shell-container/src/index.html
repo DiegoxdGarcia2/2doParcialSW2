@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AegisCore — Acceso Corporativo Unificado</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="stylesheet" href="../../design-system/variables.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#F8FAFC] text-[#0F172A] min-h-screen flex flex-col justify-between">
+  <header class="bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30">
+    <div class="max-w-6xl w-full mx-auto px-6 h-20 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#005C55] to-[#0F766E] text-white flex items-center justify-center shadow-sm">
+          <span class="material-symbols-outlined text-[24px]">shield_lock</span>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg tracking-tight text-[#0F172A]" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            AegisCore <span class="text-[#005C55]">Identity</span>
+          </h1>
+          <p class="text-xs text-slate-500">Acceso Corporativo Unificado · OAuth 2.0 / OIDC PKCE S256</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span id="badge-status" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="badge-text">Sesión Activa: Carlos Mendoza Roca (CLIENTE)</span>
+        </span>
+        <button
+          id="btn-logout-global"
+          type="button"
+          onclick="cerrarSesionGlobal()"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 transition-colors"
+        >
+          <span class="material-symbols-outlined text-[15px]">logout</span>
+          <span>Cerrar Sesión Global</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl w-full mx-auto px-6 my-10 space-y-8">
+    <!-- Selector de Identidad y Autenticación en Vivo -->
+    <div class="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
+        <div>
+          <h2 class="text-xl font-extrabold tracking-tight text-slate-900" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            Identidad Digital Activa
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Seleccione o cambie su perfil corporativo para propagar automáticamente su token JWT RS256 hacia todos los módulos autorizados.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 text-xs font-mono bg-slate-100 px-3 py-1.5 rounded-xl text-slate-700">
+          <span class="material-symbols-outlined text-[16px] text-[#005C55]">key</span>
+          <span id="session-id-label">sso-sess-aegiscore-active</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+        <button
+          type="button"
+          onclick="cambiarIdentidadSSO('carlos.mendoza@gmail.com', 'CLIENTE')"
+          data-email="carlos.mendoza@gmail.com"
+          class="sso-card text-left p-3.5 rounded-xl border-2 border-[#005C55] bg-teal-50/40 transition-all hover:shadow-xs"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-900">Carlos Mendoza Roca</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#005C55] text-white">CLIENTE</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1 truncate">carlos.mendoza@gmail.com</p>
+        </button>
+
+        <button
+          type="button"
+          onclick="cambiarIdentidadSSO('admin@aegiscore.com', 'ADMIN')"
+          data-email="admin@aegiscore.com"
+          class="sso-card text-left p-3.5 rounded-xl border border-slate-200 bg-white transition-all hover:bg-slate-50"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-900">Administrador General</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-800">ADMIN</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1 truncate">admin@aegiscore.com</p>
+        </button>
+
+        <button
+          type="button"
+          onclick="cambiarIdentidadSSO('perito.campo@aegiscore.com', 'PERITO')"
+          data-email="perito.campo@aegiscore.com"
+          class="sso-card text-left p-3.5 rounded-xl border border-slate-200 bg-white transition-all hover:bg-slate-50"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-900">Ing. Roberto Paz</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-800">PERITO</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1 truncate">perito.campo@aegiscore.com</p>
+        </button>
+
+        <button
+          type="button"
+          onclick="cambiarIdentidadSSO('actuario@aegiscore.com', 'ACTUARIO')"
+          data-email="actuario@aegiscore.com"
+          class="sso-card text-left p-3.5 rounded-xl border border-slate-200 bg-white transition-all hover:bg-slate-50"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-900">Lic. Mariana Vargas</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-800">ACTUARIO</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1 truncate">actuario@aegiscore.com</p>
+        </button>
+      </div>
+    </div>
+
+    <!-- Módulos Corporativos Conectados -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white rounded-2xl border-2 border-[#005C55] p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl bg-teal-50 text-[#005C55] flex items-center justify-center">
+              <span class="material-symbols-outlined text-[26px]">verified_user</span>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-teal-50 text-[#005C55] border border-teal-200">
+              Acceso Autorizado
+            </span>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            Portal del Asegurado y Suscripción
+          </h3>
+          <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+            Consulta de pólizas vigentes, certificados PDF en Amazon S3, cotizador digital con verificación inteligente de documentos y pagos por QR.
+          </p>
+        </div>
+        <a
+          id="link-portal-seguros"
+          href="http://localhost:3000?sso_email=carlos.mendoza%40gmail.com"
+          class="mt-6 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#005C55] text-white text-xs font-semibold hover:bg-[#0F766E] transition-colors shadow-sm"
+        >
+          <span>Ingresar con Sesión Activa</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[26px]">monitoring</span>
+            </div>
+            <span id="badge-bi-access" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Analítica y BI
+            </span>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            Centro de Inteligencia Actuarial
+          </h3>
+          <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+            Tableros ejecutivos de solvencia, evaluación pericial de siniestros por visión artificial, detección de anomalías y reportes gerenciales.
+          </p>
+        </div>
+        <a href="http://localhost:4200" class="mt-6 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors">
+          <span>Abrir Centro Actuarial</span>
+          <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+        </a>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[26px]">hub</span>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+              Automatización &amp; Nube
+            </span>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            Orquestador WhatsApp &amp; Cloud
+          </h3>
+          <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+            Flujos automatizados de contratación digital por WhatsApp, emisión de facturas PDF en Amazon S3 y estado de bases de datos.
+          </p>
+        </div>
+        <a href="http://localhost:5678" target="_blank" class="mt-6 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors">
+          <span>Abrir Consola de Flujos</span>
+          <span class="material-symbols-outlined text-[16px]">bolt</span>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-white border-t border-slate-200/80 py-5">
+    <div class="max-w-6xl w-full mx-auto px-6 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
+      <span>© 2026 AegisCore Seguros · Plataforma Corporativa</span>
+      <span class="font-mono text-[11px] text-slate-400">Conexión Cifrada TLS · OAuth 2.0 / OIDC PKCE S256</span>
+    </div>
+  </footer>
+
+  <script>
+    async function cambiarIdentidadSSO(email, rol) {
+      const cards = document.querySelectorAll('.sso-card');
+      cards.forEach((c) => {
+        if (c.getAttribute('data-email') === email) {
+          c.className = 'sso-card text-left p-3.5 rounded-xl border-2 border-[#005C55] bg-teal-50/40 transition-all hover:shadow-xs';
+        } else {
+          c.className = 'sso-card text-left p-3.5 rounded-xl border border-slate-200 bg-white transition-all hover:bg-slate-50';
+        }
+      });
+
+      const linkPortal = document.getElementById('link-portal-seguros');
+      linkPortal.href = 'http://localhost:3000?sso_email=' + encodeURIComponent(email);
+
+      try {
+        const res = await fetch('http://localhost:8001/api/v1/auth/oidc-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            rol,
+            dispositivo: 'Portal Corporativo Unificado (:8080)',
+            code_verifier: 'pkce-s256-shell-handoff-2026'
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('badge-text').textContent =
+            'Sesión Activa: ' + data.usuario_rol.nombre_completo + ' (' + data.usuario_rol.rol + ')';
+          document.getElementById('session-id-label').textContent = data.usuario_rol.session_id;
+        }
+      } catch (e) {
+        document.getElementById('badge-text').textContent = 'Sesión Activa: ' + email + ' (' + rol + ')';
+      }
+    }
+
+    async function cerrarSesionGlobal() {
+      try {
+        await fetch('http://localhost:8001/api/v1/auth/sso-logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: 'ALL' })
+        });
+      } catch (e) {}
+      document.getElementById('badge-text').textContent = 'Sesión Global Cerrada (Single Logout)';
+      document.getElementById('session-id-label').textContent = 'REVOKED_SINGLE_LOGOUT';
+    }
+
+    cambiarIdentidadSSO('carlos.mendoza@gmail.com', 'CLIENTE');
+  </script>
+</body>
+</html>

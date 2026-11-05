@@ -1,99 +1,99 @@
 {
-  "name": "CU05 - Contratar y Renovar Poliza por WhatsApp y Emitir Factura PDF",
+  "name": "AegisCore Seguros - Contratacion Poliza WhatsApp y Facturacion PDF",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "whatsapp-pedido-poliza",
-        "responseMode": "onReceived",
-        "responseData": "allEntries"
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
       },
       "id": "node-webhook-whatsapp",
       "name": "Webhook WhatsApp Business API",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [250, 300]
+      "position": [220, 300]
     },
     {
       "parameters": {
-        "jsCode": "const payload = $input.first().json.body || {};\nreturn [{\n  json: {\n    telefono: payload.from || '+59171099887',\n    mensaje: payload.text || 'Deseo contratar seguro todo riesgo vehicular',\n    numero_documento: payload.documento || '6234891-SC',\n    placa: payload.placa || '4028-PLK',\n    plan_codigo: payload.plan || 'PLAN-AUTO-FULL'\n  }\n}];"
+        "jsCode": "const payload = $input.first().json.body || $input.first().json || {};\nreturn [{\n  json: {\n    telefono: payload.telefono || payload.from || '+59171099887',\n    numero_documento: payload.numero_documento || payload.documento || '6234891-SC',\n    placa: payload.placa || '6014-AEG',\n    marca: payload.marca || 'Mazda',\n    modelo: payload.modelo || 'CX-30 AWD',\n    anio: Number(payload.anio || 2025),\n    valor_comercial: Number(payload.valor_comercial || 28000),\n    plan_codigo: payload.plan_codigo || payload.plan || 'PLAN-AUTO-FULL',\n    tipo_comprobante: payload.tipo_comprobante || 'FACTURA'\n  }\n}];"
       },
       "id": "node-parse-whatsapp",
-      "name": "Extraer Datos del Pedido WhatsApp",
+      "name": "Normalizar Solicitud de WhatsApp",
       "type": "n8n-nodes-base.code",
-      "typeVersion": 1,
-      "position": [480, 300]
+      "typeVersion": 2,
+      "position": [460, 300]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://ms1-polizas-php:8001/graphql",
+        "url": "http://localhost:8001/api/v1/whatsapp/pedido-poliza",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"query\": \"mutation EmitirPolizaWhatsApp($doc: String!, $placa: String!) { emitirPoliza(input: { documento: $doc, placa: $placa, canalVenta: WHATSAPP_N8N }) { id numeroPoliza primaAnual } }\",\n  \"variables\": {\n    \"doc\": \"{{ $json.numero_documento }}\",\n    \"placa\": \"{{ $json.placa }}\"\n  }\n}"
+        "jsonBody": "={{ JSON.stringify($json) }}"
       },
-      "id": "node-ms1-graphql",
-      "name": "Registrar Poliza en MS1 PHP (GraphQL)",
+      "id": "node-ms1-emision",
+      "name": "Emitir Poliza en Motor Central",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [720, 300]
+      "position": [710, 300]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://ms1-polizas-php:8001/api/facturas/generar-pdf",
+        "url": "http://localhost:8001/api/facturas/generar-pdf",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"poliza_id\": \"{{ $json.data.emitirPoliza.id || 'd0000001-0000-0000-0000-000000000001' }}\",\n  \"tipo_comprobante\": \"FACTURA\",\n  \"formato\": \"PDF\"\n}"
+        "jsonBody": "={\n  \"poliza_id\": \"{{ $json.poliza.id }}\",\n  \"tipo_comprobante\": \"FACTURA\",\n  \"formato\": \"PDF\"\n}"
       },
       "id": "node-generar-factura-pdf",
-      "name": "Generar Factura / Nota de Venta PDF",
+      "name": "Compilar Factura Fiscal PDF (SHA-256)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [950, 300]
+      "position": [960, 300]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.whatsapp.com/v1/messages",
+        "url": "https://graph.facebook.com/v19.0/me/messages",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"to\": \"{{ $('Extraer Datos del Pedido WhatsApp').item.json.telefono }}\",\n  \"type\": \"document\",\n  \"document\": {\n    \"link\": \"{{ $json.url_pdf || 'https://storage.aegiscore.local/facturas/FAC-2026-001.pdf' }}\",\n    \"caption\": \"Estimado cliente, su póliza AegisCore AI ha sido emitida exitosamente. Adjuntamos su factura oficial.\"\n  }\n}"
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Normalizar Solicitud de WhatsApp').item.json.telefono }}\",\n  \"type\": \"document\",\n  \"document\": {\n    \"link\": \"{{ $json.url_pdf }}\",\n    \"caption\": \"Su póliza y factura fiscal han sido emitidas exitosamente.\"\n  }\n}"
       },
       "id": "node-send-whatsapp",
-      "name": "Enviar Factura PDF por WhatsApp",
+      "name": "Despachar PDF al WhatsApp del Cliente",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1180, 200]
+      "position": [1220, 200]
     },
     {
       "parameters": {
-        "fromEmail": "facturacion@aegiscore.ai",
+        "fromEmail": "facturacion@aegiscore.com",
         "toEmail": "carlos.mendoza@gmail.com",
-        "subject": "Emisión Exitosa de Póliza de Seguro - AegisCore AI",
-        "text": "Estimado cliente, su póliza vehicular ha sido emitida exitosamente. Adjuntamos la Factura / Nota de Venta correspondiente."
+        "subject": "Factura Fiscal y Certificado de Póliza — AegisCore Seguros",
+        "text": "Estimado asegurado, adjuntamos su Factura Fiscal en formato PDF con firma digital SHA-256."
       },
       "id": "node-send-email",
-      "name": "Enviar Factura al Correo SMTP",
+      "name": "Enviar Comprobante por Correo",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
-      "position": [1180, 420]
+      "position": [1220, 400]
     }
   ],
   "connections": {
     "Webhook WhatsApp Business API": {
-      "main": [[{ "node": "Extraer Datos del Pedido WhatsApp", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Normalizar Solicitud de WhatsApp", "type": "main", "index": 0 }]]
     },
-    "Extraer Datos del Pedido WhatsApp": {
-      "main": [[{ "node": "Registrar Poliza en MS1 PHP (GraphQL)", "type": "main", "index": 0 }]]
+    "Normalizar Solicitud de WhatsApp": {
+      "main": [[{ "node": "Emitir Poliza en Motor Central", "type": "main", "index": 0 }]]
     },
-    "Registrar Poliza en MS1 PHP (GraphQL)": {
-      "main": [[{ "node": "Generar Factura / Nota de Venta PDF", "type": "main", "index": 0 }]]
+    "Emitir Poliza en Motor Central": {
+      "main": [[{ "node": "Compilar Factura Fiscal PDF (SHA-256)", "type": "main", "index": 0 }]]
     },
-    "Generar Factura / Nota de Venta PDF": {
+    "Compilar Factura Fiscal PDF (SHA-256)": {
       "main": [
-        [{ "node": "Enviar Factura PDF por WhatsApp", "type": "main", "index": 0 }],
-        [{ "node": "Enviar Factura al Correo SMTP", "type": "main", "index": 0 }]
+        [{ "node": "Despachar PDF al WhatsApp del Cliente", "type": "main", "index": 0 }],
+        [{ "node": "Enviar Comprobante por Correo", "type": "main", "index": 0 }]
       ]
     }
   }

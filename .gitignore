@@ -18,6 +18,14 @@ setup-workspace.sh
 backend/ms4-ia-mcp-python/artifacts/reports/*
 !backend/ms4-ia-mcp-python/artifacts/reports/.gitkeep
 
+# Facturas y documentos locales efímeros generados en runtime (CU05)
+backend/ms1-polizas-php/public/facturas/*
+!backend/ms1-polizas-php/public/facturas/.gitkeep
+
+# TypeScript build info y cachés de empaquetador
+*.tsbuildinfo
+.vite/
+
 # Archivos del Sistema Operativo
 .DS_Store
 Thumbs.db

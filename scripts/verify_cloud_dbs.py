@@ -47,6 +47,7 @@ AWS_REGION = os.getenv("AWS_REGION", "us-east-2")
 AWS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET = os.getenv("AWS_SECRET_ACCESS_KEY")
 DYNAMO_TABLE = os.getenv("DYNAMODB_TABLE_IDEMPOTENCY", "AegisCore_IdempotencyRecords")
+S3_BUCKET = os.getenv("AWS_S3_BUCKET", "servicio-de-seguros-aegiscore")
 
 
 def test_neon() -> bool:
@@ -124,6 +125,30 @@ def test_dynamo() -> bool:
         return False
 
 
+def test_s3() -> bool:
+    print(f"\n{CYAN}[4/4] Probando conexión y permisos en Amazon S3 ({S3_BUCKET})...{RESET}")
+    try:
+        import boto3
+        s3 = boto3.client(
+            "s3",
+            region_name=AWS_REGION,
+            aws_access_key_id=AWS_KEY,
+            aws_secret_access_key=AWS_SECRET
+        )
+        loc = s3.get_bucket_location(Bucket=S3_BUCKET).get("LocationConstraint") or "us-east-1"
+        objs = s3.list_objects_v2(Bucket=S3_BUCKET, MaxKeys=20)
+        count = objs.get("KeyCount", 0)
+        public_url = f"https://{S3_BUCKET}.s3.{loc}.amazonaws.com"
+        print(f"  {GREEN}✔ Conexión EXITOSA a Amazon S3 Cloud{RESET}")
+        print(f"    • Bucket: {BOLD}{S3_BUCKET}{RESET} (Región: {loc})")
+        print(f"    • URL Pública Base: {BOLD}{public_url}{RESET}")
+        print(f"    • Objetos almacenados actualmente: {BOLD}{count}{RESET}")
+        return True
+    except Exception as e:
+        print(f"  {RED}✘ Falló conexión a Amazon S3:{RESET} {e}")
+        return False
+
+
 def main():
     print(f"{BOLD}============================================================================={RESET}")
     print(f"{BOLD}   AEGISCORE AI :: VERIFICACIÓN DE PERSISTENCIA POLÍGLOTA CLOUD              {RESET}")
@@ -132,17 +157,19 @@ def main():
     neon_ok = test_neon()
     mongo_ok = test_mongo()
     dynamo_ok = test_dynamo()
+    s3_ok = test_s3()
 
     print(f"\n{BOLD}============================================================================={RESET}")
-    if neon_ok and mongo_ok and dynamo_ok:
-        print(f"{GREEN}{BOLD}  🎉 ¡TODAS LAS BASES DE DATOS CLOUD ESTÁN 100% OPERATIVAS Y CONECTADAS!{RESET}")
+    if neon_ok and mongo_ok and dynamo_ok and s3_ok:
+        print(f"{GREEN}{BOLD}  🎉 ¡TODOS LOS SERVICIOS CLOUD ESTÁN 100% OPERATIVOS Y CONECTADOS!{RESET}")
         print(f"{GREEN}  1. Neon PostgreSQL      -> OK (ACID Relacional){RESET}")
         print(f"{GREEN}  2. MongoDB Atlas        -> OK (Documental Siniestros){RESET}")
         print(f"{GREEN}  3. Amazon DynamoDB      -> OK (Idempotencia Sub-milisegundo){RESET}")
+        print(f"{GREEN}  4. Amazon S3 Bucket     -> OK ({S3_BUCKET}){RESET}")
         print(f"{BOLD}============================================================================={RESET}")
         sys.exit(0)
     else:
-        print(f"{RED}{BOLD}  ⚠️ AL MENOS UNA BASE DE DATOS PRESENTÓ ERRORES DE CONECTIVIDAD.{RESET}")
+        print(f"{RED}{BOLD}  ⚠️ AL MENOS UN SERVICIO PRESENTÓ ERRORES DE CONECTIVIDAD.{RESET}")
         print(f"{BOLD}============================================================================={RESET}")
         sys.exit(1)
 

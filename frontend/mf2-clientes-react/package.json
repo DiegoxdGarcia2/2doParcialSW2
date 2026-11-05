@@ -1,0 +1,29 @@
+{
+  "name": "aegiscore-mf2-clientes-react",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AegisCore AI - Micro-Frontend 2: Portal de Autoservicio, Cotizador GraphQL, IA Local Web (TF.js/ONNX) y Facturación PDF (Perfil A: CU01-CU05, CU10)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 3000 --host",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --port 3000",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "typescript": "~5.6.2",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.5"
+  }
+}
+

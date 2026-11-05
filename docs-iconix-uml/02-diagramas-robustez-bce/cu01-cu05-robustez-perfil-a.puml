@@ -1,0 +1,107 @@
+@startuml Robustez_Perfil_A_AegisCore
+!theme plain
+skinparam roundcorner 10
+skinparam stereotypeCBackgroundColor #F4D03F
+skinparam stereotypeBBackgroundColor #5DADE2
+skinparam stereotypeEBackgroundColor #58D68D
+
+title Metodología ICONIX — Diagramas de Robustez (Boundary, Control, Entity)\nPerfil A: Casos de Uso CU01 a CU05 + Apoyo Saga CU09
+
+' ==============================================================================
+' CU01: Iniciar Sesión Único Multi-Aplicación (SSO) y Control de Roles
+' ==============================================================================
+package "CU01: Single Sign-On (Keycloak OIDC + PKCE + DynamoDB)" {
+    actor "Usuario / Asegurado / Admin" as actor_cu01
+    boundary "LoginUnificadoSSOView\n(SSO Shell / React PWA)" as b_cu01_login <<boundary>>
+    control "AuthOIDCController\n(MS1 PHP / OIDC PKCE S256)" as c_cu01_auth <<control>>
+    entity "SesionUnificadaToken\n(Amazon DynamoDB SesionesSSO)" as e_cu01_dynamo <<entity>>
+    entity "UsuarioRol\n(PostgreSQL 16 usuarios_roles)" as e_cu01_pg <<entity>>
+
+    actor_cu01 --> b_cu01_login : 1. Ingresa credenciales / Selecciona Rol
+    b_cu01_login --> c_cu01_auth : 2. autenticarUsuarioOIDC(code_verifier)
+    c_cu01_auth --> c_cu01_auth : 3. validarTokenJwtRS256()
+    c_cu01_auth --> e_cu01_dynamo : 4. registrarSesionUnificadaDynamoDB()
+    c_cu01_auth --> e_cu01_pg : 5. Sincronizar Usuario y Rol RBAC
+    c_cu01_auth --> b_cu01_login : 6. Retornar JWT RS256 + SessionId
+}
+
+' ==============================================================================
+' CU02: Consultar Estado Unificado de Pólizas, Vehículos y Siniestros (GraphQL)
+' ==============================================================================
+package "CU02: Estado Unificado del Asegurado (Federación GraphQL)" {
+    actor "Cliente Asegurado" as actor_cu02
+    boundary "ResumenCoberturaClienteView\n(React 18 PWA)" as b_cu02_view <<boundary>>
+    control "ApolloFederationResolver\n(MS1 Supergraph Engine)" as c_cu02_resolver <<control>>
+    entity "Poliza & Cliente\n(PostgreSQL 16 ACID)" as e_cu02_pg <<entity>>
+    entity "ExpedienteSiniestro\n(MongoDB Atlas 7)" as e_cu02_mongo <<entity>>
+    entity "CacheCoberturaActiva\n(Amazon DynamoDB)" as e_cu02_dynamo <<entity>>
+
+    actor_cu02 --> b_cu02_view : 1. Abre Portal del Asegurado
+    b_cu02_view --> c_cu02_resolver : 2. POST /graphql (resumenUnificadoAsegurado)
+    c_cu02_resolver --> e_cu02_pg : 3. Consultar Cliente, Pólizas y Coberturas
+    c_cu02_resolver --> e_cu02_dynamo : 4. consultarOActualizarCacheCoberturaActiva()
+    c_cu02_resolver --> e_cu02_mongo : 5. federarExpedientesSiniestrosMongoDB()
+    c_cu02_resolver --> b_cu02_view : 6. Retornar ResumenUnificadoPayload
+}
+
+' ==============================================================================
+' CU03: Gestionar Catálogo de Planes de Seguro, Coberturas (FK) y Clientes
+' ==============================================================================
+package "CU03: Catálogo de Planes, Coberturas (FK) y Clientes (DDD)" {
+    actor "Administrador Comercial" as actor_cu03
+    boundary "GestionCatalogoSegurosView\n(React 18 PWA)" as b_cu03_view <<boundary>>
+    control "CatalogoPolizaApplicationService\n(MS1 PHP 8.3 DDD)" as c_cu03_service <<control>>
+    entity "PlanSeguro (Aggregate Root)\n(PostgreSQL planes_seguro)" as e_cu03_plan <<entity>>
+    entity "Cobertura (Child Entity FK)\n(PostgreSQL coberturas_plan)" as e_cu03_cob <<entity>>
+    entity "Cliente (Aggregate Root)\n(PostgreSQL clientes)" as e_cu03_cli <<entity>>
+
+    actor_cu03 --> b_cu03_view : 1. Registra Plan, Cobertura o Cliente
+    b_cu03_view --> c_cu03_service : 2. registrarPlanSeguroDDD() / agregarCoberturaAPlan()
+    c_cu03_service --> e_cu03_plan : 3. Persistir Agregado PlanSeguro
+    c_cu03_service --> e_cu03_cob : 4. Insertar Cobertura con FK plan_id
+    b_cu03_view --> c_cu03_service : 5. registrarClienteDDD()
+    c_cu03_service --> e_cu03_cli : 6. Persistir Agregado Cliente
+}
+
+' ==============================================================================
+' CU04: Cotizar y Emitir Póliza en Línea con Validación por IA Local Web
+' ==============================================================================
+package "CU04: Cotizador Web + Validación Documental IA Local (ONNX/TF.js)" {
+    actor "Cliente Asegurado" as actor_cu04
+    boundary "CotizadorInscripcionWebView\n(React 18 PWA Offline-First)" as b_cu04_view <<boundary>>
+    control "ValidadorNitidezLocalWebControl\n(ONNX / TF.js en Navegador)" as c_cu04_ia <<control>>
+    control "EmisionPolizaGraphQLController\n(MS1 PHP 8.3 DDD)" as c_cu04_emision <<control>>
+    entity "Poliza & BienAseguradoVehiculo\n(PostgreSQL 16 polizas)" as e_cu04_poliza <<entity>>
+
+    actor_cu04 --> b_cu04_view : 1. Ingresa vehículo y adjunta foto RUAT/CI
+    b_cu04_view --> c_cu04_ia : 2. validarNitidez(tensorRGBA)
+    c_cu04_ia --> b_cu04_view : 3. Score >= 0.65 + tokenValidacionNitidezLocal
+    b_cu04_view --> c_cu04_emision : 4. cotizarPolizaEnLinea() y emitirPoliza()
+    c_cu04_emision --> e_cu04_poliza : 5. insertarPoliza() con Idempotency-Key
+    c_cu04_emision --> b_cu04_view : 6. Confirmar Póliza Emitida
+}
+
+' ==============================================================================
+' CU05: Contratar o Renovar Póliza por WhatsApp y Emitir Factura PDF (n8n)
+' ==============================================================================
+package "CU05: Pedido Póliza WhatsApp -> n8n -> Factura PDF SHA-256" {
+    actor "Cliente Asegurado (WhatsApp)" as actor_cu05
+    boundary "BotConversacionalWhatsAppPoliza\n(Webhook WhatsApp)" as b_cu05_wa <<boundary>>
+    control "WebhookTriggerN8N\n(Orquestador n8n)" as c_cu05_n8n <<control>>
+    control "RecepcionPedidoService\n(MS1 PHP 8.3 DDD)" as c_cu05_pedido <<control>>
+    control "FacturacionService\n(Generador PDF %PDF-1.4)" as c_cu05_fac <<control>>
+    entity "Poliza\n(PostgreSQL polizas)" as e_cu05_pol <<entity>>
+    entity "FacturaNotaVenta\n(PostgreSQL facturas_notas_venta)" as e_cu05_fac <<entity>>
+
+    actor_cu05 --> b_cu05_wa : 1. Solicita contratar/renovar póliza
+    b_cu05_wa --> c_cu05_n8n : 2. Dispara Webhook JSON
+    c_cu05_n8n --> c_cu05_pedido : 3. procesarPedidoPolizaWhatsApp()
+    c_cu05_pedido --> e_cu05_pol : 4. Emitir Póliza canal WHATSAPP_N8N
+    c_cu05_pedido --> c_cu05_fac : 5. generarFacturaNotaVentaPDF()
+    c_cu05_fac --> e_cu05_fac : 6. Guardar Factura + Hash SHA-256
+    c_cu05_fac --> c_cu05_n8n : 7. Retornar URL PDF y Resumen Fiscal
+    c_cu05_n8n --> b_cu05_wa : 8. Enviar Factura PDF al Cliente
+}
+
+@enduml
+
