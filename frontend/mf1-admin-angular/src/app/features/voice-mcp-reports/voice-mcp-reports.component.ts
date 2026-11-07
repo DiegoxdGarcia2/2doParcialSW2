@@ -31,7 +31,14 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
   cuentaRegresivaEnvio = 0;
   private autoSendTimer: any = null;
   private countdownInterval: any = null;
-  private readonly AUTO_SEND_DELAY_MS = 2500; // 2.5s de silencio tras dictar para auto-enviar
+  private readonly AUTO_SEND_DELAY_MS = 1800; // 1.8s de silencio tras dictar para auto-enviar
+
+  // Estado de Cinemática de Carga (HUD Stepper de 4 Fases)
+  loadingStep = 1; // 1: Whisper STT, 2: OWASP Anti-SQLi, 3: Query Builder MCP, 4: Compilador Documental
+  loadingProgress = 0;
+  loadingPhaseTitle = 'Fase 1: Transcripción Acústica Whisper STT';
+  loadingPhaseSubtitle = 'Decodificando ondas de audio y extrayendo entidades actuariales...';
+  private loadingInterval: any = null;
 
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -112,6 +119,10 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.detenerGrabacion();
+    if (this.loadingInterval) {
+      clearInterval(this.loadingInterval);
+      this.loadingInterval = null;
+    }
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
@@ -179,35 +190,32 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
       this.herramientaDetectada = 'tool_reporte_ventas_primas';
     }
 
-    // 2. Detección de Formato (Solo si el usuario NO ha fijado manualmente un formato)
-    if (!this.formatoModoManual) {
-      if (p.includes('pantalla') || p.includes('ver en pantalla') || p.includes('en pantalla')) {
+    // 2. Detección de Formato (Prioridad Absoluta al comando explícito de voz)
+    const formatoExplicito: VoiceDeliveryFormat | null =
+      (p.includes('en pantalla') || p.includes('ver en pantalla') || p.includes('en monitor')) ? 'pantalla' :
+      (p.includes('en excel') || p.includes('en xlsx') || p.includes('planilla excel')) ? 'xlsx' :
+      (p.includes('en word') || p.includes('en docx') || p.includes('documento word')) ? 'docx' :
+      (p.includes('en pdf') || p.includes('formato pdf') || p.includes('documento pdf') || p.endsWith('pdf')) ? 'pdf' :
+      null;
+
+    if (formatoExplicito) {
+      this.formatoDetectado = formatoExplicito;
+      this.formatoModoManual = false; // El comando explícito de voz toma el control absoluto
+      this.formatoRazon = `Comando explícito de voz: ${this.getFormatLabel(formatoExplicito)}`;
+    } else if (!this.formatoModoManual) {
+      // Inferencia Autónoma por Dominio de Negocio (Auto-IA)
+      if (this.herramientaDetectada === 'tool_reporte_ventas_primas') {
         this.formatoDetectado = 'pantalla';
-        this.formatoRazon = 'Comando exacto de voz: Visualizar en Pantalla';
-      } else if (p.includes('excel') || p.includes('xlsx')) {
+        this.formatoRazon = 'Auto-IA: Visualización en pantalla con desglose por vehículo';
+      } else if (this.herramientaDetectada === 'tool_solvencia_reservas') {
         this.formatoDetectado = 'xlsx';
-        this.formatoRazon = 'Comando exacto de voz: Planilla Excel';
-      } else if (p.includes('word') || p.includes('docx')) {
+        this.formatoRazon = 'Auto-IA: Balances numéricos y ratios Solvency II';
+      } else if (this.herramientaDetectada === 'tool_reporte_auditoria_fraude_siu') {
         this.formatoDetectado = 'docx';
-        this.formatoRazon = 'Comando exacto de voz: Documento Word';
-      } else if (p.includes('pdf')) {
-        this.formatoDetectado = 'pdf';
-        this.formatoRazon = 'Comando exacto de voz: Certificado PDF';
+        this.formatoRazon = 'Auto-IA: Dossier forense de auditoría legal';
       } else {
-        // Inferencia Autónoma por Dominio de Negocio (Auto-IA)
-        if (this.herramientaDetectada === 'tool_reporte_ventas_primas') {
-          this.formatoDetectado = 'pantalla';
-          this.formatoRazon = 'Auto-IA: Visualización en pantalla con desglose por vehículo';
-        } else if (this.herramientaDetectada === 'tool_solvencia_reservas') {
-          this.formatoDetectado = 'xlsx';
-          this.formatoRazon = 'Auto-IA: Balances numéricos y ratios Solvency II';
-        } else if (this.herramientaDetectada === 'tool_reporte_auditoria_fraude_siu') {
-          this.formatoDetectado = 'docx';
-          this.formatoRazon = 'Auto-IA: Dossier forense de auditoría legal';
-        } else {
-          this.formatoDetectado = 'pdf';
-          this.formatoRazon = 'Auto-IA: Certificado pericial oficial';
-        }
+        this.formatoDetectado = 'pdf';
+        this.formatoRazon = 'Auto-IA: Certificado pericial oficial';
       }
     }
   }
@@ -480,6 +488,55 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
   }
 
   // --------------------------------------------------------------------------
+  // Cinemática de Carga Interactivo "Executive Precision"
+  // --------------------------------------------------------------------------
+  iniciarCinematicaCarga(): void {
+    this.loadingStep = 1;
+    this.loadingProgress = 15;
+    this.loadingPhaseTitle = 'Fase 1: Transcripción Acústica Whisper STT';
+    this.loadingPhaseSubtitle = 'Decodificando ondas acústicas y extrayendo intención NLU...';
+    if (this.loadingInterval) clearInterval(this.loadingInterval);
+
+    this.loadingInterval = setInterval(() => {
+      if (this.loadingStep === 1) {
+        this.loadingProgress += 4;
+        if (this.loadingProgress >= 35) {
+          this.loadingStep = 2;
+          this.loadingPhaseTitle = 'Fase 2: Escudo de Seguridad OWASP Anti-SQLi';
+          this.loadingPhaseSubtitle = 'Sanitizando tokens y verificando ausencia de inyecciones...';
+        }
+      } else if (this.loadingStep === 2) {
+        this.loadingProgress += 5;
+        if (this.loadingProgress >= 65) {
+          this.loadingStep = 3;
+          this.loadingPhaseTitle = 'Fase 3: Query Builder MCP en Neon PostgreSQL';
+          this.loadingPhaseSubtitle = 'Filtrando ventana temporal y agregando métricas en dataset_historico...';
+        }
+      } else if (this.loadingStep === 3) {
+        this.loadingProgress += 4;
+        if (this.loadingProgress >= 88) {
+          this.loadingStep = 4;
+          this.loadingPhaseTitle = 'Fase 4: Motor de Compilación Documental & S3';
+          this.loadingPhaseSubtitle = 'Ensamblando documento oficial y calculando firma criptográfica SHA-256...';
+        }
+      } else if (this.loadingStep === 4 && this.loadingProgress < 98) {
+        this.loadingProgress += 1;
+      }
+      this.cdr.detectChanges();
+    }, 110);
+  }
+
+  detenerCinematicaCarga(): void {
+    if (this.loadingInterval) {
+      clearInterval(this.loadingInterval);
+      this.loadingInterval = null;
+    }
+    this.loadingStep = 4;
+    this.loadingProgress = 100;
+    this.cdr.detectChanges();
+  }
+
+  // --------------------------------------------------------------------------
   // Ejecución de Comandos MCP & Exportación Dual Inteligente
   // --------------------------------------------------------------------------
   ejecutarComando(): void {
@@ -491,6 +548,7 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
     }
 
     this.isLoading = true;
+    this.iniciarCinematicaCarga();
     this.owaspBlockedAlert = null;
     this.lastResponse = null;
 
@@ -501,6 +559,7 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
       undefined
     ).subscribe({
       next: (resp) => {
+        this.detenerCinematicaCarga();
         this.isLoading = false;
         this.lastResponse = resp;
         this.audioBlob = null;
@@ -520,6 +579,7 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
         }, 150);
       },
       error: (err) => {
+        this.detenerCinematicaCarga();
         this.isLoading = false;
         if (err.status === 400 && err.error?.detail) {
           const det = err.error.detail;

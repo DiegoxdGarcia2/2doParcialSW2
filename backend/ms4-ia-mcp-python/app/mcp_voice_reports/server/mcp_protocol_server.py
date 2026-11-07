@@ -321,7 +321,7 @@ class McpProtocolServer:
         conn = get_postgres_connection()
         cur = conn.cursor()
 
-        # Construir condiciones WHERE parametrizadas
+        # Construir condiciones WHERE parametrizadas (Patrón SmartSales query_builder)
         where_conds = []
         sql_params = []
 
@@ -329,15 +329,45 @@ class McpProtocolServer:
             where_conds.append("UPPER(tipo_vehiculo) = %s")
             sql_params.append(tipo_vehiculo)
 
-        if periodo == "ultimo_mes":
-            where_conds.append("mes_registro >= (SELECT MAX(mes_registro) - INTERVAL '30 days' FROM dataset_historico_ml_polizas)")
-            label_periodo = "Último Mes (30 días)"
+        # Resolver ventana temporal dinámicamente con SQL 100% parametrizado
+        meses = args.get("meses")
+        dias = args.get("dias")
+
+        if not dias and not meses and periodo:
+            if periodo in ["trimestre", "ultimos_3_meses"]:
+                dias = 90
+            elif periodo in ["ultimo_mes", "ultimos_1_meses"]:
+                dias = 30
+            elif periodo in ["semestre", "ultimos_6_meses"]:
+                dias = 180
+            elif isinstance(periodo, str) and periodo.startswith("ultimos_") and periodo.endswith("_meses"):
+                try:
+                    meses = int(periodo.split("_")[1])
+                except Exception:
+                    pass
+            elif isinstance(periodo, str) and periodo.startswith("ultimos_") and periodo.endswith("_dias"):
+                try:
+                    dias = int(periodo.split("_")[1])
+                except Exception:
+                    pass
+
+        if meses and not dias:
+            dias = int(meses) * 30
+
+        if dias and int(dias) > 0:
+            where_conds.append("mes_registro >= (SELECT MAX(mes_registro) - (%s || ' days')::interval FROM dataset_historico_ml_polizas)")
+            sql_params.append(str(dias))
+            if int(dias) == 30:
+                label_periodo = "Último Mes (30 días en curso)"
+            elif int(dias) == 90:
+                label_periodo = "Últimos 3 Meses en Curso (90 días)"
+            elif int(dias) == 180:
+                label_periodo = "Últimos 6 Meses en Curso (180 días)"
+            else:
+                label_periodo = f"Últimos {dias} Días en Curso"
         elif periodo == "anio_en_curso":
-            where_conds.append("EXTRACT(YEAR FROM mes_registro) = 2026")
-            label_periodo = "Año en Curso 2026"
-        elif periodo == "trimestre":
-            where_conds.append("mes_registro >= (SELECT MAX(mes_registro) - INTERVAL '90 days' FROM dataset_historico_ml_polizas)")
-            label_periodo = "Último Trimestre (90 días)"
+            where_conds.append("EXTRACT(YEAR FROM mes_registro) = (SELECT EXTRACT(YEAR FROM MAX(mes_registro)) FROM dataset_historico_ml_polizas)")
+            label_periodo = "Año en Curso"
         else:
             label_periodo = "Histórico Anual Consolidado"
 

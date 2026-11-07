@@ -6,7 +6,7 @@ class AppConfig {
   
   static String get ms2BaseUrl => 'http://$hostIp:8002';
   static String get ms3BaseUrl => 'http://$hostIp:8003';
-  static String get ms4BaseUrl => 'http://$hostIp:8000';
+  static String get ms4BaseUrl => 'http://$hostIp:8004';
 
   // Endpoints MS2 Siniestros
   static String get endpointSosEmergency => '$ms2BaseUrl/api/v1/siniestros/sos';

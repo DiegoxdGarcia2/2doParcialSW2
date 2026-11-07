@@ -173,6 +173,26 @@ class TestCU15VoiceMcpReports:
         assert res.documento.format == "pdf"
         assert res.formato_solicitado == "pdf"
 
+    def test_dynamic_vehicle_demand_last_three_months_in_pdf(self):
+        """
+        Valida el caso crítico reportado por el usuario:
+        'demanda de vehículos ordenados por tipo de vehículo de los últimos tres meses en curso en pdf'
+        Debe filtrar exactamente los últimos 90 días (363 pólizas), reflejar 'Últimos 3 Meses'
+        y compilar en PDF aunque el UI tenga fijado 'docx'.
+        """
+        prompt = "demanda de vehículos ordenados por tipo de vehículo de los últimos tres meses en curso en pdf"
+        res = self.control.procesarComandoVozCompleto(
+            texto_dictado=prompt,
+            formato_preferido="docx"  # UI tenía Word fijado por error
+        )
+        assert res.auditoria_seguridad.es_amenaza is False
+        assert res.intencion_detectada == "tool_reporte_ventas_primas"
+        assert res.documento is not None
+        assert res.documento.format == "pdf"  # La voz "en pdf" debe prevalecer sobre el UI "docx"
+        assert "3 Meses" in res.kpis_resumen["periodo_analizado"]
+        assert "363" in res.kpis_resumen["total_polizas_emitidas"]
+        assert len(res.filas) > 0
+
     def test_user_explicit_format_claims_to_word(self):
         """Valida que si el usuario selecciona Word para siniestros, se compile en DOCX."""
         res = self.control.procesarComandoVozCompleto(

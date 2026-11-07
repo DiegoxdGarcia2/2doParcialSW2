@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme/aegis_theme.dart';
 import '../../core/config/app_config.dart';
 import '../../core/database/database_helper.dart';
@@ -145,12 +146,67 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                 ],
               ),
               const SizedBox(height: 16),
+              // Comandos de Voz de Ejemplo Rápido
+              const Text('Comandos de voz sugeridos (o edita el texto libremente):',
+                  style: TextStyle(color: AegisTheme.textSecondary, fontSize: 11)),
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ActionChip(
+                      avatar: const Icon(Icons.mic, size: 14, color: AegisTheme.primary),
+                      label: const Text('Siniestros (PDF)', style: TextStyle(fontSize: 11)),
+                      onPressed: () {
+                        setModalState(() {
+                          comandoController.text = 'Generar reporte de siniestralidad de alta severidad en formato PDF';
+                          formatoSeleccionado = 'pdf';
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                    ActionChip(
+                      avatar: const Icon(Icons.table_chart, size: 14, color: Colors.green),
+                      label: const Text('Ventas y Primas (Excel)', style: TextStyle(fontSize: 11)),
+                      onPressed: () {
+                        setModalState(() {
+                          comandoController.text = 'Generar reporte actuarial de ventas y primas para SUV en formato Excel';
+                          formatoSeleccionado = 'xlsx';
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                    ActionChip(
+                      avatar: const Icon(Icons.description, size: 14, color: Colors.blue),
+                      label: const Text('Fraude SIU (Word)', style: TextStyle(fontSize: 11)),
+                      onPressed: () {
+                        setModalState(() {
+                          comandoController.text = 'Auditar sospechas de fraude vehicular con anomalías en Word';
+                          formatoSeleccionado = 'docx';
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                    ActionChip(
+                      avatar: const Icon(Icons.security, size: 14, color: Colors.redAccent),
+                      label: const Text('Ataque SQLi (Probar Blindaje)', style: TextStyle(fontSize: 11, color: Colors.redAccent)),
+                      onPressed: () {
+                        setModalState(() {
+                          comandoController.text = "Dame los siniestros ' OR 1=1 -- UNION SELECT * FROM usuarios";
+                          formatoSeleccionado = 'pdf';
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: comandoController,
                 maxLines: 2,
                 style: const TextStyle(color: AegisTheme.textPrimary, fontSize: 13),
                 decoration: const InputDecoration(
-                  labelText: 'Comando de Voz Dictado',
+                  labelText: 'Comando de Voz Dictado (Editable)',
                   hintText: 'Ej. Reporte de siniestros de alta severidad en PDF',
                   prefixIcon: Icon(Icons.record_voice_over, color: AegisTheme.primary),
                 ),
@@ -196,6 +252,24 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                       if (urlDescarga != null) ...[
                         const SizedBox(height: 8),
                         Text('Descarga: $urlDescarga', style: const TextStyle(color: AegisTheme.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AegisTheme.primary),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: urlDescarga!));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: AegisTheme.surfaceElevated,
+                                content: Text('📋 Enlace S3 copiado al portapapeles. Ábrelo en otra pestaña para descargar el PDF.'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.copy, size: 14, color: AegisTheme.primary),
+                          label: const Text('Copiar Enlace Oficial S3', style: TextStyle(color: AegisTheme.primary, fontSize: 11)),
+                        ),
                       ]
                     ],
                   ),
@@ -220,9 +294,18 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                           if (response.statusCode == 200) {
                             final data = json.decode(response.body);
                             final doc = data['documento'];
+                            final rawUrl = (doc?['download_url'] ?? doc?['local_download_url'] ?? '') as String;
+                            final fullUrl = rawUrl.startsWith('http') ? rawUrl : '${AppConfig.ms4BaseUrl}$rawUrl';
+                            final sha256 = doc?['sha256_hash']?.toString() ?? '';
+                            final shortHash = sha256.length > 16 ? sha256.substring(0, 16) : sha256;
+                            final fmt = (doc?['format'] ?? formatoSeleccionado).toString().toUpperCase();
+                            final size = doc?['file_size_kb'] ?? 0.0;
                             setModalState(() {
-                              resultadoMensaje = '✅ ${data['mensaje'] ?? 'Reporte generado con éxito'}';
-                              urlDescarga = '${AppConfig.ms4BaseUrl}${doc?['download_url'] ?? ''}';
+                              resultadoMensaje = '✅ ${data['mensaje'] ?? 'Reporte generado con éxito'}\n'
+                                  '• Formato: $fmt ($size KB)\n'
+                                  '• Firma SHA-256: $shortHash...\n'
+                                  '• Fuente: ${data['traza_mcp']?['fuente_datos'] ?? 'MongoDB Atlas'}';
+                              urlDescarga = fullUrl;
                               enviando = false;
                             });
                           } else {
@@ -234,8 +317,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                           }
                         } catch (e) {
                           setModalState(() {
-                            resultadoMensaje = 'Conectado a MS4 (Port 8000): Reporte procesado exitosamente vía MCP.';
-                            urlDescarga = '${AppConfig.endpointDownloadReport}/reporte_siniestralidad.pdf';
+                            resultadoMensaje = '⚠️ Error al conectar con MS4 (Puerto 8004): $e';
                             enviando = false;
                           });
                         }
@@ -316,34 +398,38 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: AegisTheme.glassCardDecoration(borderColor: AegisTheme.primary.withOpacity(0.4)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 10,
-                          height: 10,
+                          width: 8,
+                          height: 8,
                           decoration: const BoxDecoration(
                             color: AegisTheme.success,
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 8),
                         Text(
                           'Host Backend: ${AppConfig.hostIp}',
-                          style: const TextStyle(color: AegisTheme.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
+                          style: const TextStyle(color: AegisTheme.textPrimary, fontWeight: FontWeight.w600, fontSize: 12),
                         ),
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AegisTheme.surfaceElevated,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: AegisTheme.surfaceBorder),
                       ),
-                      child: const Text('MS2: 8002 • MS3: 8003 • MS4: 8000', style: TextStyle(color: AegisTheme.textMuted, fontSize: 11)),
+                      child: const Text('MS2: 8002 • MS3: 8003 • MS4: 8004', style: TextStyle(color: AegisTheme.textMuted, fontSize: 10)),
                     ),
                   ],
                 ),

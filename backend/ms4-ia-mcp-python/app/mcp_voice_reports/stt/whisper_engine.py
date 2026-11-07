@@ -174,11 +174,59 @@ class WhisperSTTEngine:
 
         return "demanda de vehículos ordenadas por tipo de vehículo del año en curso"
 
+    # Mapeo numérico léxico en español (Patrón SmartSales NUMBER_MAP)
+    NUMBER_MAP_ES = {
+        "un": 1, "uno": 1, "una": 1,
+        "dos": 2,
+        "tres": 3,
+        "cuatro": 4,
+        "cinco": 5,
+        "seis": 6,
+        "siete": 7,
+        "ocho": 8,
+        "nueve": 9,
+        "diez": 10,
+        "once": 11,
+        "doce": 12,
+        "quince": 15,
+        "veinte": 20,
+        "treinta": 30,
+        "sesenta": 60,
+        "noventa": 90,
+        "ciento ochenta": 180,
+    }
+
+    @classmethod
+    def _parse_numero_es(cls, val_str: str) -> Optional[int]:
+        """Convierte representación textual o dígito en español a entero."""
+        if not val_str:
+            return None
+        v = val_str.lower().strip()
+        if v in cls.NUMBER_MAP_ES:
+            return cls.NUMBER_MAP_ES[v]
+        if v.isdigit():
+            return int(v)
+        return None
+
+    @classmethod
+    def _detectar_formato_explicito(cls, texto: str) -> Optional[str]:
+        """Detecta si el usuario mencionó un formato explícito en el comando de voz o texto."""
+        t = texto.lower()
+        if re.search(r"\b(en pantalla|para ver en pantalla|en monitor)\b", t):
+            return "pantalla"
+        if re.search(r"\b(en excel|en xlsx|formato excel|planilla excel)\b", t):
+            return "xlsx"
+        if re.search(r"\b(en word|en docx|formato word|documento word)\b", t):
+            return "docx"
+        if re.search(r"\b(en pdf|formato pdf|documento pdf|certificado pdf)\b", t):
+            return "pdf"
+        return None
+
     @classmethod
     def _detectar_formato(cls, texto: str, herramienta: Optional[str] = None, default: Optional[str] = None) -> str:
         """
         Determina dinámicamente el formato óptimo con prioridad estricta al usuario:
-        1. Comandos de formato exactos en el texto dictado:
+        1. Comandos de formato exactos en el texto dictado (prioridad absoluta):
            - 'pantalla' -> 'pantalla'
            - 'excel' o 'xlsx' -> 'xlsx'
            - 'word' o 'docx' -> 'docx'
@@ -191,15 +239,9 @@ class WhisperSTTEngine:
            - Auditoría SIU (tool_reporte_auditoria_fraude_siu) -> docx
            - Siniestralidad (tool_reporte_siniestralidad) -> pdf
         """
-        t = texto.lower()
-        if re.search(r"\bpantalla\b", t):
-            return "pantalla"
-        if re.search(r"\b(excel|xlsx)\b", t):
-            return "xlsx"
-        if re.search(r"\b(word|docx)\b", t):
-            return "docx"
-        if re.search(r"\bpdf\b", t):
-            return "pdf"
+        formato_exp = cls._detectar_formato_explicito(texto)
+        if formato_exp:
+            return formato_exp
 
         # Si el llamador especificó un default explícito diferente a 'auto'
         if default and default.lower().strip() in ["pantalla", "xlsx", "docx", "pdf"]:
@@ -221,6 +263,11 @@ class WhisperSTTEngine:
         t = texto.lower()
         herramienta = "tool_reporte_siniestralidad"  # Default
         params: Dict[str, Any] = {"formato": formato}
+
+        # Guardar formato explícito si el usuario lo dictó
+        formato_exp = cls._detectar_formato_explicito(texto)
+        if formato_exp:
+            params["formato_explicito"] = formato_exp
 
         # Detección de herramienta
         for keyword, tool_name in cls.HERRAMIENTAS_MAP.items():
@@ -280,13 +327,55 @@ class WhisperSTTEngine:
             else:
                 params["ordenar_por"] = "tipo_vehiculo" if params["agrupar_por_tipo"] else "tipo_vehiculo"
 
-            # 4. Detección de Ventana Temporal / Periodo
-            if any(term in t for term in ["un mes", "ultimo mes", "último mes", "mes en curso", "mes actual", "30 dias", "30 días"]):
+            # 4. Detección Dinámica de Ventana Temporal / Periodo (Patrón SmartSales query_builder)
+            meses_encontrados = None
+            dias_encontrados = None
+
+            # Regex para X meses (con números dígitos o palabras en español)
+            match_meses = re.search(
+                r"(?:ultimos?|últimos?|de los?|del|hace)?\s*(\d+|un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce)\s*mes(?:es)?(?:\s*en\s*curso)?",
+                t
+            )
+            if match_meses:
+                meses_encontrados = cls._parse_numero_es(match_meses.group(1))
+
+            # Regex para X días
+            match_dias = re.search(
+                r"(?:ultimos?|últimos?|de los?|del|hace)?\s*(\d+|quince|treinta|sesenta|noventa)\s*d[ií]as?(?:\s*en\s*curso)?",
+                t
+            )
+            if match_dias:
+                dias_encontrados = cls._parse_numero_es(match_dias.group(1))
+
+            if not meses_encontrados:
+                if any(term in t for term in ["trimestre", "trimestral"]):
+                    meses_encontrados = 3
+                elif any(term in t for term in ["semestre", "semestral"]):
+                    meses_encontrados = 6
+
+            if meses_encontrados and meses_encontrados > 0:
+                params["meses"] = meses_encontrados
+                if meses_encontrados == 1:
+                    params["periodo"] = "ultimo_mes"
+                elif meses_encontrados == 3:
+                    params["periodo"] = "trimestre"
+                elif meses_encontrados == 6:
+                    params["periodo"] = "semestre"
+                else:
+                    params["periodo"] = f"ultimos_{meses_encontrados}_meses"
+            elif dias_encontrados and dias_encontrados > 0:
+                params["dias"] = dias_encontrados
+                if dias_encontrados == 30:
+                    params["periodo"] = "ultimo_mes"
+                elif dias_encontrados == 90:
+                    params["periodo"] = "trimestre"
+                else:
+                    params["periodo"] = f"ultimos_{dias_encontrados}_dias"
+            elif any(term in t for term in ["un mes", "ultimo mes", "último mes", "mes en curso", "mes actual"]):
+                params["meses"] = 1
                 params["periodo"] = "ultimo_mes"
-            elif any(term in t for term in ["un anio", "un año", "año en curso", "anio en curso", "año actual", "anio actual", "2026", "anual"]):
+            elif any(term in t for term in ["un anio", "un año", "año en curso", "anio en curso", "año actual", "anio actual", "2026", "anual", "este anio", "este año"]):
                 params["periodo"] = "anio_en_curso"
-            elif any(term in t for term in ["trimestre", "3 meses", "trimestral"]):
-                params["periodo"] = "trimestre"
             else:
                 params["periodo"] = "historico"
 
