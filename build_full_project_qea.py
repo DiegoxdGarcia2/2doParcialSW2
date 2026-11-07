@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Constructor del Modelo de Proyecto Completo (.qea) para Enterprise Architect 17.2
+Constructor Maestro del Modelo de Proyecto Completo (.qea) para Enterprise Architect 17.2
 Proyecto: AegisCore AI — ERP Distribuido, Peritaje Inteligente y Liquidación Autónoma de Siniestros
-Alcance Total: Todos los Módulos (CU01 al CU15) — Comercial, Siniestros e Inteligencia Artificial
-Genera enlaces y conectores nativos compatibles con Sparx Enterprise Architect 17.2 (DUID, SOID, EOID, Sequence Messages)
+Genera:
+  - 30 Diagramas Completos (Home Page con NavigationCells, Casos de Uso Generales y por Módulo,
+    Robustez BCE amplios, Secuencia UML 2.5+ con métodos en Control, Dominio con Clases Rectangulares
+    y Atributos/Operaciones sin círculos gigantes, y Componentes en 4 Niveles).
+  - Ningún diagrama vacío.
+  - Cero solapamiento de elementos (coordenadas calculadas y separadas).
+  - Enlaces nativos completos con DUID, SOID, EOID y mensajes de secuencia síncronos con PtStartX/PtEndX.
 """
 import sqlite3
 import shutil
@@ -21,7 +26,7 @@ def build_qea():
     target_qea = "AegisCore_AI.qea"
 
     shutil.copy(base_template, target_qea)
-    print(f"Copiado EABase.qea a {target_qea}")
+    print(f"Copiado base EABase.qea a {target_qea}")
 
     conn = sqlite3.connect(target_qea)
     cur = conn.cursor()
@@ -38,7 +43,7 @@ def build_qea():
         VALUES (1, 1, 'Package', 'EA_Model_AegisCore_AI', ?)
     """, (get_guid(),))
 
-    # 2. Paquetes Principales
+    # 2. Paquetes Principales del Sistema
     packages = [
         (3, '01_Modulo_Comercial_SSO_Polizas', root_model_pkg_id),
         (4, '02_Modulo_Siniestros_Movil_Saga', root_model_pkg_id),
@@ -84,7 +89,7 @@ def build_qea():
     for ucid, uc_pkg, ucname in use_cases:
         cur.execute("INSERT INTO t_object (Object_ID, Package_ID, Object_Type, Name, ea_guid) VALUES (?, ?, 'UseCase', ?, ?)", (ucid, uc_pkg, ucname, get_guid()))
 
-    # 5. Clases BCE de Robustez y Dominio (IDs 51 to 105)
+    # 5. Clases BCE de Robustez y Secuencia (IDs 51 to 100)
     bce_classes = [
         # CU01
         (51, 3, "Class", "boundary", "LoginKeycloakSSOView"),
@@ -164,8 +169,124 @@ def build_qea():
     for cid, cpkg, ctype, cstereo, cname in bce_classes:
         cur.execute("INSERT INTO t_object (Object_ID, Package_ID, Object_Type, Stereotype, Name, ea_guid) VALUES (?, ?, ?, ?, ?, ?)", (cid, cpkg, ctype, cstereo, cname, get_guid()))
 
-    # Operaciones operacionales en las Clases de Control
-    operations = [
+    # 6. Clases Reales del Modelo de Dominio (IDs 201 to 212) — Estándar UML Rectangular (Sin círculos gigantes)
+    domain_classes = [
+        (201, 6, "Usuario", [
+            ("usuarioId", "UUID"),
+            ("email", "String"),
+            ("nombreCompleto", "String"),
+            ("rol", "String"),
+            ("activo", "Boolean")
+        ], ["iniciarSesion()", "cerrarSesion()"]),
+        (202, 6, "Asegurado", [
+            ("aseguradoId", "UUID"),
+            ("carnetIdentidad", "String"),
+            ("telefono", "String"),
+            ("direccion", "String"),
+            ("scoreCrediticio", "Float")
+        ], ["consultarEstadoUnificado()"]),
+        (203, 6, "Poliza", [
+            ("polizaId", "UUID"),
+            ("numeroPoliza", "String"),
+            ("planTipo", "String"),
+            ("fechaInicio", "DateTime"),
+            ("fechaVencimiento", "DateTime"),
+            ("primaMensualBOB", "Decimal"),
+            ("limiteCoberturaBOB", "Decimal"),
+            ("estado", "String")
+        ], ["verificarVigencia()", "bloquearCobertura()", "compensarCobertura()"]),
+        (204, 6, "VehiculoAsegurado", [
+            ("vin", "String"),
+            ("placa", "String"),
+            ("marca", "String"),
+            ("modelo", "String"),
+            ("anio", "Integer"),
+            ("valorComercialBOB", "Decimal")
+        ], []),
+        (205, 6, "Cotizacion", [
+            ("cotizacionId", "UUID"),
+            ("primaCalculadaBOB", "Decimal"),
+            ("puntajeNitidezDoc", "Float"),
+            ("documentoValido", "Boolean"),
+            ("fechaCreacion", "DateTime")
+        ], ["calcularTarifa()"]),
+        (206, 6, "ExpedienteSiniestro", [
+            ("siniestroId", "UUID"),
+            ("codigoSiniestro", "String"),
+            ("fechaHoraSiniestro", "DateTime"),
+            ("latitud", "Float"),
+            ("longitud", "Float"),
+            ("nivelGravedad", "String"),
+            ("estadoReclamo", "String"),
+            ("costoEstimadoReparacion", "Decimal")
+        ], ["registrarEmergencia()", "cambiarEstado()"]),
+        (207, 6, "PeritajeInspeccion", [
+            ("inspeccionId", "UUID"),
+            ("peritoId", "UUID"),
+            ("fechaPeritaje", "DateTime"),
+            ("severidadIA", "String"),
+            ("confianzaIA", "Float"),
+            ("idempotencyKey", "String"),
+            ("sincronizado", "Boolean")
+        ], ["guardarInspeccionLocal()"]),
+        (208, 6, "IdempotencyRecord", [
+            ("idempotencyKey", "String"),
+            ("payloadSha256", "String"),
+            ("requestUri", "String"),
+            ("status", "String"),
+            ("responseCode", "Integer"),
+            ("createdAt", "DateTime")
+        ], ["validarReintento()"]),
+        (209, 6, "SagaLiquidacion", [
+            ("sagaId", "UUID"),
+            ("siniestroId", "UUID"),
+            ("polizaId", "UUID"),
+            ("montoIndemnizarBOB", "Decimal"),
+            ("estadoSaga", "String"),
+            ("fechaInicio", "DateTime")
+        ], ["avanzarPaso()", "ejecutarCompensacion()"]),
+        (210, 6, "OrdenLiquidacion", [
+            ("ordenId", "UUID"),
+            ("codigoDesembolso", "String"),
+            ("montoNetoBOB", "Decimal"),
+            ("bancoDestino", "String"),
+            ("estadoPago", "String")
+        ], ["procesarDesembolso()"]),
+        (211, 6, "TransaccionPagoQR", [
+            ("transaccionId", "UUID"),
+            ("codigoQR", "String"),
+            ("importeBOB", "Decimal"),
+            ("fechaExpiracion", "DateTime"),
+            ("estadoPago", "String")
+        ], ["generarQR()", "conciliarPago()"]),
+        (212, 6, "FacturaFiscal", [
+            ("facturaId", "UUID"),
+            ("numeroFactura", "String"),
+            ("nitCliente", "String"),
+            ("totalBOB", "Decimal"),
+            ("urlPdfS3", "String")
+        ], ["emitirFacturaPDF()"])
+    ]
+
+    attr_counter = 1
+    op_counter = 100
+    for dc_id, dc_pkg, dc_name, attrs, ops in domain_classes:
+        cur.execute("INSERT INTO t_object (Object_ID, Package_ID, Object_Type, Name, ea_guid) VALUES (?, ?, 'Class', ?, ?)", (dc_id, dc_pkg, dc_name, get_guid()))
+        for aname, atype in attrs:
+            cur.execute("""
+                INSERT INTO t_attribute (ID, Object_ID, Name, Type, Scope, ea_guid)
+                VALUES (?, ?, ?, ?, 'Public', ?)
+            """, (attr_counter, dc_id, aname, atype, get_guid()))
+            attr_counter += 1
+        for op in ops:
+            cur.execute("""
+                INSERT INTO t_operation (OperationID, Object_ID, Name, Scope, ea_guid)
+                VALUES (?, ?, ?, 'Public', ?)
+            """, (op_counter, dc_id, op, get_guid()))
+            op_counter += 1
+
+    # Operaciones operacionales en las Clases de Control BCE
+    bce_ops = [
         (52, ["autenticarOAuthPKCE()", "validarTokenJWTRS256()"]),
         (55, ["resolverSubgrafosFederados()", "consolidarResumenAsegurado()"]),
         (58, ["analizarNitidezKernelLaplaciano()", "validarUmbralNitidez065()"]),
@@ -181,13 +302,12 @@ def build_qea():
         (95, ["evaluarSaludCluster()", "planificarSkillsLangGraph()", "ejecutarAccionRebalanceo()"]),
         (98, ["transcribirAudioWhisper()", "sanitizarPromptAntiSQLi()", "invocarToolMcpParametrizada()"])
     ]
-    op_counter = 1
-    for ctrl_id, ops in operations:
+    for ctrl_id, ops in bce_ops:
         for op in ops:
             cur.execute("INSERT INTO t_operation (OperationID, Object_ID, Name, ea_guid) VALUES (?, ?, ?, ?)", (op_counter, ctrl_id, op, get_guid()))
             op_counter += 1
 
-    # 6. Crear los Diagramas Visuales del Sistema
+    # 7. Crear los 30 Diagramas Visuales del Sistema
     diagrams = [
         (1, 2, "Custom", "00. Panel de Navegación del Sistema Global (Home Page)"),
         (2, 2, "Use Case", "01. Diagrama General de Casos de Uso del Sistema (CU01 al CU15)"),
@@ -221,18 +341,18 @@ def build_qea():
         (30, 7, "Component", "29. Diagrama de Componentes y Arquitectura Global en 4 Niveles")
     ]
 
-    pdata_standard = "HideRel=0;ShowTags=0;ShowReqs=0;ShowCons=0;OpParams=1;ShowSN=0;ScalePI=0;PPgs.cx=1;PPgs.cy=1;PSize=9;ShowIcons=1;SuppCN=0;HideProps=0;HideParents=0;UseAlias=0;HideAtts=0;HideOps=0;HideStereo=0;HideEStereo=0;ShowRec=1;ShowRes=0;ShowShape=1;FormName=;"
-    style_ex_standard = "ExcludeRTF=0;DocAll=0;HideQuals=0;AttPkg=1;ShowTests=0;ShowMaint=0;SuppressFOC=0;INT_ARGS=;INT_RET=;INT_ATT=;SeqTopMargin=50;MatrixActive=0;SwimlanesActive=1;KanbanActive=0;MatrixLineWidth=1;MatrixLineClr=0;MatrixLocked=0;TConnectorNotation=UML 2.1;TExplicitNavigability=0;AdvancedElementProps=1;AdvancedFeatureProps=1;AdvancedConnectorProps=1;m_bElementClassifier=1;SPT=1;MDGDgm=;STBLDgm=;ShowNotes=0;VisibleAttributeDetail=0;ShowOpRetType=1;SuppressBrackets=0;SuppConnectorLabels=0;PrintPageHeadFoot=0;ShowAsList=0;SuppressedCompartments=;Theme=:119;SaveTag=7A7E97D4;"
+    pdata_std = "HideRel=0;ShowTags=0;ShowReqs=0;ShowCons=0;OpParams=1;ShowSN=0;ScalePI=0;PPgs.cx=1;PPgs.cy=1;PSize=9;ShowIcons=1;SuppCN=0;HideProps=0;HideParents=0;UseAlias=0;HideAtts=0;HideOps=0;HideStereo=0;HideEStereo=0;ShowRec=1;ShowRes=0;ShowShape=1;FormName=;"
+    style_ex_std = "ExcludeRTF=0;DocAll=0;HideQuals=0;AttPkg=1;ShowTests=0;ShowMaint=0;SuppressFOC=0;INT_ARGS=;INT_RET=;INT_ATT=;SeqTopMargin=50;MatrixActive=0;SwimlanesActive=1;KanbanActive=0;MatrixLineWidth=1;MatrixLineClr=0;MatrixLocked=0;TConnectorNotation=UML 2.1;TExplicitNavigability=0;AdvancedElementProps=1;AdvancedFeatureProps=1;AdvancedConnectorProps=1;m_bElementClassifier=1;SPT=1;MDGDgm=;STBLDgm=;ShowNotes=0;VisibleAttributeDetail=0;ShowOpRetType=1;SuppressBrackets=0;SuppConnectorLabels=0;PrintPageHeadFoot=0;ShowAsList=0;SuppressedCompartments=;Theme=:119;SaveTag=7A7E97D4;"
 
     for did, dpkg, dtype, dname in diagrams:
         cur.execute("""
             INSERT INTO t_diagram (
                 Diagram_ID, Package_ID, ParentID, Diagram_Type, Name, Version, Author,
                 ea_guid, cx, cy, PDATA, StyleEx
-            ) VALUES (?, ?, 0, ?, ?, '2.0', 'Grupo #27 SW2', ?, 1300, 850, ?, ?)
-        """, (did, dpkg, dtype, dname, get_guid(), pdata_standard, style_ex_standard))
+            ) VALUES (?, ?, 0, ?, ?, '2.0', 'Grupo #27 SW2', ?, 1400, 950, ?, ?)
+        """, (did, dpkg, dtype, dname, get_guid(), pdata_std, style_ex_std))
 
-    # Mapeo de objetos colocados en diagramas para SOID y EOID: (did, oid) -> (duid, left, top, right, bottom, center_x)
+    # Estructuras para gestión de objetos y enlaces
     dobj_map = {}
     conn_counter = 0
 
@@ -260,11 +380,10 @@ def build_qea():
 
         if ctype == "Sequence":
             if sid == tid:
-                # Mensaje recursivo / llamada interna
                 p_sx = s_info[3] if s_info else start_x + 50
-                p_ex = p_sx + 20
+                p_ex = p_sx + 25
                 p_sy = pt_y
-                p_ey = pt_y - 15
+                p_ey = pt_y - 20
                 s_edge = 0
                 e_edge = 0
                 r_style = 2
@@ -294,7 +413,6 @@ def build_qea():
                 seq_no, r_style, did, pdata5_metric, guid
             ))
         else:
-            # Conector estándar de relaciones (Association, Use Case, Dependency, Composition)
             cur.execute("""
                 INSERT INTO t_connector (
                     Connector_ID, Name, Direction, Connector_Type,
@@ -315,34 +433,47 @@ def build_qea():
 
         return conn_counter
 
-    # --- Diagrama 1: Home Page Navegación ---
-    home_elements = [
-        (3, 50, 60, 380, 160),   # Modulo Comercial
-        (4, 450, 60, 780, 160),  # Modulo Siniestros
-        (5, 850, 60, 1220, 160), # Modulo IA
-        (6, 250, 260, 580, 360), # Dominio
-        (7, 650, 260, 1020, 360) # Arquitectura Componentes
+    # =========================================================================
+    # DIAGRAMA 1: Home Page con Celdas de Navegación Interactivas (NavigationCell)
+    # =========================================================================
+    nav_cells = [
+        (301, "01. Diagrama General de Casos de Uso (CU01 al CU15)", 2, 60, 60, 420, 180),
+        (302, "02. Casos de Uso - Módulo Comercial y SSO (CU01-CU05)", 3, 460, 60, 820, 180),
+        (303, "03. Casos de Uso - Módulo Siniestros y Saga (CU06-CU10)", 4, 860, 60, 1220, 180),
+        (304, "04. Casos de Uso - Módulo IA y MCP (CU11-CU15)", 5, 60, 220, 420, 340),
+        (305, "28. Diagrama de Clases - Modelo de Dominio Global ERP", 29, 460, 220, 820, 340),
+        (306, "29. Diagrama de Componentes y Arquitectura Global", 30, 860, 220, 1220, 340)
     ]
-    for oid, l, t, r, b in home_elements:
-        add_dobj(1, oid, l, t, r, b)
-    add_conn("1. Planes y Clientes", "Dependency", 3, 4, 1)
-    add_conn("2. Siniestros e Inferencia", "Dependency", 4, 5, 1)
-    add_conn("3. Modelo de Dominio Compartido", "Dependency", 4, 6, 1)
-    add_conn("4. Arquitectura Distribuida 4 Niveles", "Dependency", 5, 7, 1)
+    for n_id, n_name, target_did, l, t, r, b in nav_cells:
+        cur.execute("""
+            INSERT INTO t_object (Object_ID, Package_ID, Object_Type, Name, Stereotype, PDATA1, PDATA3, ea_guid)
+            VALUES (?, 2, 'Text', ?, 'NavigationCell', ?, 1, ?)
+        """, (n_id, n_name, target_did, get_guid()))
+        add_dobj(1, n_id, l, t, r, b)
 
-    # --- Diagrama 2: General de Casos de Uso (CU01 al CU15) ---
-    ay = 50
-    for aid, _ in actors:
-        add_dobj(2, aid, 40, ay, 120, ay+80)
-        ay += 105
-    uy = 30
-    for ucid, _, _ in use_cases:
-        col = 240 if ucid <= 28 else (560 if ucid <= 32 else 880)
-        row = (uy % 500) + 30
-        add_dobj(2, ucid, col, row, col+280, row+65)
-        uy += 80
+    # =========================================================================
+    # DIAGRAMA 2: General de Casos de Uso (CU01 al CU15) — 3 Columnas por Módulo
+    # =========================================================================
+    # Actores a la izquierda (X = 40 a 160)
+    act_y = 50
+    for aid, aname in actors:
+        add_dobj(2, aid, 40, act_y, 160, act_y + 75)
+        act_y += 95
 
-    # Relaciones Actores a Use Cases en Diagrama 2
+    # 3 Columnas de Casos de Uso:
+    # Col 1: Comercial (CU01-CU05) -> X = 260 a 520
+    # Col 2: Siniestros (CU06-CU10) -> X = 560 a 820
+    # Col 3: IA y MCP (CU11-CU15) -> X = 860 a 1140
+    uc_col_map = {
+        21: (260, 50),  22: (260, 135), 23: (260, 220), 24: (260, 305), 25: (260, 390),
+        26: (560, 50),  27: (560, 135), 28: (560, 220), 29: (560, 305), 30: (560, 390),
+        31: (860, 50),  32: (860, 135), 33: (860, 220), 34: (860, 305), 35: (860, 390)
+    }
+    for ucid, uc_pkg, ucname in use_cases:
+        x, y = uc_col_map[ucid]
+        add_dobj(2, ucid, x, y, x + 260, y + 60)
+
+    # Conectores en Diagrama 2
     add_conn("Inicia Sesión SSO", "Use Case", 10, 21, 2)
     add_conn("Consulta Estado GraphQL", "Use Case", 10, 22, 2)
     add_conn("Cotiza Póliza Web PWA", "Use Case", 10, 24, 2)
@@ -362,7 +493,60 @@ def build_qea():
     add_conn("Despacha Automatización n8n", "Use Case", 16, 25, 2)
     add_conn("Sirve Tools MCP Tipadas", "Use Case", 16, 35, 2)
 
-    # --- Robustez BCE para cada caso representativo (Diagramas 6 a 18) ---
+    # =========================================================================
+    # DIAGRAMA 3: Casos de Uso - Módulo Comercial y SSO (CU01-CU05)
+    # =========================================================================
+    add_dobj(3, 10, 50, 60, 160, 140)   # Cliente Asegurado
+    add_dobj(3, 14, 50, 220, 160, 300)  # Director Comercial
+    add_dobj(3, 16, 50, 380, 160, 460)  # Bot WhatsApp
+    m1_ucs = [(21, 60), (22, 145), (23, 230), (24, 315), (25, 400)]
+    for ucid, y in m1_ucs:
+        add_dobj(3, ucid, 350, y, 650, y + 60)
+    add_conn("Autenticación SSO", "Use Case", 10, 21, 3)
+    add_conn("Consulta Estado", "Use Case", 10, 22, 3)
+    add_conn("Cotiza PWA", "Use Case", 10, 24, 3)
+    add_conn("Confirma Pedido", "Use Case", 10, 25, 3)
+    add_conn("Administra Catálogo", "Use Case", 14, 23, 3)
+    add_conn("Despacha Factura n8n", "Use Case", 16, 25, 3)
+
+    # =========================================================================
+    # DIAGRAMA 4: Casos de Uso - Módulo Siniestros y Saga (CU06-CU10)
+    # =========================================================================
+    add_dobj(4, 10, 50, 60, 160, 140)   # Cliente Asegurado
+    add_dobj(4, 11, 50, 190, 160, 270)  # Perito de Campo
+    add_dobj(4, 12, 50, 320, 160, 400)  # Ajustador
+    add_dobj(4, 15, 50, 450, 160, 530)  # Broker Kafka
+    m2_ucs = [(26, 60), (27, 145), (28, 230), (29, 315), (30, 400)]
+    for ucid, y in m2_ucs:
+        add_dobj(4, ucid, 350, y, 660, y + 60)
+    add_conn("Reporta SOS", "Use Case", 10, 26, 4)
+    add_conn("Paga Cuota QR", "Use Case", 10, 30, 4)
+    add_conn("Atiende Emergencia", "Use Case", 11, 26, 4)
+    add_conn("Inspecciona Offline", "Use Case", 11, 27, 4)
+    add_conn("Sincroniza Lote", "Use Case", 11, 28, 4)
+    add_conn("Aprueba Liquidación", "Use Case", 12, 29, 4)
+    add_conn("Orquesta Rollback", "Use Case", 15, 29, 4)
+
+    # =========================================================================
+    # DIAGRAMA 5: Casos de Uso - Módulo IA y MCP (CU11-CU15)
+    # =========================================================================
+    add_dobj(5, 12, 50, 60, 160, 140)   # Ajustador
+    add_dobj(5, 13, 50, 190, 160, 270)  # Auditor BI
+    add_dobj(5, 14, 50, 320, 160, 400)  # Director
+    add_dobj(5, 16, 50, 450, 160, 530)  # Servidor MCP
+    m3_ucs = [(31, 60), (32, 145), (33, 230), (34, 315), (35, 400)]
+    for ucid, y in m3_ucs:
+        add_dobj(5, ucid, 350, y, 670, y + 60)
+    add_conn("Audita Choque CNN", "Use Case", 12, 31, 5)
+    add_conn("Calcula Prima Random Forest", "Use Case", 13, 32, 5)
+    add_conn("Segmenta y Detecta Fraude", "Use Case", 13, 33, 5)
+    add_conn("Supervisa Agente Autónomo", "Use Case", 14, 34, 5)
+    add_conn("Dicta Consulta por Voz", "Use Case", 14, 35, 5)
+    add_conn("Resuelve Tools MCP Parametrizadas", "Use Case", 16, 35, 5)
+
+    # =========================================================================
+    # DIAGRAMAS 6 a 18: Robustez BCE con Amplia Separación Horizontal
+    # =========================================================================
     rob_defs = [
         (6, 51, 52, 53, "1. Enviar credenciales SSO", "2. Generar token JWT RS256"),
         (7, 57, 58, 59, "1. Capturar foto documento", "2. Validar nitidez Laplaciano >=0.65"),
@@ -379,130 +563,149 @@ def build_qea():
         (18, 97, 98, 99, "1. Dictar nota de voz pericial", "2. Transcribir Whisper y filtrar Anti-SQLi")
     ]
     for rdid, rbid, rcid, reid, m1, m2 in rob_defs:
-        add_dobj(rdid, rbid, 50, 60, 220, 140)
-        add_dobj(rdid, rcid, 320, 60, 540, 150)
-        add_dobj(rdid, reid, 640, 60, 850, 140)
+        add_dobj(rdid, rbid, 60, 80, 220, 160)
+        add_dobj(rdid, rcid, 390, 80, 570, 170)
+        add_dobj(rdid, reid, 740, 80, 930, 160)
         add_conn(m1, "Association", rbid, rcid, rdid)
         add_conn(m2, "Association", rcid, reid, rdid)
 
-    # --- Secuencia UML 2.5+ para Casos de Uso Clave (Diagramas 19 a 28) ---
+    # =========================================================================
+    # DIAGRAMAS 19 a 28: Secuencia UML 2.5+ con Amplio Espaciado
+    # =========================================================================
     seq_defs = [
-        (19, [(51, 60), (52, 280), (53, 500)], [
+        (19, [(51, 80), (52, 380), (53, 680)], [
             ("1. ingresarCredenciales(usr, pwd)", 51, 52, -90),
-            ("2. validarOAuthPKCE()", 52, 52, -135),
-            ("3. emitirJWTRS256(claims)", 52, 53, -180),
-            ("4. 200 OK (TokenBearer)", 52, 51, -225)
+            ("2. validarOAuthPKCE()", 52, 52, -150),
+            ("3. emitirJWTRS256(claims)", 52, 53, -210),
+            ("4. 200 OK (TokenBearer)", 52, 51, -270)
         ]),
-        (20, [(60, 60), (61, 280), (62, 500)], [
+        (20, [(60, 80), (61, 380), (62, 680)], [
             ("1. recibirMensajeWhatsApp(pedido)", 60, 61, -90),
-            ("2. registrarPedidoEnERP()", 61, 61, -135),
-            ("3. generarFacturaPDF(SHA256)", 61, 62, -180),
-            ("4. enviarFacturaPorWhatsApp(pdfUrl)", 61, 60, -225)
+            ("2. registrarPedidoEnERP()", 61, 61, -150),
+            ("3. generarFacturaPDF(SHA256)", 61, 62, -210),
+            ("4. enviarFacturaPorWhatsApp(pdfUrl)", 61, 60, -270)
         ]),
-        (21, [(63, 60), (64, 270), (66, 480), (65, 690)], [
+        (21, [(63, 80), (64, 360), (66, 640), (65, 920)], [
             ("1. procesarReporteEmergencia(dto)", 63, 64, -90),
-            ("2. buscarPeritoMasCercano(25km)", 64, 66, -135),
-            ("3. guardarExpediente(expDoc)", 64, 65, -180),
-            ("4. 201 Created (SIN-2026-00050)", 64, 63, -225)
+            ("2. buscarPeritoMasCercano(25km)", 64, 66, -150),
+            ("3. guardarExpediente(expDoc)", 64, 65, -210),
+            ("4. 201 Created (SIN-2026-00050)", 64, 63, -270)
         ]),
-        (22, [(67, 60), (68, 270), (70, 480), (69, 690)], [
+        (22, [(67, 80), (68, 360), (70, 640), (69, 920)], [
             ("1. capturarEvidencia(cameraBytes)", 67, 68, -90),
-            ("2. ejecutarInferenciaLocal(tensors)", 68, 70, -135),
-            ("3. insertarInspeccionSQLite(key, hash)", 68, 69, -180),
-            ("4. peritajeProtegidoOffline()", 68, 67, -225)
+            ("2. ejecutarInferenciaLocal(tensors)", 68, 70, -150),
+            ("3. insertarInspeccionSQLite(key, hash)", 68, 69, -210),
+            ("4. peritajeProtegidoOffline()", 68, 67, -270)
         ]),
-        (23, [(71, 60), (72, 280), (73, 500), (65, 720)], [
+        (23, [(71, 80), (72, 360), (73, 640), (65, 920)], [
             ("1. POST sync (Header: Idempotency-Key)", 71, 72, -90),
-            ("2. GetItem(key) [DynamoDB <5ms]", 72, 73, -135),
-            ("3. insertOne(expDoc) [MongoDB]", 72, 65, -180),
-            ("4. UpdateItem(COMPLETED, 201)", 72, 73, -225),
-            ("5. 201 Created / Cache HIT", 72, 71, -270)
+            ("2. GetItem(key) [DynamoDB <5ms]", 72, 73, -150),
+            ("3. insertOne(expDoc) [MongoDB]", 72, 65, -210),
+            ("4. UpdateItem(COMPLETED, 201)", 72, 73, -270),
+            ("5. 201 Created / Cache HIT", 72, 71, -330)
         ]),
-        (24, [(74, 60), (75, 260), (78, 460), (76, 660), (77, 860), (79, 1060)], [
-            ("1. iniciarSagaLiquidacion(1200 BOB)", 74, 75, -90),
-            ("2. guardarSaga(INICIADA)", 75, 78, -135),
+        (24, [(74, 60), (75, 270), (78, 480), (76, 690), (77, 900), (79, 1110)], [
+            ("1. iniciarSagaLiquidacion(1200 BOB)", 74, 75, -80),
+            ("2. guardarSaga(INICIADA)", 75, 78, -130),
             ("3. Paso 1: PATCH /bloquear-siniestro", 75, 76, -180),
-            ("4. Paso 2: POST /bloquear-cobertura", 75, 77, -225),
-            ("5. Paso 3: insertOrdenDesembolso(1080 BOB)", 75, 79, -270),
-            ("6. [Rollback Kafka] CompensateCoverage", 75, 77, -315),
-            ("7. [Rollback Kafka] RevertClaimStatus", 75, 76, -360),
-            ("8. 200 OK / 422 Rollback Ejecutado", 75, 74, -405)
+            ("4. Paso 2: POST /bloquear-cobertura", 75, 77, -230),
+            ("5. Paso 3: insertOrdenDesembolso(1080 BOB)", 75, 79, -280),
+            ("6. [Rollback Kafka] CompensateCoverage", 75, 77, -330),
+            ("7. [Rollback Kafka] RevertClaimStatus", 75, 76, -380),
+            ("8. 200 OK / 422 Rollback Ejecutado", 75, 74, -430)
         ]),
-        (25, [(81, 60), (82, 280), (73, 500), (83, 720)], [
+        (25, [(81, 80), (82, 360), (73, 640), (83, 920)], [
             ("1. solicitarCobroQR(350 BOB)", 81, 82, -90),
-            ("2. generarQREMVCo(Idempotency-Key)", 82, 81, -135),
-            ("3. validarIdempotencia(key, hash)", 82, 73, -180),
-            ("4. asentarTransaccionContable()", 82, 83, -225),
-            ("5. comprobanteFiscal(REC-99120)", 82, 81, -270)
+            ("2. generarQREMVCo(Idempotency-Key)", 82, 81, -150),
+            ("3. validarIdempotencia(key, hash)", 82, 73, -210),
+            ("4. asentarTransaccionContable()", 82, 83, -270),
+            ("5. comprobanteFiscal(REC-99120)", 82, 81, -330)
         ]),
-        (26, [(84, 60), (85, 280), (86, 500)], [
+        (26, [(84, 80), (85, 380), (86, 680)], [
             ("1. subirImagenVehiculoDanado(file)", 84, 85, -90),
-            ("2. procesarConvolucionCrashNetCNN()", 85, 85, -135),
-            ("3. guardarDiagnosticoIA(severidad, baremo)", 85, 86, -180),
-            ("4. 200 OK (HeatmapGradCAM, Severidad)", 85, 84, -225)
+            ("2. procesarConvolucionCrashNetCNN()", 85, 85, -150),
+            ("3. guardarDiagnosticoIA(severidad, baremo)", 85, 86, -210),
+            ("4. 200 OK (HeatmapGradCAM, Severidad)", 85, 84, -270)
         ]),
-        (27, [(94, 60), (95, 280), (96, 500)], [
+        (27, [(94, 80), (95, 380), (96, 680)], [
             ("1. leerMetricasSaludCluster()", 94, 95, -90),
-            ("2. razonarGrafoEstadosLangGraph()", 95, 95, -135),
-            ("3. actualizarEstadoCluster(state)", 95, 96, -180),
-            ("4. ejecutarSkillRebalanceo()", 95, 94, -225)
+            ("2. razonarGrafoEstadosLangGraph()", 95, 95, -150),
+            ("3. actualizarEstadoCluster(state)", 95, 96, -210),
+            ("4. ejecutarSkillRebalanceo()", 95, 94, -270)
         ]),
-        (28, [(97, 60), (98, 280), (99, 500), (100, 720)], [
+        (28, [(97, 80), (98, 360), (99, 640), (100, 920)], [
             ("1. dictarComandoVoz(audioBuffer)", 97, 98, -90),
-            ("2. transcribirWhisperSTT()", 98, 98, -135),
-            ("3. sanitizarFiltroAntiSQLi()", 98, 98, -180),
-            ("4. invocarToolParametrizada(consultar)", 98, 99, -225),
-            ("5. generarReporteXLSX_PDF(datos)", 99, 100, -270),
-            ("6. 200 OK (EnlaceDescargaSegura)", 98, 97, -315)
+            ("2. transcribirWhisperSTT()", 98, 98, -150),
+            ("3. sanitizarFiltroAntiSQLi()", 98, 98, -210),
+            ("4. invocarToolParametrizada(consultar)", 98, 99, -270),
+            ("5. generarReporteXLSX_PDF(datos)", 99, 100, -330),
+            ("6. 200 OK (EnlaceDescargaSegura)", 98, 97, -390)
         ])
     ]
     for sdid, lifelines, msgs in seq_defs:
         for l_obj_id, lx in lifelines:
-            add_dobj(sdid, l_obj_id, lx, 40, lx+130, 480)
+            add_dobj(sdid, l_obj_id, lx, 40, lx + 140, 520)
         s_no = 1
         for mname, sid, tid, py in msgs:
             add_conn(mname, "Sequence", sid, tid, sdid, seq_no=s_no, pt_y=py)
             s_no += 1
 
-    # --- Diagrama 29: Modelo de Dominio Global ERP (Clases) ---
-    dom_objs = [
-        (53, 50, 40, 240, 130),
-        (56, 290, 40, 480, 130),
-        (59, 530, 40, 720, 130),
-        (65, 770, 40, 960, 130),
-        (69, 50, 200, 240, 290),
-        (73, 290, 200, 480, 290),
-        (78, 530, 200, 720, 290),
-        (79, 770, 200, 960, 290),
-        (80, 50, 360, 240, 450),
-        (83, 290, 360, 480, 450),
-        (86, 530, 360, 720, 450),
-        (92, 770, 360, 960, 450)
-    ]
-    for oid, l, t, r, b in dom_objs:
-        add_dobj(29, oid, l, t, r, b)
-    add_conn("asociadoA", "Association", 53, 56, 29)
-    add_conn("origina", "Association", 56, 59, 29)
-    add_conn("cubre", "Association", 80, 65, 29)
-    add_conn("documenta", "Association", 65, 69, 29)
-    add_conn("protegidoPor", "Dependency", 69, 73, 29)
-    add_conn("orquesta", "Association", 65, 78, 29)
-    add_conn("emite", "Composition", 78, 79, 29)
-    add_conn("controlIdempotencia", "Dependency", 83, 73, 29)
-    add_conn("peritadoPorIA", "Association", 65, 86, 29)
-    add_conn("evaluadoCluster", "Association", 65, 92, 29)
+    # =========================================================================
+    # DIAGRAMA 29: Modelo de Dominio Global ERP (Clases Rectangulares con Atributos)
+    # =========================================================================
+    # Matriz 4 Columnas x 3 Filas limpia y con amplio espacio (Cero solapamiento)
+    # Col 1: X = 50 a 280
+    # Col 2: X = 350 a 580
+    # Col 3: X = 650 a 880
+    # Col 4: X = 950 a 1180
+    # Fila 1: Y = 50 a 200 (Usuario, Asegurado, Poliza, VehiculoAsegurado)
+    # Fila 2: Y = 270 a 420 (Cotizacion, ExpedienteSiniestro, PeritajeInspeccion, IdempotencyRecord)
+    # Fila 3: Y = 490 a 640 (FacturaFiscal, SagaLiquidacion, OrdenLiquidacion, TransaccionPagoQR)
+    dom_layout = [
+        (201, 50, 50, 270, 190),     # Usuario
+        (202, 340, 50, 560, 190),    # Asegurado
+        (203, 630, 50, 870, 200),    # Poliza
+        (204, 940, 50, 1180, 200),   # VehiculoAsegurado
 
-    # --- Diagrama 30: Componentes y Arquitectura Global en 4 Niveles ---
+        (205, 50, 270, 270, 420),    # Cotizacion
+        (206, 340, 270, 570, 430),   # ExpedienteSiniestro
+        (207, 640, 270, 870, 430),   # PeritajeInspeccion
+        (208, 940, 270, 1180, 420),  # IdempotencyRecord
+
+        (212, 50, 490, 270, 640),    # FacturaFiscal
+        (209, 340, 490, 570, 640),   # SagaLiquidacion
+        (210, 640, 490, 870, 640),   # OrdenLiquidacion
+        (211, 940, 490, 1180, 640)   # TransaccionPagoQR
+    ]
+    for oid, l, t, r, b in dom_layout:
+        add_dobj(29, oid, l, t, r, b)
+
+    add_conn("es-un", "Generalization", 202, 201, 29)
+    add_conn("contrata", "Composition", 202, 203, 29)
+    add_conn("ampara", "Composition", 203, 204, 29)
+    add_conn("deriva-de", "Aggregation", 203, 205, 29)
+    add_conn("factura-mensual", "Association", 203, 212, 29)
+    add_conn("abono-prima", "Association", 203, 211, 29)
+    add_conn("cubre-accidente", "Association", 203, 206, 29)
+    add_conn("detalla-evidencias", "Composition", 206, 207, 29)
+    add_conn("asegurado-por", "Dependency", 207, 208, 29)
+    add_conn("protegido-por", "Dependency", 211, 208, 29)
+    add_conn("resuelve-financieramente", "Association", 206, 209, 29)
+    add_conn("genera-desembolso", "Composition", 209, 210, 29)
+
+    # =========================================================================
+    # DIAGRAMA 30: Componentes y Arquitectura Global en 4 Niveles
+    # =========================================================================
     comp_layout = [
-        (101, 50, 50, 260, 160),   # Flutter
-        (102, 50, 220, 260, 330),  # React PWA
-        (103, 50, 390, 260, 500),  # Angular Admin
-        (104, 350, 50, 580, 160),  # MS1 PHP
-        (105, 350, 220, 580, 330), # MS2 NestJS
-        (106, 350, 390, 580, 500), # MS3 Spring Boot
-        (107, 350, 560, 580, 670), # MS4 Python FastAPI
-        (108, 680, 220, 920, 380), # Persistencia Poliglota
-        (109, 980, 220, 1220, 380) # Kafka y Gateway
+        (101, 60, 50, 300, 160),    # Flutter
+        (102, 60, 210, 300, 320),   # React PWA
+        (103, 60, 370, 300, 480),   # Angular Admin
+        (104, 400, 50, 650, 160),   # MS1 PHP
+        (105, 400, 210, 650, 320),  # MS2 NestJS
+        (106, 400, 370, 650, 480),  # MS3 Spring Boot
+        (107, 400, 530, 650, 640),  # MS4 Python FastAPI
+        (108, 770, 200, 1020, 370), # Persistencia Políglota
+        (109, 1080, 200, 1330, 370) # Kafka y Gateway
     ]
     for cid, l, t, r, b in comp_layout:
         add_dobj(30, cid, l, t, r, b)
@@ -520,15 +723,15 @@ def build_qea():
     conn.commit()
     conn.close()
 
-    # Copiar a las ubicaciones del repositorio
+    # Sincronizar copias en el repositorio
     shutil.copy(target_qea, "AegisCore_Perfil_B.qea")
     shutil.copy(target_qea, "docs-iconix-uml/AegisCore_AI.qea")
     shutil.copy(target_qea, "docs-iconix-uml/AegisCore_Perfil_B.qea")
     shutil.copy(target_qea, "docs-iconix-uml/enterprise-architect/aegiscore-perfil-b-ea17.qea")
 
-    print(f"Éxito: Modelo Global del Proyecto construido en {target_qea}")
-    print(f"Total de Diagramas: {len(diagrams)} (Home Page, Casos de Uso, Robustez BCE, Secuencia UML 2.5+, Clases y Componentes)")
-    print(f"Total de Conectores/Mensajes: {conn_counter}")
+    print(f"Éxito: AegisCore_AI.qea completamente reconstruido.")
+    print(f"Total Diagramas: {len(diagrams)} (Todos con elementos y conectores)")
+    print(f"Total Conectores y Mensajes: {conn_counter}")
 
 if __name__ == "__main__":
     build_qea()
