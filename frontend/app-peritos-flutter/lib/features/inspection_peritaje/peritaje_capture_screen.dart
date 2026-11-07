@@ -504,7 +504,7 @@ class _PeritajeCaptureScreenState extends State<PeritajeCaptureScreen> {
                 const SnackBar(
                   backgroundColor: AegisTheme.surfaceElevated,
                   content: Text(
-                    '✅ Solicitud MCP enviada a MS4 Python (Port 8000). Compilando PDF...',
+                    '✅ Solicitud MCP enviada a MS4 Python (Port 8004). Compilando PDF...',
                     style: TextStyle(color: AegisTheme.textPrimary),
                   ),
                 ),

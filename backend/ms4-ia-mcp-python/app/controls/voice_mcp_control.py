@@ -189,15 +189,20 @@ class VoiceMcpControl:
         else:
             herramienta = herramienta_detectada or "tool_reporte_siniestralidad"
 
-        # Resolución con Prioridad Absoluta al Usuario (Sin restricciones del Auto-IA):
-        # 1. Prioridad: Si el usuario seleccionó un formato manual explícito en el UI
+        # Resolución con Prioridad Absoluta al Usuario (Patrón SmartSales voice_view):
         pref_limpio = (formato_preferido or "").lower().strip()
-        if pref_limpio in ["pantalla", "xlsx", "pdf", "docx"]:
+        formato_explicito = params.get("formato_explicito")
+
+        # 1. Prioridad Absoluta: Si el usuario dictó explícitamente el formato en lenguaje natural ("en pdf", "en excel", etc.)
+        if formato_explicito and formato_explicito in ["pantalla", "xlsx", "pdf", "docx"]:
+            formato_final = formato_explicito
+        # 2. Prioridad: Si el usuario seleccionó un formato manual explícito en el UI
+        elif pref_limpio in ["pantalla", "xlsx", "pdf", "docx"]:
             formato_final = pref_limpio
-        # 2. Prioridad: Si el usuario dictó explícitamente el formato en lenguaje natural
+        # 3. Prioridad: Formato inferido por Whisper STT
         elif formato_detectado and formato_detectado in ["pantalla", "xlsx", "pdf", "docx"]:
             formato_final = formato_detectado
-        # 3. Fallback: Inferencia Autónoma por Dominio (Auto-IA)
+        # 4. Fallback: Inferencia Autónoma por Dominio (Auto-IA)
         else:
             if herramienta in ["tool_reporte_ventas_primas", "tool_solvencia_reservas"]:
                 formato_final = "xlsx"
