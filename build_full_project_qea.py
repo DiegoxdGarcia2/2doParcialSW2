@@ -55,7 +55,7 @@ def build_qea():
         cur.execute("INSERT INTO t_package (Package_ID, Name, Parent_ID, ea_guid) VALUES (?, ?, ?, ?)", (pid, pname, parent, get_guid()))
         cur.execute("INSERT INTO t_object (Object_ID, Package_ID, Object_Type, Name, ea_guid) VALUES (?, ?, 'Package', ?, ?)", (pid, parent, pname, get_guid()))
 
-    # 3. Actores Globales del Sistema (IDs 10 to 16)
+    # 3. Actores Globales del Sistema (IDs 10 to 17)
     actors = [
         (10, 'Cliente Asegurado'),
         (11, 'Perito de Campo'),
@@ -63,7 +63,8 @@ def build_qea():
         (13, 'Auditor de Riesgos y Analista BI'),
         (14, 'Director Comercial y Finanzas'),
         (15, 'Broker Apache Kafka'),
-        (16, 'Bot WhatsApp y Servidor MCP')
+        (16, 'Bot WhatsApp y Servidor MCP'),
+        (17, 'Usuario')
     ]
     for aid, aname in actors:
         cur.execute("INSERT INTO t_object (Object_ID, Package_ID, Object_Type, Name, ea_guid) VALUES (?, 2, 'Actor', ?, ?)", (aid, aname, get_guid()))
@@ -167,6 +168,21 @@ def build_qea():
         (109, 7, "Node", "Nivel 4: Mensajería", "Apache Kafka & Apollo Supergraph Router")
     ]
     for cid, cpkg, ctype, cstereo, cname in bce_classes:
+        cur.execute("INSERT INTO t_object (Object_ID, Package_ID, Object_Type, Stereotype, Name, ea_guid) VALUES (?, ?, ?, ?, ?, ?)", (cid, cpkg, ctype, cstereo, cname, get_guid()))
+
+    # 5.1 Sistemas y Participantes Externos en Secuencias UML 2.5+ (IDs 220 to 228)
+    ext_participants = [
+        (220, 3, "Class", "system", "Servidor Keycloak"),
+        (221, 3, "Class", "service", "MS1 Pólizas PHP (DDD)"),
+        (222, 3, "Class", "storage", "Almacenamiento S3 / MinIO"),
+        (223, 4, "Class", "service", "PushNotificationGateway"),
+        (224, 4, "Class", "service", "Pasarela Bancaria BCB"),
+        (225, 5, "Class", "ai_model", "CNN CrashNet (Keras/TensorFlow)"),
+        (226, 5, "Class", "environment", "Entorno de Servicios / Despacho"),
+        (227, 5, "Class", "ai_model", "Motor Whisper STT"),
+        (228, 5, "Node", "database", "PostgreSQL 16 Engine")
+    ]
+    for cid, cpkg, ctype, cstereo, cname in ext_participants:
         cur.execute("INSERT INTO t_object (Object_ID, Package_ID, Object_Type, Stereotype, Name, ea_guid) VALUES (?, ?, ?, ?, ?, ?)", (cid, cpkg, ctype, cstereo, cname, get_guid()))
 
     # 6. Clases Reales del Modelo de Dominio (IDs 201 to 212) — Estándar UML Rectangular (Sin círculos gigantes)
@@ -287,20 +303,23 @@ def build_qea():
 
     # Operaciones operacionales en las Clases de Control BCE
     bce_ops = [
-        (52, ["autenticarOAuthPKCE()", "validarTokenJWTRS256()"]),
+        (52, ["iniciarFlujoPKCE(redirectUri)", "validarOAuthPKCE()", "emitirJWTRS256(claims)", "inicializarSesion(jwtClaims, roles)"]),
         (55, ["resolverSubgrafosFederados()", "consolidarResumenAsegurado()"]),
         (58, ["analizarNitidezKernelLaplaciano()", "validarUmbralNitidez065()"]),
-        (61, ["procesarMensajeWhatsApp()", "dispararEmisionFacturaPDF()"]),
-        (64, ["procesarReporteEmergencia(dto)", "calcularPrioridadTriajeGeoespacial()", "asignarPeritoMasCercano()"]),
-        (68, ["capturarFotografiasEvidencia()", "ejecutarInferenciaLocalTFLite()", "generarIdempotencyKey()"]),
-        (72, ["extraerLotePendienteSQLite()", "validarIdempotenciaDynamoDB()", "sincronizarConMongoDB()"]),
-        (75, ["iniciarSagaLiquidacion()", "solicitarBloqueoCoberturaMS1()", "calcularMontoIndemnizable()", "ejecutarRollbackSemantico()"]),
-        (82, ["generarCobroQREMV()", "validarIdempotenciaPago()", "asentarTransaccionContable()"]),
-        (85, ["clasificarDanoCrashNet()", "generarHeatmapGradCAM()", "calcularEstimacionBaremo()"]),
+        (61, ["recibirMensajeWhatsApp(payloadJson)", "generarFacturaPDF(poliza, qrFiscal, sha256)", "almacenarDocumento(facturaBytes)", "enviarDocumentoPorChat(pdfUrl)"]),
+        (64, ["procesarReporteEmergencia(dto)", "calcularPrioridadTriajeGeoespacial()", "asignarPeritoMasCercano()", "despacharAlertaPush(peritoId, expedienteId)"]),
+        (68, ["capturarFotografiasEvidencia(cameraBytes)", "preprocesarImagen(224x224, float32)", "ejecutarInferenciaLocalTFLite(tensors)", "calcularEstimacionBaremo(severidad)", "generarIdempotencyKey()"]),
+        (72, ["extraerLotePendienteSQLite()", "validarIdempotenciaDynamoDB(key)", "sincronizarConMongoDB(expediente)", "actualizarEstadoSincronizado()"]),
+        (75, ["iniciarSagaLiquidacion(siniestroId, monto)", "solicitarBloqueoCoberturaMS1()", "calcularMontoIndemnizable()", "insertOrdenDesembolso(montoNeto)", "ejecutarRollbackSemantico()"]),
+        (76, ["bloquearSiniestro(siniestroId)", "revertirEstadoSiniestro(siniestroId)"]),
+        (77, ["reservarCobertura(polizaId, monto)", "compensarCobertura(polizaId, monto)"]),
+        (82, ["generarCobroQREMV(polizaId, monto)", "validarIdempotenciaPago(key, hash)", "asentarTransaccionContable(nroRecibo, monto)"]),
+        (85, ["clasificarDanoCrashNet(tensorBatch)", "preprocesarRGBNormalizado(tensor)", "generarHeatmapGradCAM(targetLayer)", "calcularEstimacionBaremo(severidad)", "guardarDiagnosticoIA(severidad, baremo, heatmapUrl)"]),
         (88, ["entrenarModeloRandomForest()", "predecirDemandaVentas()", "calcularPrimaTecnicaOptima()"]),
         (91, ["segmentarAseguradosKMeans()", "detectarAnomaliasIsolationForest()", "marcarBanderaSIUFraude()"]),
-        (95, ["evaluarSaludCluster()", "planificarSkillsLangGraph()", "ejecutarAccionRebalanceo()"]),
-        (98, ["transcribirAudioWhisper()", "sanitizarPromptAntiSQLi()", "invocarToolMcpParametrizada()"])
+        (95, ["evaluarSaludCluster()", "evaluarDesviacionMetas()", "planificarSkillsLangGraph()", "ejecutarAccionRebalanceo()"]),
+        (98, ["transcribirAudioWhisper(audioBytes)", "sanitizarPromptAntiSQLi(texto)", "invocarToolMcpParametrizada(toolName, args)"]),
+        (99, ["ejecutarToolParametrizada(tool, params)", "generarReporteExcelPDF(datos)"])
     ]
     for ctrl_id, ops in bce_ops:
         for op in ops:
@@ -380,10 +399,10 @@ def build_qea():
 
         if ctype == "Sequence":
             if sid == tid:
-                p_sx = s_info[3] if s_info else start_x + 50
-                p_ex = p_sx + 25
+                p_sx = start_x
+                p_ex = start_x + 5
                 p_sy = pt_y
-                p_ey = pt_y - 20
+                p_ey = pt_y - 15
                 s_edge = 0
                 e_edge = 0
                 r_style = 2
@@ -570,81 +589,233 @@ def build_qea():
         add_conn(m2, "Association", rcid, reid, rdid)
 
     # =========================================================================
-    # DIAGRAMAS 19 a 28: Secuencia UML 2.5+ con Amplio Espaciado
+    # DIAGRAMAS 19 a 28: Secuencia UML 2.5+ Completos (Fieles a PlantUML / Markdown)
     # =========================================================================
     seq_defs = [
-        (19, [(51, 80), (52, 380), (53, 680)], [
-            ("1. ingresarCredenciales(usr, pwd)", 51, 52, -90),
-            ("2. validarOAuthPKCE()", 52, 52, -150),
-            ("3. emitirJWTRS256(claims)", 52, 53, -210),
-            ("4. 200 OK (TokenBearer)", 52, 51, -270)
+        # 19. Secuencia CU01: Autenticación Centralizada SSO con Keycloak (5 Lifelines, 12 Mensajes)
+        (19, [
+            (17, 80, 110),   # Usuario (Actor)
+            (51, 310, 120),  # LoginKeycloakSSOView (Boundary)
+            (52, 540, 120),  # KeycloakSSOControl (Control)
+            (220, 770, 120), # Servidor Keycloak (System)
+            (53, 1000, 120)  # UsuarioSesionEntity (Entity)
+        ], [
+            ("1. Presiona \"Ingresar con Keycloak\"", 17, 51, -80),
+            ("2. iniciarFlujoPKCE(redirectUri)", 51, 52, -125),
+            ("3. GET /auth?response_type=code&code_challenge=...", 52, 220, -170),
+            ("4. Presenta formulario de credenciales", 220, 17, -215),
+            ("5. Envía credenciales (usr, pwd)", 17, 220, -260),
+            ("6. Emite código de autorización (code)", 220, 52, -305),
+            ("7. POST /token (code + code_verifier)", 52, 220, -350),
+            ("8. Retorna tokens JWT (Access RS256 + Refresh)", 220, 52, -395),
+            ("9. inicializarSesion(jwtClaims, roles)", 52, 53, -440),
+            ("10. Sesión creada", 53, 52, -485),
+            ("11. Redirigir a Dashboard con permisos", 52, 51, -530),
+            ("12. Muestra pantalla según rol autorizado", 51, 17, -575)
         ]),
-        (20, [(60, 80), (61, 380), (62, 680)], [
-            ("1. recibirMensajeWhatsApp(pedido)", 60, 61, -90),
-            ("2. registrarPedidoEnERP()", 61, 61, -150),
-            ("3. generarFacturaPDF(SHA256)", 61, 62, -210),
-            ("4. enviarFacturaPorWhatsApp(pdfUrl)", 61, 60, -270)
+
+        # 20. Secuencia CU05: Flujo WhatsApp a Factura Fiscal PDF con n8n (6 Lifelines, 11 Mensajes)
+        (20, [
+            (10, 70, 100),   # Cliente Asegurado (Actor)
+            (60, 270, 110),  # CanalWhatsAppWebhook (Boundary)
+            (61, 480, 120),  # OrquestadorWorkflowN8nControl (Control)
+            (221, 690, 110), # MS1 Pólizas PHP (DDD) (Service)
+            (222, 900, 110), # Almacenamiento S3 / MinIO (Storage)
+            (62, 1110, 110)  # FacturaFiscalPDFEntity (Entity)
+        ], [
+            ("1. CONFIRMAR PEDIDO COT-88102", 10, 60, -80),
+            ("2. recibirMensajeWhatsApp(payloadJson)", 60, 61, -125),
+            ("3. POST /api/v1/polizas/emitir-desde-cotizacion", 61, 221, -170),
+            ("4. 201 Created (PolizaId: POL-2026-0041)", 221, 61, -215),
+            ("5. generarFacturaPDF(poliza, qrFiscal, sha256)", 61, 61, -260),
+            ("6. almacenarDocumento(facturaBytes)", 61, 222, -305),
+            ("7. URL prefirmada segura", 222, 61, -350),
+            ("8. registrarFacturaEmitida(nroFactura, urlPdf)", 61, 62, -395),
+            ("9. Factura persistida", 62, 61, -440),
+            ("10. enviarDocumentoPorChat(pdfUrl)", 61, 60, -485),
+            ("11. Recibe Factura Oficial en PDF con código QR", 60, 10, -530)
         ]),
-        (21, [(63, 80), (64, 360), (66, 640), (65, 920)], [
-            ("1. procesarReporteEmergencia(dto)", 63, 64, -90),
-            ("2. buscarPeritoMasCercano(25km)", 64, 66, -150),
-            ("3. guardarExpediente(expDoc)", 64, 65, -210),
-            ("4. 201 Created (SIN-2026-00050)", 64, 63, -270)
+
+        # 21. Secuencia CU06: Triaje SOS Geoespacial y Despacho de Perito (6 Lifelines, 11 Mensajes)
+        (21, [
+            (10, 70, 100),   # Asegurado (Actor)
+            (63, 270, 110),  # SiniestroSosMobileView (Boundary)
+            (64, 480, 120),  # SiniestroEmergencyControl (Control)
+            (66, 690, 110),  # PeritoGuardiaEntity (2dsphere)
+            (65, 900, 110),  # ExpedienteSiniestroEntity (Mongo)
+            (223, 1110, 110) # PushNotificationGateway (Service)
+        ], [
+            ("1. Presiona botón rojo \"EMERGENCIA SOS\"", 10, 63, -80),
+            ("2. Capturar coordenadas GPS (-17.783, -63.182)", 63, 63, -125),
+            ("3. procesarReporteEmergencia(dto)", 63, 64, -170),
+            ("4. buscarPeritoMasCercano(coords, radio25km)", 64, 66, -215),
+            ("5. Perito encontrado: \"Ing. Perito Juan\" (a 3.2 km)", 66, 64, -260),
+            ("6. guardarExpediente(expedienteDoc)", 64, 65, -305),
+            ("7. Expediente guardado: SIN-2026-00050", 65, 64, -350),
+            ("8. despacharAlertaPush(peritoId, expedienteId)", 64, 223, -395),
+            ("9. Alerta despachada", 223, 64, -440),
+            ("10. 201 Created (SiniestroRegistradoDto)", 64, 63, -485),
+            ("11. Muestra código SIN-2026-00050 y perito en camino", 63, 10, -530)
         ]),
-        (22, [(67, 80), (68, 360), (70, 640), (69, 920)], [
-            ("1. capturarEvidencia(cameraBytes)", 67, 68, -90),
-            ("2. ejecutarInferenciaLocal(tensors)", 68, 70, -150),
-            ("3. insertarInspeccionSQLite(key, hash)", 68, 69, -210),
-            ("4. peritajeProtegidoOffline()", 68, 67, -270)
+
+        # 22. Secuencia CU07: Captura e Inferencia Móvil Offline con Edge AI (5 Lifelines, 11 Mensajes)
+        (22, [
+            (11, 80, 110),   # Perito de Campo (Actor)
+            (67, 310, 120),  # CamaraPeritajeOfflineView (Boundary)
+            (68, 540, 120),  # PeritajeOfflineTFLiteControl (Control)
+            (70, 770, 120),  # ModeloTFLiteQuantized (Model)
+            (69, 1000, 120)  # InspeccionOfflineSQLiteEntity (Entity)
+        ], [
+            ("1. Encuadra parachoque abollado y presiona obturador", 11, 67, -80),
+            ("2. capturarFotografiasEvidencia(cameraBytes)", 67, 68, -125),
+            ("3. preprocesarImagen(224x224, float32)", 68, 68, -170),
+            ("4. ejecutarInferenciaLocalTFLite(tensors)", 68, 70, -215),
+            ("5. Vector probabilidades: [0.02, 0.10, 0.85, 0.03]", 70, 68, -260),
+            ("6. calcularEstimacionBaremo(\"Moderado\") -> 1,200 BOB", 68, 68, -305),
+            ("7. generarIdempotencyKey() -> UUIDv4 + Hash", 68, 68, -350),
+            ("8. insertarInspeccionSQLite(inspeccionOfflineDto)", 68, 69, -395),
+            ("9. Registro guardado localmente", 69, 68, -440),
+            ("10. Presenta diagnóstico: \"Daño Moderado (85%)\"", 68, 67, -485),
+            ("11. Confirma peritaje guardado sin internet", 67, 11, -530)
         ]),
-        (23, [(71, 80), (72, 360), (73, 640), (65, 920)], [
-            ("1. POST sync (Header: Idempotency-Key)", 71, 72, -90),
-            ("2. GetItem(key) [DynamoDB <5ms]", 72, 73, -150),
-            ("3. insertOne(expDoc) [MongoDB]", 72, 65, -210),
-            ("4. UpdateItem(COMPLETED, 201)", 72, 73, -270),
-            ("5. 201 Created / Cache HIT", 72, 71, -330)
+
+        # 23. Secuencia CU08: Sincronización Idempotente con DynamoDB (<5 ms) (5 Lifelines, 10 Mensajes)
+        (23, [
+            (11, 80, 110),   # Perito de Campo (Actor)
+            (71, 310, 120),  # ColaSincronizacionOfflineView (Boundary)
+            (72, 540, 120),  # SyncIdempotentControl (Control)
+            (73, 770, 120),  # IdempotencyRecordEntity (DynamoDB)
+            (65, 1000, 120)  # ExpedienteSiniestroEntity (MongoDB)
+        ], [
+            ("1. Recupera señal 4G y presiona \"Sincronizar Lote\"", 11, 71, -80),
+            ("2. POST /sync-offline (Header: X-Idempotency-Key)", 71, 72, -125),
+            ("3. GetItem(idempotencyKey) [<5 ms]", 72, 73, -170),
+            ("4. Clave No Existe: null", 73, 72, -215),
+            ("5. PutItem(key, hash, status=\"IN_PROGRESS\")", 72, 73, -260),
+            ("6. insertOne(expedienteConsolidado)", 72, 65, -305),
+            ("7. 201 Created (Expediente Guardado en MongoDB)", 65, 72, -350),
+            ("8. UpdateItem(status=\"COMPLETED\", resCode=201)", 72, 73, -395),
+            ("9. 201 Created (Expediente Sincronizado)", 72, 71, -440),
+            ("10. Marca inspección como SINCRONIZADA en SQLite", 71, 11, -485)
         ]),
-        (24, [(74, 60), (75, 270), (78, 480), (76, 690), (77, 900), (79, 1110)], [
-            ("1. iniciarSagaLiquidacion(1200 BOB)", 74, 75, -80),
-            ("2. guardarSaga(INICIADA)", 75, 78, -130),
-            ("3. Paso 1: PATCH /bloquear-siniestro", 75, 76, -180),
-            ("4. Paso 2: POST /bloquear-cobertura", 75, 77, -230),
-            ("5. Paso 3: insertOrdenDesembolso(1080 BOB)", 75, 79, -280),
-            ("6. [Rollback Kafka] CompensateCoverage", 75, 77, -330),
-            ("7. [Rollback Kafka] RevertClaimStatus", 75, 76, -380),
-            ("8. 200 OK / 422 Rollback Ejecutado", 75, 74, -430)
+
+        # 24. Secuencia CU09: Liquidación Autónoma Transversal con Saga y Rollback en Kafka (7 Lifelines, 13 Mensajes)
+        (24, [
+            (12, 60, 100),   # Ajustador (Actor)
+            (74, 230, 110),  # LiquidacionSiniestroAdminView (Boundary)
+            (75, 400, 120),  # SagaLiquidacionOrchestratorControl (Control MS3)
+            (15, 570, 100),  # Apache Kafka (Broker Actor)
+            (76, 740, 110),  # ReclamoEstadoControl_MS2 (Control MS2)
+            (77, 910, 110),  # PolizaCoberturaControl_MS1 (Control MS1)
+            (79, 1080, 110)  # OrdenLiquidacionEntity (Entity Postgres)
+        ], [
+            ("1. Presiona \"Aprobar Liquidación (1,200 BOB)\"", 12, 74, -80),
+            ("2. iniciarSagaLiquidacion(siniestroId, 1200 BOB)", 74, 75, -125),
+            ("3. Publish: ClaimSettlementInitiated", 75, 15, -170),
+            ("4. Consume: ClaimSettlementInitiated", 15, 76, -215),
+            ("5. PATCH /siniestros/bloquear -> Estado LIQUIDANDO", 76, 76, -260),
+            ("6. Publish: ClaimStatusLocked", 76, 15, -305),
+            ("7. Consume: ClaimStatusLocked", 15, 77, -350),
+            ("8. Reservar cobertura 1,200 BOB en PostgreSQL", 77, 77, -395),
+            ("9. Publish: PolicyCoverageReserved", 77, 15, -440),
+            ("10. Consume: PolicyCoverageReserved", 15, 75, -485),
+            ("11. insertOrdenDesembolso(1080 BOB [neto deducible])", 75, 79, -530),
+            ("12. Publish: SettlementApproved", 75, 15, -575),
+            ("13. 200 OK: Liquidación Desembolsada", 75, 74, -620)
         ]),
-        (25, [(81, 80), (82, 360), (73, 640), (83, 920)], [
-            ("1. solicitarCobroQR(350 BOB)", 81, 82, -90),
-            ("2. generarQREMVCo(Idempotency-Key)", 82, 81, -150),
-            ("3. validarIdempotencia(key, hash)", 82, 73, -210),
-            ("4. asentarTransaccionContable()", 82, 83, -270),
-            ("5. comprobanteFiscal(REC-99120)", 82, 81, -330)
+
+        # 25. Secuencia CU10: Cobro Recurrente y Pago QR Idempotente (6 Lifelines, 12 Mensajes)
+        (25, [
+            (10, 70, 100),   # Cliente Asegurado (Actor)
+            (81, 270, 110),  # CobroPrimaQRView (Boundary)
+            (82, 480, 120),  # PagoPrimaQRControl (Control)
+            (224, 690, 110), # Pasarela Bancaria BCB (Service)
+            (73, 900, 110),  # IdempotencyRecordEntity (DynamoDB)
+            (83, 1110, 110)  # TransaccionPagoQREntity (Postgres)
+        ], [
+            ("1. Solicita pago de cuota mensual (350 BOB)", 10, 81, -80),
+            ("2. generarCobroQREMV(polizaId, 350 BOB)", 81, 82, -125),
+            ("3. Solicitar payload QR EMVCo", 82, 224, -170),
+            ("4. Retorna QR String con vencimiento 15 min", 224, 82, -215),
+            ("5. Despliega imagen QR en pantalla", 82, 81, -260),
+            ("6. Escanea y transfiere desde app bancaria", 10, 224, -305),
+            ("7. Callback POST /qr/callback (X-Idempotency-Key)", 224, 82, -350),
+            ("8. GetItem(key) [<5 ms]", 82, 73, -395),
+            ("9. asentarTransaccionContable(nroRecibo, 350 BOB)", 82, 83, -440),
+            ("10. UpdateItem(status=\"COMPLETED\")", 82, 73, -485),
+            ("11. Notifica pago recibido en tiempo real", 82, 81, -530),
+            ("12. Presenta Recibo Digital REC-99120", 81, 10, -575)
         ]),
-        (26, [(84, 80), (85, 380), (86, 680)], [
-            ("1. subirImagenVehiculoDanado(file)", 84, 85, -90),
-            ("2. procesarConvolucionCrashNetCNN()", 85, 85, -150),
-            ("3. guardarDiagnosticoIA(severidad, baremo)", 85, 86, -210),
-            ("4. 200 OK (HeatmapGradCAM, Severidad)", 85, 84, -270)
+
+        # 26. Secuencia CU11: Visión Artificial CNN CrashNet y Grad-CAM (5 Lifelines, 12 Mensajes)
+        (26, [
+            (13, 80, 110),   # Auditor / Ajustador (Actor)
+            (84, 310, 120),  # VisionArtificialUploadView (Boundary)
+            (85, 540, 120),  # CrashNetVisionControl (Control)
+            (225, 770, 120), # CNN CrashNet (Keras/TensorFlow) (Model)
+            (86, 1000, 120)  # ReporteInspeccionIAEntity (MongoDB)
+        ], [
+            ("1. Sube fotografía de siniestro vehicular", 13, 84, -80),
+            ("2. POST /api/v1/ia/crashnet/analizar (multipart/data)", 84, 85, -125),
+            ("3. Preprocesar RGB normalizado [224x224]", 85, 85, -170),
+            ("4. clasificarDanoCrashNet(tensorBatch)", 85, 225, -215),
+            ("5. Probabilidades: {Severo: 0.914, Moderado: 0.08}", 225, 85, -260),
+            ("6. generarHeatmapGradCAM(targetLayer=\"conv_final\")", 85, 225, -305),
+            ("7. Matriz de calor Grad-CAM sobreexpuesta", 225, 85, -350),
+            ("8. calcularEstimacionBaremo(\"Severo\") -> 3,800 BOB", 85, 85, -395),
+            ("9. guardarDiagnosticoIA(severidad, baremo, heatmapUrl)", 85, 86, -440),
+            ("10. Diagnóstico persistido", 86, 85, -485),
+            ("11. 200 OK (Heatmap Imagen, 91.4% Confianza, Baremo)", 85, 84, -530),
+            ("12. Visualiza mapa de calor y desglose de piezas", 84, 13, -575)
         ]),
-        (27, [(94, 80), (95, 380), (96, 680)], [
-            ("1. leerMetricasSaludCluster()", 94, 95, -90),
-            ("2. razonarGrafoEstadosLangGraph()", 95, 95, -150),
-            ("3. actualizarEstadoCluster(state)", 95, 96, -210),
-            ("4. ejecutarSkillRebalanceo()", 95, 94, -270)
+
+        # 27. Secuencia CU14: Bucle de Razonamiento del Agente Autónomo LangGraph (5 Lifelines, 9 Mensajes)
+        (27, [
+            (13, 80, 110),   # Auditor BI (Actor)
+            (94, 310, 120),  # AutonomousAgentMonitorView (Boundary)
+            (95, 540, 120),  # LangGraphAutonomousAgentControl (Control)
+            (96, 770, 120),  # ClusterAgentStateEntity (Entity)
+            (226, 1000, 120) # Entorno de Servicios / Despacho (System)
+        ], [
+            ("1. Suscribirse a feed de razonamiento SSE", 94, 95, -80),
+            ("2. PerceptionNode: leerMetricasSaludCluster()", 95, 226, -125),
+            ("3. Métricas: SLA Cuadrante Norte = 38 min (>30 min)", 226, 95, -170),
+            ("4. ReasoningNode: evaluarDesviacionMetas()", 95, 95, -215),
+            ("5. PlanningNode: seleccionarSkill(\"RebalancearPeritos\")", 95, 95, -260),
+            ("6. ActionNode: ejecutarSkill(origen=\"Centro\", qty=2)", 95, 226, -305),
+            ("7. Rebalanceo confirmado en despacho", 226, 95, -350),
+            ("8. actualizarEstadoCluster(state=\"GOAL_MET\", SLA=22m)", 95, 96, -395),
+            ("9. Push evento SSE con árbol de razonamiento actualizado", 95, 94, -440)
         ]),
-        (28, [(97, 80), (98, 360), (99, 640), (100, 920)], [
-            ("1. dictarComandoVoz(audioBuffer)", 97, 98, -90),
-            ("2. transcribirWhisperSTT()", 98, 98, -150),
-            ("3. sanitizarFiltroAntiSQLi()", 98, 98, -210),
-            ("4. invocarToolParametrizada(consultar)", 98, 99, -270),
-            ("5. generarReporteXLSX_PDF(datos)", 99, 100, -330),
-            ("6. 200 OK (EnlaceDescargaSegura)", 98, 97, -390)
+
+        # 28. Secuencia CU15: Reportes por Voz MCP con Blindaje Anti-SQLi (6 Lifelines, 12 Mensajes)
+        (28, [
+            (14, 70, 100),   # Directivo (Actor)
+            (97, 270, 110),  # MicrofonoVoiceReportView (Boundary)
+            (98, 480, 120),  # VoiceMcpOwaspControl (Control)
+            (227, 690, 110), # Motor Whisper STT (Model)
+            (99, 900, 110),  # Servidor MCP Protocol (Control)
+            (228, 1110, 110) # PostgreSQL 16 (Consultas Compiladas) (Node)
+        ], [
+            ("1. Presiona micrófono y dicta instrucción ejecutiva", 14, 97, -80),
+            ("2. POST /transcribe-and-query (audioBlob)", 97, 98, -125),
+            ("3. transcribirAudioWhisper(audioBytes)", 98, 227, -170),
+            ("4. Texto: \"Dame siniestros moderados liquidados en SCZ\"", 227, 98, -215),
+            ("5. sanitizarPromptAntiSQLi(textoTranscrito)", 98, 98, -260),
+            ("6. invocarToolTipada(\"consultar_liquidaciones\", args)", 98, 99, -305),
+            ("7. SELECT parametrizado compilado en ORM", 99, 228, -350),
+            ("8. 14 registros recuperados", 228, 99, -395),
+            ("9. generarReporteExcelPDF(datos)", 99, 99, -440),
+            ("10. URL descarga segura + Síntesis resumen", 99, 98, -485),
+            ("11. 200 OK (Audio respuesta + Enlace descarga)", 98, 97, -530),
+            ("12. Reproduce audio y habilita botón \"Descargar XLSX\"", 97, 14, -575)
         ])
     ]
+
     for sdid, lifelines, msgs in seq_defs:
-        for l_obj_id, lx in lifelines:
-            add_dobj(sdid, l_obj_id, lx, 40, lx + 140, 520)
+        max_bottom = 660 if len(msgs) <= 9 else 780
+        for l_obj_id, cx, w in lifelines:
+            add_dobj(sdid, l_obj_id, cx - w // 2, 40, cx + w // 2, max_bottom)
         s_no = 1
         for mname, sid, tid, py in msgs:
             add_conn(mname, "Sequence", sid, tid, sdid, seq_no=s_no, pt_y=py)
