@@ -101,6 +101,7 @@ venv.bak/
 *.sqlite
 *.sqlite3
 *.db
+*.ldb
 dynamodb_data/
 mongo_data/
 postgres_data/

@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
 import { VoiceMcpService } from '../../core/services/voice-mcp.service';
-import { 
-  VoiceMcpResponse, 
-  McpToolDefinition, 
-  OwaspSecurityAudit, 
+import {
+  VoiceMcpResponse,
+  McpToolDefinition,
+  OwaspSecurityAudit,
   VoiceDeliveryFormat,
-  QuickExportRequest 
+  QuickExportRequest
 } from '../../core/models/voice-mcp.models';
 
 Chart.register(...registerables);
@@ -111,7 +111,7 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
   constructor(
     private voiceService: VoiceMcpService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.cargarCatalogoTools();
@@ -174,9 +174,9 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
       this.herramientaDetectada = 'tool_solvencia_reservas';
     } else if (
       p.includes('venta') || p.includes('prima') || p.includes('actuarial') ||
-      p.includes('demanda') || p.includes('suv') || p.includes('sedan') || 
-      p.includes('pickup') || p.includes('camioneta') || p.includes('hatchback') || 
-      p.includes('motocicleta') || p.includes('poliza') || p.includes('póliza') || 
+      p.includes('demanda') || p.includes('suv') || p.includes('sedan') ||
+      p.includes('pickup') || p.includes('camioneta') || p.includes('hatchback') ||
+      p.includes('motocicleta') || p.includes('poliza') || p.includes('póliza') ||
       p.includes('vehiculo') || p.includes('vehículo') || p.includes('random forest')
     ) {
       this.herramientaDetectada = 'tool_reporte_ventas_primas';
@@ -193,10 +193,10 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
     // 2. Detección de Formato (Prioridad Absoluta al comando explícito de voz)
     const formatoExplicito: VoiceDeliveryFormat | null =
       (p.includes('en pantalla') || p.includes('ver en pantalla') || p.includes('en monitor')) ? 'pantalla' :
-      (p.includes('en excel') || p.includes('en xlsx') || p.includes('planilla excel')) ? 'xlsx' :
-      (p.includes('en word') || p.includes('en docx') || p.includes('documento word')) ? 'docx' :
-      (p.includes('en pdf') || p.includes('formato pdf') || p.includes('documento pdf') || p.endsWith('pdf')) ? 'pdf' :
-      null;
+        (p.includes('en excel') || p.includes('en xlsx') || p.includes('planilla excel')) ? 'xlsx' :
+          (p.includes('en word') || p.includes('en docx') || p.includes('documento word')) ? 'docx' :
+            (p.includes('en pdf') || p.includes('formato pdf') || p.includes('documento pdf') || p.endsWith('pdf')) ? 'pdf' :
+              null;
 
     if (formatoExplicito) {
       this.formatoDetectado = formatoExplicito;
@@ -408,13 +408,13 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
     if (this.speechRecognizer) {
       try {
         this.speechRecognizer.abort();
-      } catch (_) {}
+      } catch (_) { }
       this.speechRecognizer = null;
     }
     if (this.mediaRecorder && this.isRecording) {
       try {
         this.mediaRecorder.stop();
-      } catch (_) {}
+      } catch (_) { }
       this.isRecording = false;
       clearInterval(this.timerInterval);
       this.cdr.detectChanges();
@@ -623,8 +623,8 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
 
         // Disparar descarga en el navegador
         const link = document.createElement('a');
-        link.href = doc.download_url.startsWith('http') 
-          ? doc.download_url 
+        link.href = doc.download_url.startsWith('http')
+          ? doc.download_url
           : this.obtenerDownloadUrl(doc.filename);
         link.download = doc.filename;
         link.target = '_blank';
@@ -646,7 +646,7 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
       return filas;
     }
     const term = this.busquedaFiltro.toLowerCase().trim();
-    return filas.filter(f => 
+    return filas.filter(f =>
       Object.values(f).some(val => String(val || '').toLowerCase().includes(term))
     );
   }
@@ -736,7 +736,7 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
           position: 'right',
           title: { display: true, text: 'Prima Promedio ($ USD)', font: { size: 10, family: 'Inter' }, color: '#4F46E5' },
           grid: { drawOnChartArea: false },
-          ticks: { 
+          ticks: {
             font: { family: 'JetBrains Mono', size: 10 },
             callback: (val: any) => `$${val}`
           }

@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart' as p;
 
@@ -6,9 +7,17 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
 
+  // Almacenamiento en memoria para modo Web (Chrome)
+  final List<Map<String, dynamic>> _webInspecciones = [];
+  final List<Map<String, dynamic>> _webPartes = [];
+  final List<Map<String, dynamic>> _webSos = [];
+  int _nextInspeccionId = 1;
+  int _nextSosId = 1;
+
   DatabaseHelper._internal();
 
-  Future<Database> get database async {
+  Future<Database?> get database async {
+    if (kIsWeb) return null;
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
@@ -16,7 +25,7 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     // Si corre en Windows / Linux de escritorio o tests, inicializar sqflite_ffi
-    if (Platform.isWindows || Platform.isLinux) {
+    if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
     }
@@ -85,7 +94,19 @@ class DatabaseHelper {
 
   // Operaciones para Inspecciones (CU07 / CU08)
   Future<int> insertarInspeccion(Map<String, dynamic> inspeccion, List<Map<String, dynamic>> partes) async {
-    final db = await database;
+    if (kIsWeb) {
+      final id = _nextInspeccionId++;
+      final inspCopy = Map<String, dynamic>.from(inspeccion);
+      inspCopy['id'] = id;
+      _webInspecciones.add(inspCopy);
+      for (final parte in partes) {
+        final pCopy = Map<String, dynamic>.from(parte);
+        pCopy['inspeccion_id'] = id;
+        _webPartes.add(pCopy);
+      }
+      return id;
+    }
+    final db = (await database)!;
     return await db.transaction((txn) async {
       final inspeccionId = await txn.insert('inspecciones', inspeccion);
       for (final parte in partes) {
@@ -98,7 +119,10 @@ class DatabaseHelper {
   }
 
   Future<List<Map<String, dynamic>>> obtenerInspeccionesPendientes() async {
-    final db = await database;
+    if (kIsWeb) {
+      return _webInspecciones.where((i) => i['estado_sync'] == 'PENDIENTE').toList();
+    }
+    final db = (await database)!;
     return await db.query(
       'inspecciones',
       where: 'estado_sync = ?',
@@ -108,7 +132,10 @@ class DatabaseHelper {
   }
 
   Future<List<Map<String, dynamic>>> obtenerPartesDeInspeccion(int inspeccionId) async {
-    final db = await database;
+    if (kIsWeb) {
+      return _webPartes.where((p) => p['inspeccion_id'] == inspeccionId).toList();
+    }
+    final db = (await database)!;
     return await db.query(
       'partes_inspeccionadas',
       where: 'inspeccion_id = ?',
@@ -117,7 +144,16 @@ class DatabaseHelper {
   }
 
   Future<void> marcarInspeccionSincronizada(int id, String idempotencyKey) async {
-    final db = await database;
+    if (kIsWeb) {
+      for (final i in _webInspecciones) {
+        if (i['id'] == id) {
+          i['estado_sync'] = 'SINCRONIZADO';
+          i['idempotency_key'] = idempotencyKey;
+        }
+      }
+      return;
+    }
+    final db = (await database)!;
     await db.update(
       'inspecciones',
       {
@@ -130,18 +166,31 @@ class DatabaseHelper {
   }
 
   Future<List<Map<String, dynamic>>> obtenerTodasInspecciones() async {
-    final db = await database;
+    if (kIsWeb) {
+      return List<Map<String, dynamic>>.from(_webInspecciones.reversed);
+    }
+    final db = (await database)!;
     return await db.query('inspecciones', orderBy: 'created_at DESC');
   }
 
   // Operaciones para SOS Emergencia (CU06)
   Future<int> insertarSosLocal(Map<String, dynamic> sos) async {
-    final db = await database;
+    if (kIsWeb) {
+      final id = _nextSosId++;
+      final sosCopy = Map<String, dynamic>.from(sos);
+      sosCopy['id'] = id;
+      _webSos.add(sosCopy);
+      return id;
+    }
+    final db = (await database)!;
     return await db.insert('siniestros_sos_locales', sos);
   }
 
   Future<List<Map<String, dynamic>>> obtenerSosPendientes() async {
-    final db = await database;
+    if (kIsWeb) {
+      return _webSos.where((s) => s['estado_sync'] == 'PENDIENTE').toList();
+    }
+    final db = (await database)!;
     return await db.query(
       'siniestros_sos_locales',
       where: 'estado_sync = ?',
@@ -151,11 +200,19 @@ class DatabaseHelper {
   }
 
   Future<void> marcarSosSincronizado(int id) async {
-    final db = await database;
+    if (kIsWeb) {
+      for (final s in _webSos) {
+        if (s['id'] == id) {
+          s['estado_sync'] = 'SINCRONIZADO';
+        }
+      }
+      return;
+    }
+    final db = (await database)!;
     await db.update(
       'siniestros_sos_locales',
       {'estado_sync': 'SINCRONIZADO'},
-      where: 'id = ?',
+      where: 'estado_sync = ?',
       whereArgs: [id],
     );
   }

@@ -17,11 +17,11 @@ def get_duid():
     return uuid.uuid4().hex[:8].upper()
 
 def build_qea():
-    base_template = r"C:\Program Files\Sparx Systems\EA Trial\EABase.qea"
+    base_template = "template_base.qea"
     target_qea = "AegisCore_AI.qea"
 
     shutil.copy(base_template, target_qea)
-    print(f"Copiado EABase.qea a {target_qea}")
+    print(f"Copiado template_base.qea a {target_qea}")
 
     conn = sqlite3.connect(target_qea)
     cur = conn.cursor()
@@ -151,15 +151,25 @@ def build_qea():
         (99, 5, "Class", "control", "McpProtocolServer"),
         (100, 5, "Class", "entity", "ReporteEjecutivoDescargableEntity"),
         # Componentes Nivel 1 a 4 (IDs 101 to 109)
+        # Componentes Nivel 1 a 4 Desglosados (IDs 101 al 120)
         (101, 7, "Component", "Nivel 1: Frontend", "App Móvil Flutter (SQLite + TFLite)"),
-        (102, 7, "Component", "Nivel 1: Frontend", "Portal Clientes React PWA (ONNX Local)"),
-        (103, 7, "Component", "Nivel 1: Frontend", "Panel Admin Angular 17+ (Dashboards BI)"),
-        (104, 7, "Component", "Nivel 2: Backend", "MS1 Pólizas y Clientes PHP Laravel (DDD)"),
-        (105, 7, "Component", "Nivel 2: Backend", "MS2 Siniestros y Triaje NestJS (Clean/CQRS)"),
-        (106, 7, "Component", "Nivel 2: Backend", "MS3 Motor Actuarial Spring Boot (Hexagonal)"),
-        (107, 7, "Component", "Nivel 2: Backend", "MS4 IA, Agentes y Servidor MCP FastAPI"),
-        (108, 7, "Node", "Nivel 3: Persistencia", "Persistencia Políglota (PG, Mongo, DynamoDB, Redis)"),
-        (109, 7, "Node", "Nivel 4: Mensajería", "Apache Kafka & Apollo Supergraph Router")
+        (102, 7, "Component", "Nivel 1: Frontend", "Portal Clientes React 18+ PWA (IA Local Web)"),
+        (103, 7, "Component", "Nivel 1: Frontend", "Panel Admin Angular 17+ (Dashboards BI Nativos)"),
+        (110, 7, "Component", "Nivel 1: Frontend", "SSO Shell Container (Keycloak JS)"),
+        (111, 7, "Component", "Nivel Gateways", "Keycloak SSO 24 (OAuth2 / OIDC + PKCE)"),
+        (112, 7, "Component", "Nivel Gateways", "Apollo Supergraph Router 2.5 (GraphQL Federation)"),
+        (113, 7, "Component", "Nivel Gateways", "Servidor MCP Protocol (Blindaje OWASP Anti-SQLi)"),
+        (104, 7, "Component", "Nivel 2: Backend", "MS1 Pólizas y Facturación (PHP 8.3 Laravel - DDD)"),
+        (105, 7, "Component", "Nivel 2: Backend", "MS2 Siniestros y Triaje (NestJS 10 - Clean CQRS)"),
+        (106, 7, "Component", "Nivel 2: Backend", "MS3 Motor Actuarial y Pagos (Spring Boot 3 - Hexagonal)"),
+        (107, 7, "Component", "Nivel 2: Backend", "MS4 Inteligencia Artificial y Agentes (Python FastAPI)"),
+        (114, 7, "Component", "Nivel 3: Persistencia", "PostgreSQL 16 Relacional ACID (aegiscore_erp)"),
+        (115, 7, "Component", "Nivel 3: Persistencia", "MongoDB 7.0 Documental BSON (Índice 2dsphere)"),
+        (116, 7, "Component", "Nivel 3: Persistencia", "Amazon DynamoDB Local (IdempotencyRecords < 5ms)"),
+        (117, 7, "Component", "Nivel 3: Persistencia", "SQLite 3 Móvil Cifrado (Offline Flutter)"),
+        (118, 7, "Component", "Nivel 3: Persistencia", "Redis Cache 7 (Subgrafos y Sesiones)"),
+        (119, 7, "Component", "Nivel 4: Mensajería", "Apache Kafka 3.7 Bus de Eventos (saga-claim-settlement)"),
+        (120, 7, "Component", "Nivel 4: Automatización", "Servidor Automatización n8n (WhatsApp / Facturas PDF)")
     ]
     for cid, cpkg, ctype, cstereo, cname in bce_classes:
         cur.execute("INSERT INTO t_object (Object_ID, Package_ID, Object_Type, Stereotype, Name, ea_guid) VALUES (?, ?, ?, ?, ?, ?)", (cid, cpkg, ctype, cstereo, cname, get_guid()))
@@ -492,39 +502,80 @@ def build_qea():
     add_conn("peritadoPorIA", "Association", 65, 86, 29)
     add_conn("evaluadoCluster", "Association", 65, 92, 29)
 
-    # --- Diagrama 30: Componentes y Arquitectura Global en 4 Niveles ---
+    # --- Diagrama 30: Componentes y Arquitectura Global en 4 Niveles Desglosada (18 Componentes en 5 Columnas) ---
     comp_layout = [
-        (101, 50, 50, 260, 160),   # Flutter
-        (102, 50, 220, 260, 330),  # React PWA
-        (103, 50, 390, 260, 500),  # Angular Admin
-        (104, 350, 50, 580, 160),  # MS1 PHP
-        (105, 350, 220, 580, 330), # MS2 NestJS
-        (106, 350, 390, 580, 500), # MS3 Spring Boot
-        (107, 350, 560, 580, 670), # MS4 Python FastAPI
-        (108, 680, 220, 920, 380), # Persistencia Poliglota
-        (109, 980, 220, 1220, 380) # Kafka y Gateway
+        # Columna 1: Nivel 1 — Canales y Frontends (X: 40 a 280)
+        (110, 40, 40, 280, 115),     # SSO Shell Container (Keycloak JS)
+        (102, 40, 135, 280, 215),    # Portal Clientes React 18+ PWA (IA Local Web)
+        (101, 40, 235, 280, 315),    # App Móvil Flutter (SQLite + TFLite)
+        (117, 40, 335, 280, 405),    # SQLite 3 Móvil Cifrado (Offline Flutter)
+        (103, 40, 440, 280, 520),    # Panel Admin Angular 17+ (Dashboards BI Nativos)
+        
+        # Columna 2: Nivel Gateways e Ingress (X: 340 a 600)
+        (111, 340, 40, 600, 115),    # Keycloak SSO 24 (OAuth2 / OIDC + PKCE)
+        (112, 340, 135, 600, 215),   # Apollo Supergraph Router 2.5 (GraphQL Federation)
+        (120, 340, 235, 600, 315),   # Servidor Automatización n8n (WhatsApp / Facturas PDF)
+        (113, 340, 440, 600, 520),   # Servidor MCP Protocol (Blindaje OWASP Anti-SQLi)
+        
+        # Columna 3: Nivel 2 — Microservicios Backend Core (X: 660 a 940)
+        (104, 660, 40, 940, 120),    # MS1 Pólizas y Facturación (PHP 8.3 Laravel - DDD)
+        (105, 660, 160, 940, 245),   # MS2 Siniestros y Triaje (NestJS 10 - Clean CQRS)
+        (106, 660, 285, 940, 370),   # MS3 Motor Actuarial y Pagos (Spring Boot 3 - Hexagonal)
+        (107, 660, 440, 940, 525),   # MS4 Inteligencia Artificial y Agentes (Python FastAPI)
+        
+        # Columna 4: Nivel 3 — Persistencia Políglota (X: 1000 a 1280)
+        (114, 1000, 40, 1280, 125),  # PostgreSQL 16 Relacional ACID (aegiscore_erp)
+        (118, 1000, 145, 1280, 220), # Redis Cache 7 (Subgrafos y Sesiones)
+        (116, 1000, 240, 1280, 325), # Amazon DynamoDB Local (IdempotencyRecords < 5ms)
+        (115, 1000, 345, 1280, 430), # MongoDB 7.0 Documental BSON (Índice 2dsphere)
+        
+        # Columna 5: Nivel 4 — Mensajería y Bus de Eventos (X: 1340 a 1620)
+        (119, 1340, 150, 1620, 370)  # Apache Kafka 3.7 Bus de Eventos (saga-claim-settlement)
     ]
     for cid, l, t, r, b in comp_layout:
         add_dobj(30, cid, l, t, r, b)
+
+    # Conectores Ortogonales Limpios
+    # Nivel 1 a Gateways y Almacenamiento Local
+    add_conn("Auth PKCE", "Dependency", 110, 111, 30)
+    add_conn("Queries / Mutations", "Dependency", 102, 112, 30)
     add_conn("HTTP REST Idempotente", "Dependency", 101, 105, 30)
-    add_conn("Consulta GraphQL", "Dependency", 102, 104, 30)
-    add_conn("BI Dashboards", "Dependency", 103, 107, 30)
-    add_conn("ACID PostgreSQL", "Association", 104, 108, 30)
-    add_conn("MongoDB 2dsphere", "Association", 105, 108, 30)
-    add_conn("Hexagonal JPA", "Association", 106, 108, 30)
-    add_conn("ML Scikit/TF", "Association", 107, 108, 30)
-    add_conn("Saga Bus Eventos", "Association", 106, 109, 30)
-    add_conn("Compensacion Kafka", "Dependency", 109, 104, 30)
-    add_conn("Reversión Kafka", "Dependency", 109, 105, 30)
+    add_conn("Persistencia Offline", "Dependency", 101, 117, 30)
+    add_conn("Audio WebRTC / Tools", "Dependency", 103, 113, 30)
+
+    # Gateways a Microservicios Backend
+    add_conn("Subgrafo Pólizas", "Dependency", 112, 104, 30)
+    add_conn("Subgrafo Siniestros", "Dependency", 112, 105, 30)
+    add_conn("Subgrafo Actuarial", "Dependency", 112, 106, 30)
+    add_conn("Webhook Pedido WhatsApp", "Dependency", 120, 104, 30)
+    add_conn("Webhook Siniestro SOS", "Dependency", 120, 105, 30)
+    add_conn("Tools Tipadas MCP", "Dependency", 113, 107, 30)
+
+    # Microservicios a Persistencia Políglota
+    add_conn("ACID PostgreSQL", "Association", 104, 114, 30)
+    add_conn("Caché Sesiones", "Association", 104, 118, 30)
+    add_conn("Check Idempotencia <5ms", "Association", 105, 116, 30)
+    add_conn("MongoDB 2dsphere", "Association", 105, 115, 30)
+    add_conn("JPA Transaccional", "Association", 106, 114, 30)
+    add_conn("Lock Idempotencia QR", "Association", 106, 116, 30)
+    add_conn("Expedientes BSON", "Association", 107, 115, 30)
+
+    # Microservicios a Mensajería y Automatización
+    add_conn("Compensación Cobertura", "Association", 104, 119, 30)
+    add_conn("Eventos Siniestros", "Association", 105, 119, 30)
+    add_conn("Orquestación Saga CU09", "Association", 106, 119, 30)
 
     conn.commit()
     conn.close()
 
     # Copiar a las ubicaciones del repositorio
     shutil.copy(target_qea, "AegisCore_Perfil_B.qea")
+    shutil.copy(target_qea, "AegisCore_Perfil_C.qea")
     shutil.copy(target_qea, "docs-iconix-uml/AegisCore_AI.qea")
     shutil.copy(target_qea, "docs-iconix-uml/AegisCore_Perfil_B.qea")
+    shutil.copy(target_qea, "docs-iconix-uml/AegisCore_Perfil_C.qea")
     shutil.copy(target_qea, "docs-iconix-uml/enterprise-architect/aegiscore-perfil-b-ea17.qea")
+    shutil.copy(target_qea, "docs-iconix-uml/enterprise-architect/aegiscore-perfil-c-ea17.qea")
 
     print(f"Éxito: Modelo Global del Proyecto construido en {target_qea}")
     print(f"Total de Diagramas: {len(diagrams)} (Home Page, Casos de Uso, Robustez BCE, Secuencia UML 2.5+, Clases y Componentes)")

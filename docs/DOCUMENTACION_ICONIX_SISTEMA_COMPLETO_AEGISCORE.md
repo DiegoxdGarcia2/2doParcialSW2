@@ -35,10 +35,12 @@
 4. **[CAPÍTULO 4: DISEÑO PRELIMINAR Y DETALLADO (SECUENCIA UML 2.5+)](#capítulo-4-diseño-preliminar-y-detallado-secuencia-uml-25)**
    - 4.1. Diagramas de Secuencia UML 2.5+ con Métodos en el Objeto de Control
    - 4.2. Diagrama de Clases de Diseño Detallado del ERP
-5. **[CAPÍTULO 5: ARQUITECTURA DE IMPLEMENTACIÓN Y PERSISTENCIA POLÍGLOTA](#capítulo-5-arquitectura-de-implementación-y-persistencia-políglota)**
-   - 5.1. Diagrama de Componentes y Arquitectura Global en 4 Niveles
-   - 5.2. Persistencia Políglota y Motores de Base de Datos
-   - 5.3. Contratos Congelados de Integración Inter-Servicios
+4. **[CAPÍTULO IV: DESARROLLO E IMPLEMENTACIÓN](#capítulo-iv-desarrollo-e-implementación)**
+   - 4.1. Herramientas y tecnologías utilizadas (Matriz Consolidada de Stack y Justificación de los 3 Perfiles)
+   - 4.2. Diseño de la arquitectura del sistema (Arquitectura en 4 Niveles, Diagrama de Componentes y Patrones de Código)
+   - 4.3. Implementación de la base de datos (PostgreSQL 16, MongoDB 7 con 2dsphere, DynamoDB Local, SQLite Móvil y Redis)
+   - 4.4. Desarrollo de los módulos del sistema (Módulos 1 al 5 cubriendo CU01 al CU15 en 4 Lenguajes y 3 Patrones)
+   - 4.5. Integración de componentes (Contratos Congelados, Apache Kafka Saga, Apollo Supergraph, n8n y Servidor MCP)
 6. **[CAPÍTULO 6: PRUEBAS, EVIDENCIA DE EJECUCIÓN Y VALIDACIÓN](#capítulo-6-pruebas-evidencia-de-ejecución-y-validación)**
    - 6.1. Suite de Pruebas Automatizadas Unitarias y de Integración
    - 6.2. Pruebas de Carga y Resiliencia de Idempotencia (<5 ms en Red Intermitente)
@@ -1243,143 +1245,859 @@ sequenceDiagram
 
 ---
 
-# CAPÍTULO 5: ARQUITECTURA DE IMPLEMENTACIÓN Y PERSISTENCIA POLÍGLOTA
+# CAPÍTULO IV: DESARROLLO E IMPLEMENTACIÓN
 
-## 5.1. Diagrama de Componentes y Arquitectura Global en 4 Niveles
-La arquitectura de **AegisCore AI** está organizada en cuatro niveles rigurosamente desacoplados, combinando microfrontends especializados, microservicios autónomos, persistencia políglota y un bus asíncrono de eventos:
+El presente capítulo detalla la construcción física, tecnológica y arquitectónica del sistema **AegisCore AI**, integrando de manera sinérgica los componentes desarrollados por las tres células de trabajo (**Perfil A**, **Perfil B** y **Perfil C**) bajo los contratos congelados inter-servicios.
+
+---
+
+## 4.1. Herramientas y tecnologías utilizadas
+
+Para dar respuesta a los requerimientos de alta concurrencia, resiliencia ante pérdida de señal en terreno, integridad transaccional financiera y capacidades cognitivas avanzadas, AegisCore AI adopta un stack tecnológico políglota y heterogéneo estrictamente justificado:
+
+### 4.1.1. Matriz Consolidada del Stack Tecnológico del Sistema
+
+| Capa / Subsistema | Tecnología / Versión | Rol Arquitectónico | Célula Responsable | Justificación Técnica |
+|---|---|---|---|---|
+| **Frontend Web Administrativo y BI** | Angular 17+ (TypeScript) | Micro-Frontend 1 (Portal ERP Admin & BI) | **Perfil C** | Arquitectura robusta basada en componentes empresariales, renderizado nativo de dashboards analíticos (Chart.js / ECharts) en código sin dependencias externas de Power BI, captura de audio WebRTC para STT. |
+| **Frontend Web Autoservicio y PWA** | React 18+ (Vite, TypeScript) | Micro-Frontend 2 (Portal Clientes & Cotizador) | **Perfil A** | Soporte PWA offline mediante Service Workers, reactividad ligera y ejecución de IA Local en el navegador con TensorFlow.js y OpenCV.js para validar nitidez de documentos antes de subir. |
+| **Cliente Móvil Peritos de Terreno** | Flutter 3.22 / Dart 3.4 | Cliente 3 (App Peritaje Offline) | **Perfil B** | Compilación nativa multiplataforma (Android/iOS), acceso directo a hardware (Cámara, GPS, Acelerómetro), base de datos local SQLite cifrada e inferencia Edge AI con TensorFlow Lite. |
+| **Servidor SSO y Gestión de Identidad** | Keycloak 24 (OAuth2 / OIDC) | Seguridad Perimetral y Autenticación Única | **Perfil A / Transversal** | Inicio de sesión unificado (SSO) con tokens JWT firmados criptográficamente (RS256) y flujo Authorization Code con PKCE para aplicaciones móviles y SPAs. |
+| **Puerta de Enlace Federada** | Apollo Supergraph Router 2.5 | API Gateway GraphQL | **Perfil A / Transversal** | Unificación de esquemas GraphQL de múltiples microservicios en un único endpoint federado de alto rendimiento en Rust/Node. |
+| **Microservicio 1 (MS1)** | PHP 8.3 / Laravel 11 | Core ERP: Pólizas, Clientes y Facturación | **Perfil A** | Implementación táctica y estratégica de **Domain-Driven Design (DDD)**, gestión del Bounded Context comercial y emisión de comprobantes fiscales. |
+| **Microservicio 2 (MS2)** | TypeScript / NestJS 10 | Reclamos, Triaje y Gestión de Siniestros | **Perfil B** | Implementación estricta de **Clean Architecture + CQRS**, procesamiento de eventos de siniestros, triaje geoespacial y control de idempotencia sub-milisegundo. |
+| **Microservicio 3 (MS3)** | Java 21 LTS / Spring Boot 3.2 | Motor Actuarial, Cobranzas y Orquestador Saga | **Perfil B** | Implementación de **Arquitectura Hexagonal (Ports & Adapters)**, cálculo de reservas técnicas, cobranza de primas por QR y orquestación del patrón Saga con transacciones compensatorias. |
+| **Microservicio 4 (MS4)** | Python 3.11 / FastAPI | Inteligencia Artificial, Agentes y Servidor MCP | **Perfil C** | Ejecución de pipelines de Machine Learning (Scikit-Learn), Deep Learning (TensorFlow/Keras), agente autónomo LangGraph con Metas/Skills y servidor MCP con Whisper STT y filtro OWASP. |
+| **Automatización Omnicanal** | n8n Workflow Automation | Orquestación de Procesos y Webhooks | **Perfil A / B** | Integración no-code/low-code entre WhatsApp Business API, servicios REST/GraphQL del ERP y canalización de eventos de siniestros y facturación. |
+| **Bus de Eventos Asíncronos** | Apache Kafka 3.7 (Confluent) | Event Streaming Broker | **Perfil B / Transversal** | Desacoplamiento temporal de microservicios, persistencia duradera del log de eventos de la Saga (`saga-claim-settlement`, `policy-events`) y semántica at-least-once. |
+| **Persistencia Relacional ACID** | PostgreSQL 16 (Neon Serverless & Local) | Almacén Transaccional Oficial | **Perfil A / B / C** | Cumplimiento ACID estricto para pólizas, clientes, balances contables, comprobantes fiscales y dataset histórico de 1,200 registros sintéticos para reentrenamiento de IA. |
+| **Persistencia NoSQL Documental** | MongoDB 7.0 Community | Almacén de Expedientes Multimedia | **Perfil B / C** | Flexibilidad de esquema para expedientes periciales semi-estructurados, fotografías, metadatos EXIF e índice geoespacial `2dsphere` para triaje SOS por geocercas. |
+| **Persistencia NoSQL Clave-Valor** | Amazon DynamoDB Local | Almacén de Idempotencia y Sesiones | **Perfil B / Transversal** | Latencia garantizada $< 5\text{ ms}$ (p95: $3.8\text{ ms}$) para verificación atómica de cabeceras `X-Idempotency-Key` y prevención de cobros o registros duplicados con mala señal. |
+| **Persistencia Local Móvil** | SQLite 3 (sqflite cifrado) | Almacén Offline en Dispositivo Móvil | **Perfil B** | Autonomía total del perito en sótanos o carreteras sin conexión, sincronización asíncrona diferida con marca de agua (`is_synced`). |
+| **Caché en Memoria** | Redis 7 Alpine | Caché de Subgrafos y Sesiones | **Perfil A / Transversal** | Aceleración de respuestas repetitivas de lectura de pólizas y resolución de federación Apollo Router. |
+
+---
+
+## 4.2. Diseño de la arquitectura del sistema
+
+AegisCore AI implementa una arquitectura distribuida de nivel empresarial que combina el estilo de **Microservicios Orientados a Eventos (EDA - Event-Driven Architecture)**, **Micro-Frontends Especializados**, **Persistencia Políglota Especializada** y **Puertas de Enlace Federadas**, garantizando que cada componente resuelva de manera óptima las demandas operativas del dominio asegurador:
+
+### 4.2.1. Enfoque Arquitectónico, Estilo y Principios de Diseño
+
+1. **Alineación con la Metodología ICONIX:**
+   El diseño arquitectónico mantiene trazabilidad matemática y estructural con los artefactos de análisis previo:
+   - **Objetos Boundary (Frontera):** Se materializan en el Nivel 1 mediante vistas web reactivas (Angular, React), pantallas nativas móviles (Flutter), canales de mensajería (WhatsApp bot vía n8n) y consolas de entrada de audio WebRTC.
+   - **Objetos Control (Lógica de Orquestación):** Se implementan en el Nivel 2 como controladores de casos de uso, servicios de aplicación, agregados de dominio, orquestadores de transacciones Saga y agentes de inferencia.
+   - **Objetos Entity (Persistencia):** Se distribuyen en el Nivel 3 a través de esquemas relacionales ACID (PostgreSQL), documentos semiestructurados (MongoDB), registros clave-valor sub-milisegundo (DynamoDB) y bases de datos locales (SQLite).
+
+2. **Principios Clave del Sistema:**
+   - **Desacoplamiento Políglota:** Cuatro lenguajes de programación (**PHP 8.3**, **TypeScript**, **Java 21**, **Python 3.11**) seleccionados estratégicamente para maximizar el rendimiento según el dominio (cálculo actuarial, streaming de eventos, IA y gestión documental).
+   - **Tolerancia a Red Intermitente (Offline-First):** Capacidad del cliente pericial móvil de operar al 100% sin internet, procesando visión artificial local en el dispositivo (Edge AI con TFLite) y almacenando en SQLite local con control criptográfico de idempotencia.
+   - **Consistencia Transaccional Eventual:** Reemplazo de bloqueos bifásicos (2PC) por el **Patrón Saga**, coordinando transacciones que involucran múltiples microservicios mediante eventos en Kafka y rollback semántico ante contingencias.
+   - **Seguridad en Profundidad (OWASP):** Blindaje contra inyecciones SQL en consultas dictadas por voz mediante la separación estricta entre el modelo generativo y las herramientas tipadas del **Model Context Protocol (MCP)**.
+
+---
+
+### 4.2.2. Arquitectura Global en Cuatro Niveles (Diagrama de Componentes UML)
+
+La solución se estructura en cuatro niveles rigurosamente delimitados mediante interfaces contractuales inmutables:
 
 ```mermaid
 flowchart TD
-    subgraph Nivel1["NIVEL 1: FRONTEND & CLIENTES ESPECIALIZADOS"]
-        F1["📱 App Móvil Peritos (Flutter)<br/>• Offline SQLite<br/>• TensorFlow Lite"]
-        F2["💻 Portal Clientes (React 18+ PWA)<br/>• IA Local Web (Laplaciano)<br/>• Apollo Client"]
-        F3["📊 Panel BI y Operaciones (Angular 17+)<br/>• Chart.js / ECharts Nativos<br/>• Whisper Audio STT"]
+    subgraph Nivel1["NIVEL 1: MICRO-FRONTENDS, CLIENTES ESPECIALIZADOS Y EDGE AI"]
+        MF1["🅰️ Micro-Frontend 1: Angular 17+<br/>• Portal ERP Admin & BI Ejecutivo<br/>• Dashboards Nativos (Chart.js / ECharts)<br/>• Captura de Voz WebRTC (CU12, CU13, CU15)"]
+        MF2["⚛️ Micro-Frontend 2: React 18+ PWA<br/>• Portal Clientes & Cotizador Web<br/>• IA Local Web (Filtro Laplaciano / TF.js)<br/>• Apollo Client GraphQL (CU02, CU04)"]
+        MF3["📱 Cliente 3: Flutter 3.22 / Dart 3.4<br/>• App Móvil Peritos de Terreno<br/>• SQLite Cifrado Offline (CU07)<br/>• Edge AI (CrashNet TFLite embebido)"]
+        SHELL["🌐 SSO Shell Container (Keycloak JS)<br/>• Orquestador de Sesión Única y Contexto"]
     end
 
-    subgraph NivelGw["GATEWAYS Y PROTOCOLOS"]
-        GW1["🛡️ Keycloak SSO (OAuth2 / PKCE)"]
-        GW2["🌐 Apollo Supergraph Router (GraphQL)"]
-        GW3["🤖 Servidor MCP Protocol (Model Context)"]
+    subgraph NivelGateways["PUERTAS DE ENLACE Y PROTOCOLOS FEDERADOS"]
+        GW_SSO["🔐 Keycloak SSO 24 (OAuth2 / OIDC)<br/>• Puerto 8080 | Authorization Code + PKCE<br/>• Emisión de Tokens JWT RS256 (CU01)"]
+        GW_GQL["🚀 Apollo Supergraph Router 2.5<br/>• Puerto 4000 | GraphQL Federation 2.5<br/>• Subgrafos Unificados de MS1, MS2 y MS3 (CU02)"]
+        GW_MCP["🤖 Servidor MCP Protocol (Anthropic SDK)<br/>• Puerto 8004/mcp | Tools Tipadas con JSON Schema<br/>• Blindaje OWASP Anti-SQLi (CU15)"]
     end
 
-    subgraph Nivel2["NIVEL 2: MICROSERVICIOS BACKEND"]
-        MS1["🐘 MS1 Pólizas y Clientes (PHP 8.3 / Laravel)<br/>• Domain-Driven Design (DDD)<br/>• Agregados y Value Objects"]
-        MS2["🟢 MS2 Siniestros y Triaje (NestJS 10)<br/>• Clean Architecture + CQRS<br/>• Comandos y Consultas"]
-        MS3["☕ MS3 Motor Actuarial y Pagos (Spring Boot 3)<br/>• Arquitectura Hexagonal<br/>• Orquestador Saga"]
-        MS4["🐍 MS4 Inteligencia Artificial (FastAPI / Python 3.11)<br/>• CNN CrashNet + Grad-CAM<br/>• Random Forest + K-Means + Isolation Forest<br/>• Agente Autónomo LangGraph"]
+    subgraph Nivel2["NIVEL 2: MICROSERVICIOS BACKEND (4 LENGUAJES Y 3 PATRONES)"]
+        MS1["🐘 MS1: Core ERP Pólizas y Facturación<br/>• PHP 8.3 / Laravel 11 | Puerto 8001<br/>• PATRÓN: Domain-Driven Design (DDD)<br/>• Bounded Context Comercial (CU03, CU05)"]
+        MS2["🦁 MS2: Siniestros, Triaje y Notificaciones<br/>• TypeScript / NestJS 10 | Puerto 8002<br/>• PATRÓN: Clean Architecture + CQRS<br/>• Triaje Geoespacial y Idempotency Guard (CU06, CU08)"]
+        MS3["🍃 MS3: Motor Actuarial, Pagos y Saga<br/>• Java 21 LTS / Spring Boot 3.2 | Puerto 8003<br/>• PATRÓN: Arquitectura Hexagonal (Ports & Adapters)<br/>• Orquestador Saga y Cobros QR (CU09, CU10)"]
+        MS4["🐍 MS4: Inteligencia Artificial y Agentes<br/>• Python 3.11 / FastAPI | Puerto 8004<br/>• PATRÓN: Pipelines de IA + Agente LangGraph<br/>• CNN CrashNet, Random Forest, K-Means, IsoForest (CU11-CU15)"]
     end
 
-    subgraph Nivel3["NIVEL 3: PERSISTENCIA POLÍGLOTA"]
-        DB_PG[("🐘 PostgreSQL 16 (aegiscore_erp)<br/>• Esquema Transaccional ACID<br/>• Dataset Histórico 1,200 Regs")]
-        DB_Mongo[("🍃 MongoDB 7 (aegiscore_siniestros)<br/>• Documentos GeoJSON BSON<br/>• Índice Espacial 2dsphere")]
-        DB_Dynamo[("⚡ Amazon DynamoDB Local<br/>• Tabla IdempotencyRecords<br/>• Latencia < 5 ms")]
-        DB_SQLite[("💾 SQLite 3 Móvil Cifrado<br/>• Persistencia Offline Flutter")]
-        DB_Redis[("🔴 Redis Cache<br/>• Caché Sesiones y Supergraph")]
+    subgraph Nivel3["NIVEL 3: PERSISTENCIA POLÍGLOTA ESPECIALIZADA"]
+        DB_PG[("🐘 PostgreSQL 16 (aegiscore_erp)<br/>• Puerto 5432 (Neon Serverless & Local)<br/>• Tablas ACID: Clientes, Pólizas, Facturas, Pagos QR<br/>• Dataset Histórico Sintético 1,200 Regs")]
+        DB_MONGO[("🍃 MongoDB 7.0 (aegiscore_siniestros)<br/>• Puerto 27017 | BSON GeoJSON<br/>• Expedientes Multimedia y Peritajes de Terreno<br/>• Índice Geoespacial 2dsphere ($nearSphere)")]
+        DB_DYNAMO[("⚡ Amazon DynamoDB Local<br/>• Puerto 8000 | Tabla IdempotencyRecords<br/>• Latencia sub-milisegundo (< 5 ms)<br/>• Prevención de duplicados de red inestable")]
+        DB_SQLITE[("💾 SQLite 3 Móvil Cifrado<br/>• Embebido en Smartphone Flutter<br/>• Persistencia Offline con bandera is_synced")]
+        DB_REDIS[("🔴 Redis 7 Alpine<br/>• Puerto 6379 | Caché Subgrafos y Sesiones")]
     end
 
-    subgraph Nivel4["NIVEL 4: MENSAJERÍA Y BUS DE EVENTOS"]
-        KAFKA["📨 Apache Kafka Bus<br/>• saga-claim-settlement<br/>• policy-events<br/>• audit-telemetry"]
-        N8N["🔄 Servidor de Automatización n8n<br/>• Webhook WhatsApp a Factura PDF"]
+    subgraph Nivel4["NIVEL 4: MENSAJERÍA ASÍNCRONA Y AUTOMATIZACIÓN OMNICANAL"]
+        BUS_KAFKA["📨 Apache Kafka 3.7 & Zookeeper<br/>• Puertos 9092 / 2181 | Tópicos Distribuidos:<br/>  - saga-claim-settlement (Orquestación Saga CU09)<br/>  - policy-events (Eventos Comerciales)<br/>  - audit-telemetry (Trazabilidad y Peritajes)"]
+        AUTO_N8N["⚡ Servidor de Automatización n8n<br/>• Puerto 5678 | Webhooks Omnicanal:<br/>  - Pedidos WhatsApp -> Emisión Póliza -> Factura PDF<br/>  - Alerta Siniestros SOS -> Triaje Geoespacial"]
     end
 
-    %% Conexiones Nivel 1 a Gateways y Servicios
-    F1 -->|HTTP REST Idempotente| MS2
-    F2 -->|GraphQL Queries/Mutations| GW2
-    F3 -->|REST / SSE / MCP Tools| MS4
-    F2 -.->|Auth PKCE| GW1
-    F1 -.->|Auth PKCE| GW1
-    F3 -.->|Auth PKCE| GW1
+    %% Relaciones Nivel 1 a Gateways y SSO
+    SHELL -.->|Flujo PKCE| GW_SSO
+    MF1 -.->|Bearer JWT| GW_SSO
+    MF2 -.->|Bearer JWT| GW_SSO
+    MF3 -.->|Bearer JWT| GW_SSO
+    MF2 -->|GraphQL Queries/Mutations| GW_GQL
+    MF1 -->|Audio WebRTC / Tools MCP| GW_MCP
+    MF3 -->|HTTP POST Idempotente + Fotos| MS2
+    MF3 -->|Almacenamiento Local| DB_SQLITE
 
-    %% Gateways a Microservicios
-    GW2 --> MS1
-    GW2 --> MS2
-    GW2 --> MS3
-    GW3 --> MS4
+    %% Gateways a Microservicios Backend
+    GW_GQL -->|Subgrafo Pólizas| MS1
+    GW_GQL -->|Subgrafo Siniestros| MS2
+    GW_GQL -->|Subgrafo Actuarial| MS3
+    GW_MCP -->|Invocación Tools Tipadas| MS4
 
-    %% Microservicios a Persistencia
-    MS1 --> DB_PG
-    MS1 --> DB_Redis
-    MS2 --> DB_Mongo
-    MS2 --> DB_Dynamo
-    F1 --> DB_SQLite
-    MS3 --> DB_PG
-    MS3 --> DB_Dynamo
-    MS4 --> DB_PG
-    MS4 --> DB_Mongo
+    %% Conexiones Backend a Nivel 3 (Persistencia Políglota)
+    MS1 -->|Conexión ACID / Eloquent| DB_PG
+    MS1 -->|Caché de Consultas| DB_REDIS
+    MS2 -->|Colecciones BSON / Mongoose| DB_MONGO
+    MS2 -->|Check Idempotencia < 5 ms| DB_DYNAMO
+    MS3 -->|Persistencia Contable / JPA| DB_PG
+    MS3 -->|Lock Idempotencia Cobros QR| DB_DYNAMO
+    MS4 -->|Lectura Dataset Histórico 1,200 Regs| DB_PG
+    MS4 -->|Lectura/Escritura Expedientes IA| DB_MONGO
 
-    %% Integración Asíncrona
-    MS2 <-->|Eventos Reclamos| KAFKA
-    MS3 <-->|Orquestación Saga| KAFKA
-    MS1 <-->|Eventos Pólizas| KAFKA
-    N8N -->|Webhook WhatsApp| MS1
+    %% Conexiones Backend a Nivel 4 (Kafka y n8n)
+    MS2 <-->|Publicación/Consumo Eventos Reclamo| BUS_KAFKA
+    MS3 <-->|Orquestación Transversal Saga| BUS_KAFKA
+    MS1 <-->|Eventos de Cobertura y Facturación| BUS_KAFKA
+    AUTO_N8N -->|Webhook Mensajería WhatsApp| MS1
+    AUTO_N8N -->|Webhook Alertas SOS| MS2
 ```
 
-## 5.2. Persistencia Políglota y Motores de Base de Datos
-El proyecto implementa una estrategia de **Persistencia Políglota Especializada**, asignando cada base de datos según los requerimientos óptimos de consistencia, esquema y latencia:
+---
 
-### 5.2.1. PostgreSQL 16 (`aegiscore_erp`)
-Utilizada por **MS1** (Laravel DDD) y **MS3** (Spring Boot Hexagonal). Garantiza transaccionalidad ACID para entidades financieras, contratos y el histórico de machine learning:
-- **`polizas`:** Registro oficial de contratos, fechas de vigencia, prima pactada, deducible y límites de cobertura.
-- **`clientes`:** Datos de personas naturales o jurídicas vinculadas mediante el identificador `keycloak_sub`.
-- **`vehiculos`:** Detalle de automóviles amparados con VIN, placa y valor comercial en BOB.
-- **`ordenes_liquidacion`:** Instrumentos contables de desembolso bancario con código de transferencia y beneficiario.
-- **`transacciones_pago_qr`:** Registro de comprobantes fiscales, códigos QR y estados de conciliación bancaria.
-- **`dataset_historico_ml_polizas`:** Tabla con 1,200 registros sintéticos pre-cargados que alimentan el pipeline de entrenamiento del modelo Random Forest (edad conductor, valor vehículo, siniestros previos, prima técnica real).
+### 4.2.3. Diagrama de Despliegue Físico y Topología Docker (Nodos, Redes y Puertos)
 
-### 5.2.2. MongoDB 7 (`aegiscore_siniestros`)
-Utilizada por **MS2** (NestJS CQRS) y **MS4** (Python AI) para almacenar expedientes no estructurados, fotografías, peritajes técnicos y coordenadas de ubicación:
-- **Colección `siniestros`:** Documentos BSON con estructura flexible que contienen:
-  ```json
-  {
-    "_id": "6724a1b0f19c8d0012a99011",
-    "codigoSiniestro": "SIN-2026-00050",
-    "fechaHora": "2026-11-05T14:20:00Z",
-    "coordenadas": {
-      "type": "Point",
-      "coordinates": [-63.182, -17.783]
-    },
-    "estado": "INSPECCIONADO",
-    "peritajes": [
+Todos los servicios del backend, bases de datos y herramientas de infraestructura se orquestan mediante **Docker Compose** sobre una red virtual privada con aislamiento de tráfico:
+
+```mermaid
+graph TB
+    subgraph Host["💻 Nodo Anfitrión (Docker Engine Host)"]
+        subgraph Net["Red Virtual Bridge: aegiscore-network"]
+            subgraph DataTiers["Capa de Persistencia y Caché"]
+                C_PG["🐘 aegiscore-postgres-erp<br/>Interno: 5432 | Host: 5432<br/>Volumen: aegiscore_postgres_erp_data"]
+                C_MONGO["🍃 aegiscore-mongo-siniestros<br/>Interno: 27017 | Host: 27017<br/>Volumen: aegiscore_mongo_siniestros_data"]
+                C_DYNA["⚡ aegiscore-dynamodb-local<br/>Interno: 8000 | Host: 8000"]
+                C_REDIS["🔴 aegiscore-redis<br/>Interno: 6379 | Host: 6379"]
+            end
+
+            subgraph InfraTiers["Capa de Identidad, Mensajería y Automatización"]
+                C_KC["🔐 aegiscore-keycloak-sso<br/>Interno: 8080 | Host: 8080"]
+                C_ZK["aegiscore-zookeeper<br/>Interno: 2181"]
+                C_KAFKA["📨 aegiscore-kafka<br/>Interno: 29092 | Host: 9092"]
+                C_N8N["⚡ aegiscore-n8n<br/>Interno: 5678 | Host: 5678<br/>Volumen: aegiscore_n8n_workflow_data"]
+            end
+
+            subgraph MicroserviceTiers["Capa de Microservicios Backend"]
+                C_MS1["🐘 aegiscore-ms1-polizas-php<br/>PHP 8.3-FPM / Nginx | Host: 8001"]
+                C_MS2["🦁 aegiscore-ms2-siniestros-nestjs<br/>Node.js 20 LTS | Host: 8002"]
+                C_MS3["🍃 aegiscore-ms3-actuarial-springboot<br/>OpenJDK 21 Eclipse Temurin | Host: 8003"]
+                C_MS4["🐍 aegiscore-ms4-ia-mcp-python<br/>Python 3.11 / Uvicorn | Host: 8004"]
+            end
+        end
+    end
+
+    C_KAFKA --> C_ZK
+    C_MS1 --> C_PG
+    C_MS1 --> C_KAFKA
+    C_MS2 --> C_MONGO
+    C_MS2 --> C_DYNA
+    C_MS2 --> C_KAFKA
+    C_MS3 --> C_PG
+    C_MS3 --> C_DYNA
+    C_MS3 --> C_KAFKA
+    C_MS4 --> C_PG
+    C_MS4 --> C_MONGO
+    C_N8N --> C_MS1
+    C_N8N --> C_MS2
+```
+
+#### Matriz de Puertos y Exposición de Servicios
+
+| Servicio / Contenedor | Imagen Base | Puerto Interno | Puerto Host | Protocolo | Propósito |
+|---|---|---|---|---|---|
+| `aegiscore-postgres-erp` | `postgres:16-alpine` | `5432` | `5432` | TCP / PostgreSQL | Almacén relacional ACID y dataset histórico de ML. |
+| `aegiscore-mongo-siniestros` | `mongo:7.0` | `27017` | `27017` | TCP / MongoDB | Expedientes documentales con índice geoespacial `2dsphere`. |
+| `aegiscore-dynamodb-local` | `amazon/dynamodb-local` | `8000` | `8000` | HTTP / REST | Control de idempotencia sub-milisegundo (< 5 ms). |
+| `aegiscore-keycloak-sso` | `quay.io/keycloak:24.0` | `8080` | `8080` | HTTP / OIDC | Servidor de identidad y Single Sign-On (Realm `AegisCore`). |
+| `aegiscore-kafka` | `cp-kafka:7.5.0` | `29092` | `9092` | PLAINTEXT | Bus de eventos y streaming para orquestación de la Saga. |
+| `aegiscore-zookeeper` | `cp-zookeeper:7.5.0` | `2181` | - | TCP | Coordinador de metadatos del clúster Kafka. |
+| `aegiscore-n8n` | `n8nio/n8n:latest` | `5678` | `5678` | HTTP / Webhooks | Automatización WhatsApp $ightarrow$ Factura fiscal PDF. |
+| `aegiscore-ms1-polizas-php` | Dockerfile personalizado | `8001` | `8001` | HTTP / GraphQL | Core ERP comercial y emisión de pólizas (DDD). |
+| `aegiscore-ms2-siniestros-nestjs` | Dockerfile personalizado | `8002` | `8002` | HTTP / REST / WS | Gestión de siniestros, triaje y guard de idempotencia (Clean CQRS). |
+| `aegiscore-ms3-actuarial-springboot` | Dockerfile personalizado | `8003` | `8003` | HTTP / REST | Motor actuarial, cobros QR y orquestador Saga (Hexagonal). |
+| `aegiscore-ms4-ia-mcp-python` | Dockerfile personalizado | `8004` | `8004` | HTTP / MCP / SSE | Modelos ML/DL, Agente LangGraph y Servidor MCP por voz. |
+
+---
+
+### 4.2.4. Desglose Estructural de Patrones de Arquitectura de Código por Microservicio
+
+A continuación se detalla cómo cada microservicio implementa su patrón arquitectónico específico a nivel de estructura de carpetas, reglas de dependencia y asignación de responsabilidades:
+
+#### 4.2.4.1. MS1: Core ERP Pólizas y Facturación — Domain-Driven Design (DDD)
+
+El microservicio `backend/ms1-polizas-php` implementa **Domain-Driven Design (DDD)** estratégico y táctico para modelar el Bounded Context comercial de seguros:
+
+```mermaid
+flowchart TD
+    subgraph DDD_Layers["CAPAS ARQUITECTÓNICAS DDD (MS1 - PHP 8.3 / Laravel 11)"]
+        direction TB
+        subgraph PresentationLayer["1. Presentation Layer (Adaptadores Primarios)"]
+            P1["SupergraphGraphQLEngine.php<br/>• Resolutores de Consultas y Mutaciones"]
+            P2["RestControllers / Webhooks"]
+        end
+
+        subgraph ApplicationLayer["2. Application Layer (Casos de Uso)"]
+            A1["EmisionPolizaGraphQLController.php (CU04)"]
+            A2["FacturacionService.php (CU05)"]
+            A3["CatalogoPolizaApplicationService.php (CU03)"]
+            A4["PolizaCoberturaService.php (Paso 2 Saga CU09)"]
+            A5["DTOs: CotizarPolizaInputDTO, EmitirPolizaInputDTO"]
+        end
+
+        subgraph DomainLayer["3. Domain Layer (Núcleo de Negocio - Reglas Puras)"]
+            D1["Agregado Raíz: Poliza.php<br/>• Invariante: Cobertura >= Deducible<br/>• Invariante: Saldo no negativo"]
+            D2["Entidades: Cliente.php, PlanSeguro.php, FacturaNotaVenta.php"]
+            D3["Value Objects Inmutables:<br/>• PrimaMonetaria (Monto + Moneda BOB)<br/>• VigenciaPoliza (FechaInicio < FechaFin)<br/>• BienAseguradoVehiculo (VIN, Placa validada)"]
+            D4["Eventos de Dominio:<br/>• PolizaEmitidaEvent<br/>• CoberturaPolizaDescontadaEvent<br/>• CoberturaRestituidaEvent"]
+            D5["Contratos de Repositorio:<br/>• PolizaRepositoryInterface<br/>• ClienteRepositoryInterface"]
+        end
+
+        subgraph InfrastructureLayer["4. Infrastructure Layer (Adaptadores Secundarios)"]
+            I1["PostgresPolizaRepository.php (PDO / Eloquent)"]
+            I2["SagaKafkaConsumer.php (Consumo de eventos de compensación)"]
+            I3["FacturaPdfGenerator.php (Compilación fiscal TCPDF/Dompdf)"]
+            I4["DynamoDbSessionCacheRepository.php"]
+        end
+    end
+
+    PresentationLayer --> ApplicationLayer
+    ApplicationLayer --> DomainLayer
+    InfrastructureLayer -->|Implementa interfaces de| DomainLayer
+    ApplicationLayer --> InfrastructureLayer
+```
+
+- **Regla de Dependencia en MS1:** El Dominio no tiene ninguna dependencia hacia Eloquent ni librerías de infraestructura. Si la base de datos cambia de PostgreSQL a otro motor, las clases `Poliza`, `PrimaMonetaria` y `VigenciaPoliza` permanecen inalteradas.
+
+---
+
+#### 4.2.4.2. MS2: Siniestros y Triaje — Clean Architecture + CQRS
+
+El microservicio `backend/ms2-siniestros-nestjs` aplica **Clean Architecture** estructurada en anillos concéntricos con segregación formal de responsabilidades de lectura y escritura (**CQRS**):
+
+```mermaid
+flowchart TD
+    subgraph CleanArch["CÍRCULO CONCÉNTRICO CLEAN ARCHITECTURE + CQRS (MS2 - NestJS)"]
+        direction TB
+        subgraph CapaFrameworks["Capa Externa: Frameworks & Drivers"]
+            FW1["NestJS HTTP Server (Fastify/Express)"]
+            FW2["Mongoose Driver (MongoDB 7)"]
+            FW3["AWS SDK DynamoDB Client"]
+            FW4["KafkaJS Driver (Apache Kafka)"]
+        end
+
+        subgraph CapaAdaptadores["Capa Intermedia: Interface Adapters"]
+            AD1["SiniestrosCommandController (POST /siniestros)"]
+            AD2["SiniestrosQueryController (GET /siniestros)"]
+            AD3["IdempotencyGuard (< 5 ms en DynamoDB)"]
+            AD4["MongoReclamoRepository (Consultas $nearSphere)"]
+            AD5["KafkaSagaConsumerService (Eventos Saga)"]
+        end
+
+        subgraph CapaCasosDeUso["Capa de Aplicación: Use Cases (CQRS Segregation)"]
+            direction LR
+            subgraph Commands["Comandos (Escritura / Modificación)"]
+                C1["RegistrarSiniestroCommand & Handler (CU06)"]
+                C2["SincronizarPeritajeCommand & Handler (CU08)"]
+                C3["MarcarEnLiquidacionCommand (Paso 1 Saga CU09)"]
+                C4["RevertirEstadoReclamoCommand (Compensación CU09)"]
+            end
+            subgraph Queries["Consultas (Lectura Optimizada)"]
+                Q1["ListarCercanosGeoQuery ($geoNear 2dsphere)"]
+                Q2["ListarPorClienteQuery"]
+                Q3["ObtenerSiniestroQuery"]
+            end
+        end
+
+        subgraph CapaDominio["Núcleo Interno: Enterprise Entities"]
+            E1["ReclamoSiniestroEntity (Ciclo de vida y transiciones)"]
+            E2["PeritajeDetalleEntity (Fotografías y severidad IA)"]
+            E3["Value Objects: EstadoReclamoVO, SeveridadVO, UbicacionGeoVO"]
+            E4["ReclamoRepositoryInterface (Contrato puro TypeScript)"]
+        end
+    end
+
+    CapaFrameworks --> CapaAdaptadores
+    CapaAdaptadores --> CapaCasosDeUso
+    CapaCasosDeUso --> CapaDominio
+```
+
+- **Beneficio del Patrón en MS2:** La lógica de triaje y validación pericial puede ser probada al 100% mediante mocks en memoria (`test/cu06-triaje-sos.e2e-spec.ts` y `test/cu08-dynamodb-idempotency.e2e-spec.ts`) sin requerir un clúster MongoDB activo.
+
+---
+
+#### 4.2.4.3. MS3: Motor Actuarial y Pagos — Arquitectura Hexagonal (Ports & Adapters)
+
+El microservicio `backend/ms3-actuarial-springboot` implementa la **Arquitectura Hexagonal (Puertos y Adaptadores)** de Alistair Cockburn, aislando el cálculo actuarial de precisión de los controladores web y las colas de mensajería:
+
+```mermaid
+flowchart LR
+    subgraph AdaptadoresEntrada["ADAPTADORES DE ENTRADA (Driving Adapters)"]
+        IN_REST1["CobranzaQRRestController<br/>(POST /api/v1/cobros/qr)"]
+        IN_REST2["LiquidacionRestController<br/>(POST /api/v1/liquidaciones)"]
+        IN_KAFKA["SagaStepKafkaListener<br/>(Consume saga-claim-settlement)"]
+    end
+
+    subgraph Hexagono["HEXÁGONO DE DOMINIO Y APLICACIÓN (MS3 - Java 21)"]
+        subgraph PuertosEntrada["Puertos de Entrada (Inbound Ports)"]
+            PIN1["CobroPrimaQRUseCasePort"]
+            PIN2["IniciarLiquidacionSagaUseCasePort"]
+            PIN3["ProcesarPasoSagaUseCasePort"]
+        end
+
+        subgraph DominioPuro["Núcleo de Dominio (Java Puro)"]
+            CORE_CALC["CalculoActuarialService<br/>• Prima pura técnica<br/>• Deducción de reserva matemática"]
+            CORE_ENT1["OrdenLiquidacion.java"]
+            CORE_ENT2["PagoPrima.java"]
+            CORE_ENT3["ReservaTecnica.java"]
+        end
+
+        subgraph PuertosSalida["Puertos de Salida (Outbound Ports)"]
+            POUT1["SagaEventPublisherPort"]
+            POUT2["IdempotencyLockPort"]
+            POUT3["OrdenLiquidacionRepositoryPort"]
+            POUT4["PagoPrimaRepositoryPort"]
+        end
+    end
+
+    subgraph AdaptadoresSalida["ADAPTADORES DE SALIDA (Driven Adapters)"]
+        OUT_KAFKA["KafkaSagaEventPublisherAdapter<br/>(Publica en saga-claim-settlement)"]
+        OUT_JPA["JpaPostgresLiquidacionAdapter<br/>(Tablas ACID PostgreSQL)"]
+        OUT_DYNA["DynamoDbIdempotencyAdapter<br/>(Bloqueo atómico de pagos)"]
+    end
+
+    IN_REST1 --> PIN1
+    IN_REST2 --> PIN2
+    IN_KAFKA --> PIN3
+
+    PIN1 --> CORE_CALC
+    PIN2 --> CORE_ENT1
+    PIN3 --> CORE_CALC
+
+    CORE_ENT1 --> POUT1
+    CORE_CALC --> POUT2
+    CORE_ENT1 --> POUT3
+    CORE_ENT2 --> POUT4
+
+    POUT1 --> OUT_KAFKA
+    POUT2 --> OUT_DYNA
+    POUT3 --> OUT_JPA
+    POUT4 --> OUT_JPA
+```
+
+- **Aislamiento en MS3:** El servicio `CalculoActuarialService.java` implementa fórmulas actuariales complejas sin importar una sola clase de Spring Framework (`org.springframework.*`), asegurando una vida útil del código independiente del ciclo de vida del framework tecnológico.
+
+---
+
+#### 4.2.4.4. MS4: Inteligencia Artificial y Servidor MCP — Pipelines de IA y Agentes
+
+El microservicio `backend/ms4-ia-mcp-python` organiza sus capacidades cognitivas en **cinco subsistemas desacoplados** que abarcan aprendizaje supervisado, no supervisado, visión artificial profunda, agentes autónomos y servidores de protocolo de contexto:
+
+```mermaid
+flowchart TD
+    subgraph MS4_Pipelines["SUBSISTEMAS Y PIPELINES DE IA (MS4 - Python 3.11 / FastAPI)"]
+        subgraph Sub_DL["1. Visión Artificial Deep Learning (TensorFlow / Keras)"]
+            DL1["Entrenamiento CNN CrashNet<br/>(3 Bloques Conv2D + MaxPool + Dropout)"]
+            DL2["Inferencia Severidad: Leve / Moderado / Grave / Pérdida Total"]
+            DL3["Explicabilidad Visual: Mapas Grad-CAM"]
+            DL4["Conversión y Cuantización a LiteRT / TensorFlow Lite (.tflite 4.2 MB)"]
+        end
+
+        subgraph Sub_Supervisado["2. ML Supervisado (Scikit-Learn Pipelines)"]
+            RF1["Dataset Histórico Neon PostgreSQL (1,200 registros)"]
+            RF2["RandomForestRegressor: Predicción Demanda de Pólizas (R² = 0.912)"]
+            RF3["RandomForestClassifier: Cálculo Actuarial de Prima Óptima"]
+        end
+
+        subgraph Sub_NoSupervisado["3. ML No Supervisado (Agrupamiento y Fraudes)"]
+            UN1["K-Means (Algoritmo Lloyd, k=3 Clústeres de Perfil de Asegurado)"]
+            UN2["Isolation Forest: Detección de Anomalías en Reclamos (Score c(n) < -0.65)"]
+        end
+
+        subgraph Sub_Agente["4. Agente Autónomo (LangGraph StateGraph)"]
+            AG1["Ciclo de Razonamiento Goal-Skill-Action"]
+            AG2["Meta 1: Despacho SOS peritos en < 15 min por GPS"]
+            AG3["Meta 2: Congelamiento preventivo de siniestros con alerta de fraude"]
+        end
+
+        subgraph Sub_MCP["5. Servidor MCP de Voz con Blindaje OWASP (Model Context Protocol)"]
+            MCP1["Entrada Micrófono WebRTC -> Whisper STT (Transcripción Local)"]
+            MCP2["Guardia OWASP Anti-SQLi: Filtro léxico-gramatical contra inyecciones"]
+            MCP3["Servidor MCP (Anthropic SDK): Exposición de Tools tipadas JSON Schema"]
+            MCP4["Generador Dinámico Multi-formato (OpenPyXL, ReportLab, python-docx)"]
+        end
+    end
+
+    Sub_DL -->|Exportación modelo| MF3
+    Sub_Supervisado -->|Métricas y Predicciones| MF1
+    Sub_NoSupervisado -->|Alertas de Fraude| Sub_Agente
+    Sub_Agente -->|Eventos de Reasignación| BUS_KAFKA
+    Sub_MCP -->|Reportes XLSX / PDF / DOCX| MF1
+```
+
+---
+
+### 4.2.5. Mecanismos Transversales de Seguridad, Idempotencia y Federación
+
+Para satisfacer los requisitos no funcionales globales de la arquitectura, se diseñaron e implementaron cuatro mecanismos transversales:
+
+#### 1. Mecanismo de Seguridad y Single Sign-On (Keycloak SSO con PKCE)
+Para garantizar el acceso seguro y la portabilidad entre las tres aplicaciones cliente (Angular, React, Flutter), el Realm `AegisCore` en Keycloak 24 implementa el flujo estándar **OAuth 2.0 Authorization Code con PKCE** (Proof Key for Code Exchange, RFC 7636).
+- El cliente genera un `code_verifier` aleatorio y deriva un `code_challenge` SHA-256.
+- Keycloak autentica al usuario contra la base de datos de credenciales y retorna un `authorization_code`.
+- El cliente intercambia el código más el `code_verifier` por un token de acceso JWT firmado criptográficamente con algoritmo **RS256** (par de claves asimétricas RSA de 2048 bits).
+- Cada microservicio valida localmente la firma del token consultando el endpoint de claves públicas JWKS (`/realms/AegisCore/protocol/openid-connect/certs`), evitando cuellos de botella de red hacia el servidor de autenticación.
+
+#### 2. Mecanismo de Federación de Esquemas (Apollo Supergraph Router)
+La puerta de enlace GraphQL utiliza la especificación **Apollo Federation 2.5**. Cada microservicio backend expone su propio subgrafo declarando entidades compartidas mediante directivas federadas:
+- **`@key(fields: "id")`:** Define la clave primaria del tipo para permitir que otros subgrafos extiendan sus campos.
+- **`@shareable`:** Permite que múltiples microservicios resuelvan campos comunes (como `nombre`, `estado`).
+- **`@override`:** Permite migrar gradualmente la resolución de campos entre microservicios sin romper la compatibilidad de los clientes web.
+
+#### 3. Mecanismo de Resiliencia e Idempotencia Sub-milisegundo (< 5 ms en DynamoDB)
+Para dar solución a los micro-cortes de conexión que sufren los peritos en carreteras y evitar cobros o siniestros duplicados:
+- El cliente (Flutter / React) genera un identificador único `idempotency_key` (UUIDv4) antes de emitir cualquier mutación `POST`.
+- El cliente calcula el hash criptográfico SHA-256 del cuerpo JSON de la petición (`payload_sha256`).
+- El interceptor `IdempotencyGuard` consulta la tabla `IdempotencyRecords` en **Amazon DynamoDB Local**.
+- Gracias a la indexación directa por clave hash primaria, el tiempo de respuesta es inferior a $5\text{ ms}$ (auditado en $2.3\text{ ms}$ promedio, p95 de $3.8\text{ ms}$). Si la clave existe y el hash coincide, se interrumpe la ejecución del microservicio y se retorna de inmediato la respuesta previamente almacenada.
+
+#### 4. Mecanismo de Transacciones Distribuidas (Patrón Saga con Rollback Semántico)
+Para el proceso crítico de liquidación de indemnizaciones (CU09), donde intervienen simultáneamente MS2 (NestJS), MS1 (PHP) y MS3 (Spring Boot), se descarta el bloqueo pesimista distribudo (2PC) y se adopta una **Saga Coreografiada** sobre Apache Kafka:
+- Cada microservicio ejecuta su transacción local atómica en su propia base de datos (PostgreSQL o MongoDB).
+- Al finalizar con éxito, publica un evento en el tópico `saga-claim-settlement`.
+- Si un paso intermedio falla (por ejemplo, fondos insuficientes en la reserva técnica actuarial de MS3 o inconsistencia en la póliza de MS1), el orquestador emite eventos de compensación (`SettlementRolledBack`) que instruyen a los servicios previos a ejecutar transacciones semánticas inversas (restituir saldo de cobertura y revertir el estado del siniestro), garantizando la consistencia final del sistema.
+
+---
+
+## 4.3. Implementación de la base de datos
+
+AegisCore AI materializa el principio de **Persistencia Políglota Especializada**, asignando los esquemas físicos a los motores óptimos:
+
+### 4.3.1. PostgreSQL 16 (`aegiscore_erp`) — Esquema Relacional Transaccional
+
+Implementada en Neon Serverless y contenedor local, almacena los datos estructurados que exigen transaccionalidad ACID estricta:
+
+```sql
+-- DDL DE TABLAS TRANSACCIONALES CORE ERP (MS1 Y MS3)
+CREATE TABLE clientes (
+    id VARCHAR(36) PRIMARY KEY,
+    keycloak_sub VARCHAR(64) UNIQUE NOT NULL,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    ci_nit VARCHAR(20) UNIQUE NOT NULL,
+    telefono VARCHAR(20) NOT NULL,
+    email VARCHAR(120) UNIQUE NOT NULL,
+    perfil_riesgo VARCHAR(20) DEFAULT 'MEDIO',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE planes_seguro (
+    id VARCHAR(36) PRIMARY KEY,
+    codigo VARCHAR(20) UNIQUE NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    tipo_ramo VARCHAR(30) NOT NULL, -- 'AUTOMOTRIZ', 'SALUD', 'VIDA'
+    cobertura_maxima_bob NUMERIC(14,2) NOT NULL,
+    deducible_porcentaje NUMERIC(5,2) NOT NULL,
+    activo BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE polizas (
+    id VARCHAR(36) PRIMARY KEY,
+    numero_poliza VARCHAR(30) UNIQUE NOT NULL,
+    cliente_id VARCHAR(36) REFERENCES clientes(id),
+    plan_id VARCHAR(36) REFERENCES planes_seguro(id),
+    monto_prima_anual_bob NUMERIC(12,2) NOT NULL,
+    saldo_cobertura_disponible_bob NUMERIC(14,2) NOT NULL,
+    estado VARCHAR(25) NOT NULL DEFAULT 'VIGENTE', -- 'VIGENTE', 'SUSPENDIDA', 'LIQUIDADA'
+    fecha_emision DATE NOT NULL,
+    fecha_vencimiento DATE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE vehiculos_asegurados (
+    id VARCHAR(36) PRIMARY KEY,
+    poliza_id VARCHAR(36) REFERENCES polizas(id),
+    placa VARCHAR(15) UNIQUE NOT NULL,
+    vin VARCHAR(30) UNIQUE NOT NULL,
+    marca VARCHAR(50) NOT NULL,
+    modelo VARCHAR(50) NOT NULL,
+    anio INTEGER NOT NULL,
+    valor_comercial_bob NUMERIC(12,2) NOT NULL
+);
+
+CREATE TABLE ordenes_liquidacion (
+    id VARCHAR(36) PRIMARY KEY,
+    codigo_saga_id VARCHAR(64) UNIQUE NOT NULL,
+    siniestro_id VARCHAR(36) NOT NULL,
+    poliza_id VARCHAR(36) REFERENCES polizas(id),
+    monto_indemnizado_bob NUMERIC(12,2) NOT NULL,
+    deducible_aplicado_bob NUMERIC(10,2) NOT NULL,
+    monto_neto_desembolso_bob NUMERIC(12,2) NOT NULL,
+    estado VARCHAR(30) NOT NULL DEFAULT 'COMPLETADA', -- 'PENDIENTE', 'COMPLETADA', 'COMPENSADA'
+    fecha_liquidacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE transacciones_pago_qr (
+    id VARCHAR(36) PRIMARY KEY,
+    idempotency_key VARCHAR(64) UNIQUE NOT NULL,
+    poliza_id VARCHAR(36) REFERENCES polizas(id),
+    monto_bob NUMERIC(10,2) NOT NULL,
+    codigo_qr_payload TEXT NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE', -- 'PENDIENTE', 'PAGADO', 'EXPIRADO'
+    fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    fecha_confirmacion TIMESTAMP WITH TIME ZONE
+);
+
+-- TABLA ANALÍTICA CON 1,200 REGISTROS SINTÉTICOS PARA ENTRENAMIENTO DE IA
+CREATE TABLE dataset_historico_ml_polizas (
+    id SERIAL PRIMARY KEY,
+    edad_conductor INTEGER NOT NULL,
+    antiguedad_licencia INTEGER NOT NULL,
+    valor_vehiculo_usd NUMERIC(10,2) NOT NULL,
+    tipo_vehiculo VARCHAR(30) NOT NULL,
+    siniestros_previos INTEGER NOT NULL,
+    zona_circulacion VARCHAR(40) NOT NULL,
+    prima_tecnica_anual_usd NUMERIC(10,2) NOT NULL,
+    ocurrio_siniestro_grave BOOLEAN NOT NULL,
+    costo_real_reclamo_usd NUMERIC(12,2) NOT NULL
+);
+CREATE INDEX idx_dataset_ml_features ON dataset_historico_ml_polizas(edad_conductor, tipo_vehiculo, zona_circulacion);
+```
+
+### 4.3.2. MongoDB 7 (`aegiscore_siniestros`) — Colecciones Documentales y Geoespaciales
+
+Almacena los expedientes no estructurados de los siniestros, fotografías de peritajes y telemetría geoespacial:
+
+```javascript
+// ESTRUCTURA BSON DE COLECCIÓN 'expedientes_siniestros'
+{
+  "_id": ObjectId("6724a1b0f19c8d0012a99011"),
+  "codigoSiniestro": "SIN-2026-00045",
+  "polizaNumero": "POL-AUTO-2026-8812",
+  "estado": "INSPECCIONADO_EN_TERRENO", // REGISTRADO, ASIGNADO, INSPECCIONADO, EN_PROCESO_LIQUIDACION, LIQUIDADO, OBSERVADO
+  "fechaHoraAccidente": ISODate("2026-11-05T14:20:00Z"),
+  "ubicacionGeo": {
+    "type": "Point",
+    "coordinates": [-63.18214, -17.78345] // [Longitud, Latitud] - Santa Cruz de la Sierra
+  },
+  "triaje": {
+    "peritoAsignadoId": "PER-884",
+    "distanciaKm": 3.42,
+    "tiempoRespuestaMin": 12
+  },
+  "inspeccionCampo": {
+    "fotos": [
       {
-        "peritoId": "PER-991",
-        "severidadIA": "Moderado",
-        "confianzaIA": 0.85,
-        "fotos": ["s3://aegiscore/inspecciones/img_01.jpg"],
-        "idempotencyKey": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+        "url": "https://s3.aegiscore.bo/peritajes/sin-45-front.jpg",
+        "hashSha256": "8f4e2...a1b",
+        "angulo": "FRONTAL_DERECHO",
+        "inferenciaLocal": {
+          "piezaDanada": "PARACHOQUES_DELANTERO",
+          "severidad": "Grave",
+          "confianza": 0.94
+        }
       }
-    ]
+    ],
+    "evaluacionIA_CNN": {
+      "nivelSeveridad": "Grave",
+      "costoEstimadoTallerBOB": 6800.00,
+      "gradCamMapaCalorUrl": "https://s3.aegiscore.bo/gradcam/sin-45-map.png"
+    }
+  },
+  "controlIdempotencia": {
+    "idempotencyKey": "4a7378f8-b391-4927-b67e-751722e032ff",
+    "fechaSincronizacion": ISODate("2026-11-05T14:45:10Z")
   }
-  ```
-- **Índice Espacial `2dsphere`:** Permite resolver consultas de proximidad geográfica `$nearSphere` para asignar al perito más cercano en menos de 15 milisegundos en un radio de 25 km.
+}
 
-### 5.2.3. Amazon DynamoDB Local (`IdempotencyRecords`)
-Diseñada específicamente para satisfacer el requisito no funcional **RNF02 (Latencia $< 5	ext{ ms}$)** y prevenir transacciones duplicadas originadas por reintentos de red inestable en carreteras:
-- **Clave Primaria (`Partition Key`):** `idempotency_key` (String, formato UUIDv4).
-- **Atributos:**
-  - `payload_sha256`: Hash criptográfico SHA-256 del cuerpo JSON original.
-  - `status`: `IN_PROGRESS` | `COMPLETED` | `FAILED`.
-  - `response_code`: Código HTTP resultante (ej. 201 Created o 200 OK).
-  - `response_body`: JSON serializado de la respuesta emitida.
-  - `created_at`: Marca temporal ISO 8601.
-  - `ttl`: Tiempo de expiración automática (24 horas).
+// CREACIÓN DE ÍNDICE GEOESPACIAL OBLIGATORIO (TIEMPO DE RESPUESTA < 15 MS)
+db.expedientes_siniestros.createIndex({ "ubicacionGeo": "2dsphere" });
+```
 
-### 5.2.4. SQLite 3 Móvil Cifrado
-Base de datos relacional local embebida en la aplicación Flutter. Permite al perito de campo almacenar hasta 500 inspecciones con fotos codificadas en base64 sin requerir conexión a internet, manteniendo una bandera booleana `is_synced` que se actualiza al sincronizar con DynamoDB y MongoDB.
+### 4.3.3. Amazon DynamoDB Local (`IdempotencyRecords`) — Control de Duplicados (<5 ms)
 
-### 5.2.5. Redis Cache
-Almacén en memoria de alta velocidad utilizado para la caché de subgrafos de Apollo Supergraph Router, reduciendo la latencia de las consultas de estado unificado a $< 20	ext{ ms}$.
+Estructurada en Amazon DynamoDB Local para almacenar de forma atómica y ultrarrápida las claves de idempotencia:
 
-## 5.3. Contratos Congelados de Integración Inter-Servicios
-Conforme a la regla estricta del proyecto, los contratos inter-servicios en la carpeta `contracts/` representan la **fuente de verdad inmutable** del sistema global:
+```json
+{
+  "TableName": "IdempotencyRecords",
+  "KeySchema": [
+    { "AttributeName": "idempotency_key", "KeyType": "HASH" }
+  ],
+  "AttributeDefinitions": [
+    { "AttributeName": "idempotency_key", "AttributeType": "S" }
+  ],
+  "BillingMode": "PAY_PER_REQUEST",
+  "TimeToLiveSpecification": {
+    "AttributeName": "ttl",
+    "Enabled": true
+  }
+}
+```
 
-1. **`contracts/supergraph.graphql`:** Define el esquema federado Apollo Federation 2.5 que unifica los tipos `Usuario`, `Poliza`, `ExpedienteSiniestro`, `Liquidacion` y `Vehiculo`.
-2. **`contracts/saga-events.schema.json`:** Define la máquina de estados y el esquema JSON Schema de los eventos que transitan por Apache Kafka durante la Saga de liquidación:
-   - `ClaimSettlementInitiated`: Disparado por MS3 al autorizar la indemnización.
-   - `ClaimStatusLocked`: Confirmación de MS2 bloqueando el siniestro.
-   - `PolicyCoverageReserved`: Confirmación de MS1 reservando el saldo de cobertura.
-   - `SettlementApproved`: Confirmación de MS3 emitiendo la orden contable.
-   - `SettlementRolledBack`: Compensación emitida si MS1 rechaza la cobertura.
-3. **`contracts/idempotency-header.spec.json`:** Define la especificación formal de la cabecera `X-Idempotency-Key` (RFC 7231 / IETF Idempotency-Key draft), exigiendo formato UUIDv4 y validación de hash SHA-256 en las peticiones mutables (`POST`, `PUT`, `PATCH`).
+*Estructura de Ítem en DynamoDB:*
+```json
+{
+  "idempotency_key": { "S": "a5e81d77-628b-494b-972c-292416bfa629" },
+  "payload_sha256": { "S": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+  "status": { "S": "COMPLETED" },
+  "response_code": { "N": "201" },
+  "response_body": { "S": "{\"codigoSiniestro\":\"SIN-2026-00045\",\"estado\":\"INSPECCIONADO\"}" },
+  "created_at": { "S": "2026-11-05T14:45:10.125Z" },
+  "ttl": { "N": "1794019510" }
+}
+```
+
+### 4.3.4. SQLite 3 Móvil Cifrado (`inspecciones_locales.db`)
+
+Embebida en la aplicación Flutter para almacenar peritajes en zonas sin conectividad:
+
+```sql
+CREATE TABLE inspecciones_locales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo_siniestro TEXT NOT NULL,
+    fotos_json TEXT NOT NULL,
+    latitud REAL NOT NULL,
+    longitud REAL NOT NULL,
+    severidad_ia TEXT NOT NULL,
+    confianza_ia REAL NOT NULL,
+    idempotency_key TEXT UNIQUE NOT NULL,
+    is_synced INTEGER DEFAULT 0, -- 0: Pendiente, 1: Sincronizado en DynamoDB/Mongo
+    created_at TEXT NOT NULL
+);
+CREATE INDEX idx_inspecciones_sync ON inspecciones_locales(is_synced);
+```
+
+---
+
+## 4.4. Desarrollo de los módulos del sistema
+
+AegisCore AI se compone de cinco módulos funcionales que integran armónicamente los 15 Casos de Uso del sistema:
+
+### 4.4.1. Módulo 1: Identidad, Seguridad Perimetral y Federación GraphQL (Transversal — Perfil A y B)
+
+- **Keycloak SSO (CU01):** Configuración del Realm `AegisCore` con clientes OIDC para Angular, React y Flutter. Utiliza el flujo *Authorization Code con PKCE* (RFC 7636). El token JWT emitido contiene roles (`ADMIN`, `PERITO`, `CLIENTE`, `ACTUARIO`) y es validado en cada microservicio mediante la clave pública RS256.
+- **Apollo Supergraph Gateway (CU02):** Orquesta los subgrafos de MS1, MS2 y MS3. Permite a los frontends consultar en una única petición el estado unificado de un cliente, sus pólizas vigentes, el saldo de cobertura y los siniestros en curso:
+
+```graphql
+query ObtenerEstadoUnificadoCliente($clienteId: ID!) {
+  cliente(id: $clienteId) {
+    nombres
+    apellidos
+    ciNit
+    polizasVigentes {
+      numeroPoliza
+      saldoCoberturaBob
+      estado
+      vehiculo {
+        placa
+        marca
+        modelo
+      }
+    }
+    siniestrosActivos {
+      codigoSiniestro
+      estado
+      severidadIA
+      fechaHora
+    }
+  }
+}
+```
+
+### 4.4.2. Módulo 2: Core ERP de Pólizas, Clientes y Facturación — MS1 PHP (Perfil A — CU01 a CU05)
+
+- **Domain-Driven Design (CU03):** Se modeló el agregado `Poliza` con invariantes de negocio estrictas: no se puede emitir una póliza con prima menor a la técnica calculada, ni descontar cobertura a pólizas no vigentes:
+
+```php
+namespace AegisCore\Domain\Poliza\Entities;
+
+use AegisCore\Domain\Shared\ValueObjects\PrimaMonetaria;
+use AegisCore\Domain\Shared\ValueObjects\VigenciaPoliza;
+use AegisCore\Domain\Poliza\Events\CoberturaPolizaDescontadaEvent;
+
+class Poliza {
+    private string $id;
+    private string $numeroPoliza;
+    private PrimaMonetaria $saldoCobertura;
+    private string $estado;
+
+    public function descontarCobertura(float $montoIndemnizado): void {
+        if ($this->estado !== 'VIGENTE') {
+            throw new \DomainException("La póliza {$this->numeroPoliza} no se encuentra vigente.");
+        }
+        if ($montoIndemnizado > $this->saldoCobertura->getMonto()) {
+            throw new \DomainException("Monto indemnizado excede el saldo de cobertura anual.");
+        }
+        $this->saldoCobertura = new PrimaMonetaria($this->saldoCobertura->getMonto() - $montoIndemnizado);
+        // Emisión de evento para auditoría
+        DomainEventPublisher::publish(new CoberturaPolizaDescontadaEvent($this->id, $montoIndemnizado));
+    }
+}
+```
+
+- **Cotizador Web React con IA Local (CU04):** En `frontend/mf2-clientes-react`, cuando el usuario sube fotografías de su carnet de identidad o vehículo, un worker local ejecuta un filtro de detección de bordes (Laplaciano con TensorFlow.js) que calcula la varianza de nitidez en $< 80\text{ ms}$. Si la imagen está borrosa ($	ext{varianza} < 100$), se rechaza localmente sin consumir ancho de banda de red.
+- **Automatización Omnicanal con n8n (CU05):** El flujo `workflow-pedido-poliza-whatsapp-factura.json` recepciona mensajes de compra por WhatsApp Business API. Extrae los parámetros, ejecuta una mutación GraphQL en MS1 para emitir la póliza, invoca al servicio `FacturaPdfGenerator` para compilar el documento fiscal PDF con código QR y lo envía de regreso al cliente por WhatsApp y correo SMTP en $< 3.5\text{ segundos}$.
+
+### 4.4.3. Módulo 3: Gestión de Siniestros, Peritaje Móvil y Triaje — MS2 NestJS (Perfil B — CU06 a CU08)
+
+- **Triaje Geoespacial SOS (CU06):** Al reportarse una emergencia vial por WhatsApp o móvil, el comando `RegistrarSiniestroCommand` indexa el evento en MongoDB con coordenadas GeoJSON y ejecuta una consulta de proximidad pericial:
+
+```typescript
+// mongo-reclamo.repository.ts
+async encontrarPeritoMasCercano(longitud: number, latitud: number, radioKm: number = 25): Promise<PeritoDisponibleDTO> {
+  const peritosLibres = await this.peritoModel.aggregate([
+    {
+      $geoNear: {
+        near: { type: "Point", coordinates: [longitud, latitud] },
+        distanceField: "distanciaMetros",
+        maxDistance: radioKm * 1000,
+        query: { estadoDisponibilidad: "DISPONIBLE" },
+        spherical: true
+      }
+    },
+    { $limit: 1 }
+  ]);
+  return peritosLibres[0];
+}
+```
+
+- **Inspección Móvil Offline con Edge AI (CU07):** La app Flutter (`frontend/app-peritos-flutter`) carga el modelo cuantizado `crashnet_model.tflite` de 4.2 MB. El perito toma fotografías de los daños estructurales y el motor TFLite ejecuta la inferencia local en $115\text{ ms}$ en la NPU/CPU del smartphone sin señal telefónica, clasificando la severidad en cuatro categorías y guardando el expediente con UUIDv4 en SQLite local.
+- **Sincronización Idempotente con DynamoDB (CU08):** El interceptor `IdempotencyGuard` de NestJS analiza la cabecera `X-Idempotency-Key`:
+
+```typescript
+// idempotency.guard.ts
+@Injectable()
+export class IdempotencyGuard implements CanActivate {
+  constructor(private readonly dynamoRepo: DynamoIdempotencyRepository) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest();
+    const idempotencyKey = req.headers['x-idempotency-key'];
+    if (!idempotencyKey) throw new BadRequestException('Falta cabecera X-Idempotency-Key obligatoria');
+
+    const payloadHash = crypto.createHash('sha256').update(JSON.stringify(req.body)).digest('hex');
+    const existingRecord = await this.dynamoRepo.findKey(idempotencyKey);
+
+    if (existingRecord) {
+      if (existingRecord.payload_sha256 !== payloadHash) {
+        throw new ConflictException('Idempotency-Key ya fue utilizada con un payload diferente');
+      }
+      // Retorna respuesta cacheada inmediatamente en < 5 ms
+      const res = context.switchToHttp().getResponse();
+      res.status(existingRecord.response_code).json(JSON.parse(existingRecord.response_body));
+      return false;
+    }
+    // Bloqueo atómico preventivo
+    await this.dynamoRepo.saveInProgress(idempotencyKey, payloadHash);
+    return true;
+  }
+}
+```
+
+### 4.4.4. Módulo 4: Motor Actuarial, Cobranzas y Orquestador Saga — MS3 Spring Boot (Perfil B — CU09 a CU10)
+
+- **Transacción Transversal Distribuida con Patrón Saga (CU09):** Cuando el ajustador autoriza una liquidación, el servicio `SagaLiquidacionOrchestratorService` ejecuta una Saga Coreografiada a través del tópico Kafka `saga-claim-settlement`:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UI as 🅰️ Panel Angular (Ajustador)
+    participant MS3 as 🍃 MS3 Actuarial (Orquestador Saga)
+    participant Kafka as 📨 Apache Kafka (saga-claim-settlement)
+    participant MS2 as 🦁 MS2 Siniestros (MongoDB)
+    participant MS1 as 🐘 MS1 Pólizas (PostgreSQL)
+
+    UI->>MS3: 1. POST /api/v1/liquidaciones/aprobar (siniestroId, monto)
+    MS3->>Kafka: 2. Publica ClaimSettlementInitiatedEvent
+    Kafka->>MS2: 3. Consume ClaimSettlementInitiatedEvent
+    MS2->>MS2: 4. Cambia estado a EN_PROCESO_LIQUIDACION
+    MS2->>Kafka: 5. Publica ClaimStatusLockedEvent
+    Kafka->>MS1: 6. Consume ClaimStatusLockedEvent
+    alt Saldo de Cobertura Válido
+        MS1->>MS1: 7a. Descuenta monto de cobertura anual en PostgreSQL
+        MS1->>Kafka: 8a. Publica PolicyCoverageReservedEvent
+        Kafka->>MS3: 9a. Consume PolicyCoverageReservedEvent
+        MS3->>MS3: 10a. Descuenta reserva técnica y genera Orden de Desembolso
+        MS3->>UI: 11a. 200 OK: Liquidación Exitosa
+    else Saldo de Cobertura Insuficiente o Rechazo
+        MS1->>Kafka: 7b. Publica PolicyCoverageRejectedEvent
+        Kafka->>MS3: 8b. Detecta fallo y activa COMPENSACIÓN
+        MS3->>Kafka: 9b. Publica RollbackClaimStatusEvent
+        Kafka->>MS2: 10b. Reinvierte estado de siniestro a OBSERVADO_FINANZAS
+        MS3-->>UI: 11b. 422 Unprocessable Entity: Transacción Revertida
+    end
+```
+
+- **Cobros QR Idempotentes (CU10):** El puerto `CobroPrimaQRUseCasePort` genera el código QR para pago de primas e inserta el bloqueo en DynamoDB para asegurar que escaneos repetidos no originen dobles cargos en la cuenta bancaria del cliente.
+
+### 4.4.5. Módulo 5: Inteligencia Artificial, Agentes y Servidor MCP — MS4 Python (Perfil C — CU11 a CU15)
+
+- **Visión Artificial con CNN CrashNet y Grad-CAM (CU11):** En `backend/ms4-ia-mcp-python/app/dl_tensorflow`, una red neuronal convolucional implementada en Keras procesa imágenes de $224 \times 224 \times 3$. Posee 3 bloques convolucionales dobles (`Conv2D(32, 64, 128)`, `ReLU`), capas de reducción (`MaxPooling2D`), normalización de lotes (`BatchNormalization`), abandono (`Dropout(0.3)`) y una capa densa final con activación `Softmax` para estimar la probabilidad sobre 4 clases de severidad. Adicionalmente, el algoritmo Grad-CAM computa los gradientes de la última capa convolucional respecto a la clase predicha, generando un mapa de calor visual que resalta las abolladuras y roturas estructurales.
+- **Predicción de Siniestralidad y Ventas con Random Forest (CU12):** En `app/controls/random_forest_service.py`, se entrena un ensamble `RandomForestRegressor` (150 árboles, reducción de impureza de varianza) sobre los 1,200 registros de Neon PostgreSQL. El modelo predice la demanda esperada de pólizas para los meses de noviembre y diciembre ($R^2 = 0.912$) y estima la prima pura técnica a partir de la edad del conductor, valor del vehículo y antecedentes.
+- **Segmentación K-Means y Detección de Fraude con Isolation Forest (CU13):**
+  - *K-Means:* Agrupa asegurados en 3 clústeres no supervisados (VIP Conducción Segura, Riesgo Moderado, Alta Siniestralidad) minimizando la inercia intraclúster mediante el algoritmo Lloyd.
+  - *Isolation Forest:* Aísla siniestros sospechosos basándose en la longitud promedio de camino en árboles de aislamiento aleatorios ($c(n)$). Reclamos con scores de anomalía negativos ($s < -0.65$) son catalogados como fraude probable por costos inflados o mecánicas incompatibles.
+- **Agente Autónomo LangGraph con Metas y Skills (CU14):** En `app/controls/langgraph_autonomous_agent.py`, un grafo de estados `StateGraph` cíclico monitorea continuamente la base de datos:
+  - *Meta 1 (Cero Siniestros Estancados):* Skill que detecta incidentes graves con más de 15 minutos sin atención y reasigna automáticamente al perito geográficamente más cercano por GPS.
+  - *Meta 2 (Protección de Fondos):* Skill que congela de manera atómica cualquier siniestro con alerta de fraude emitida por Isolation Forest antes de que ingrese a la Saga de liquidación contable.
+- **Reportes por Voz con Servidor MCP y Blindaje OWASP Anti-SQLi (CU15):** En `app/mcp_voice_reports`, el flujo de voz a reporte elimina cualquier posibilidad de inyección SQL:
+  1. *Whisper STT:* Convierte el audio del micrófono a texto en lenguaje natural ("Genera reporte de siniestros liquidados en Santa Cruz en formato PDF").
+  2. *Guardia OWASP Anti-SQLi:* Analiza léxica y gramaticalmente el texto; bloquea patrones sospechosos (`DROP`, `UNION`, `OR 1=1`, `--`, `/*`).
+  3. *Protocolo MCP:* El LLM no formula sentencias SQL libres. Únicamente puede emitir una llamada a la herramienta tipada predefinida `tool_consultar_siniestralidad` validada con JSON Schema estricto.
+  4. *ORM Parametrizado:* El servidor MCP ejecuta la consulta mediante SQLAlchemy parametrizado y genera dinámicamente el reporte descargable en XLSX, PDF, DOCX y CSV.
+- **Micro-Frontend Angular BI (MF1):** Implementa gráficos estadísticos nativos en TypeScript utilizando Chart.js y ECharts para visualización de KPIs, sin recurrir a software de terceros como Power BI.
+
+---
+
+## 4.5. Integración de componentes
+
+La interoperabilidad del ecosistema distribuido se rige por contratos inmutables y canales de comunicación estandarizados:
+
+### 4.5.1. Contratos Congelados de Integración (`contracts/`)
+
+1. **`contracts/supergraph.graphql`:** Especificación federada Apollo Federation 2.5 que unifica los tipos de dominio `Usuario`, `Poliza`, `ExpedienteSiniestro`, `Liquidacion` y `Vehiculo`.
+2. **`contracts/saga-events.schema.json`:** Contrato formal JSON Schema que define la estructura inmutable de los mensajes transitados en Kafka:
+   - `ClaimSettlementInitiated`: Código de siniestro, monto acordado, póliza y timestamp.
+   - `ClaimStatusLocked`: Confirmación de bloqueo emitida por MS2.
+   - `PolicyCoverageReserved`: Confirmación de descuento de cobertura emitida por MS1.
+   - `SettlementApproved`: Emisión de comprobante contable y orden bancaria por MS3.
+   - `SettlementRolledBack`: Instrucción de compensación ante inconsistencias.
+3. **`contracts/idempotency-header.spec.json`:** Especificación estándar de cabecera HTTP:
+   - Header: `X-Idempotency-Key` (formato UUIDv4 obligatorio).
+   - Verificación de integridad: Validación de hash criptográfico SHA-256 sobre el cuerpo de la petición.
+
+### 4.5.2. Topología de Mensajería Asíncrona en Apache Kafka
+
+AegisCore AI configura tres tópicos principales con factor de replicación y semántica *at-least-once*:
+- **`saga-claim-settlement`:** Log distribuido de orquestación transaccional entre MS2, MS1 y MS3.
+- **`policy-events`:** Emisión de renovaciones, expiraciones y descuentos de cobertura para sincronización de réplicas analíticas.
+- **`audit-telemetry`:** Registro inmutable de acciones periciales, inferencias de IA y decisiones autónomas del agente LangGraph.
+
+### 4.5.3. Automatización de Procesos con n8n
+
+El motor de flujos n8n actúa como pegamento omnicanal, exponiendo endpoints webhook que interconectan la mensajería instantánea del asegurado con las mutaciones GraphQL del ERP y las alertas push a la app móvil de los peritos de terreno.
+
+### 4.5.4. Estandarización con Model Context Protocol (MCP)
+
+El protocolo MCP de Anthropic estandariza la interacción entre modelos de lenguaje y los recursos de datos del ERP. Al desacoplar la generación de lenguaje natural de la ejecución de datos mediante herramientas fuertemente tipadas, se garantiza gobernanza de datos y total seguridad contra ciberataques.
 
 ---
 
