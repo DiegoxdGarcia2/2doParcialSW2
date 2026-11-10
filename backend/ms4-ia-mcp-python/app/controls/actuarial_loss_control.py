@@ -108,7 +108,8 @@ class ActuarialLossAnalysisControl:
         """
         conn = get_postgres_connection()
         cur = conn.cursor()
-        where_clause, params = self._construir_clausula_where(filtros)
+        try:
+            where_clause, params = self._construir_clausula_where(filtros)
 
         # 1. Consulta SQL para Top 5 Bento KPIs
         query_kpis = f"""
@@ -269,8 +270,15 @@ class ActuarialLossAnalysisControl:
                 )
             )
 
-        cur.close()
-        conn.close()
+        finally:
+            try:
+                cur.close()
+            except Exception:
+                pass
+            try:
+                conn.close()
+            except Exception:
+                pass
 
         return ActuarialLossSummaryDTO(
             frecuencia_siniestralidad_pct=frecuencia_pct,

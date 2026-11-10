@@ -8,11 +8,19 @@ setup-workspace.sh
 
 # Variables de entorno y secretos activos (usar .env.example como plantilla)
 .env
-/env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+**/.env*
+!**/.env.example
 *.pem
 *.key
+docs/PLAN_DESPLIEGUE_MULTICLOUD_V3.md
+docs/*_REAL_URLS.md
+docs/*_PRIVADO.md
+production_e2e_results.json
+test_quick_probe.py
+e2e_production_test_runner.py
+scan_secrets.py
 
 # Reportes compilados efímeros generados en caliente (CU15)
 backend/ms4-ia-mcp-python/artifacts/reports/*

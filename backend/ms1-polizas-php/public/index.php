@@ -150,17 +150,25 @@ if (($uri === '/api/v1/auth/oidc-token' || $uri === '/api/v1/auth/sso-session') 
 
 if ($uri === '/api/v1/auth/sso-sessions' && $method === 'GET') {
     header('Content-Type: application/json; charset=utf-8');
+    $activeSession = $authController->obtenerSesionActivaActual();
+    $isAuthenticated = $activeSession !== null;
     echo json_encode([
         'status' => 'OK',
+        'authenticated' => $isAuthenticated,
+        'active_session' => $activeSession,
+        'total_sesiones_activas' => $isAuthenticated ? 1 : 0,
         'sesiones' => $authController->listarSesionesSSOActivas(),
     ]);
     exit;
 }
 
-if ($uri === '/api/v1/auth/sso-logout' && $method === 'POST') {
+if ($uri === '/api/v1/auth/sso-logout' && ($method === 'POST' || $method === 'GET')) {
     header('Content-Type: application/json; charset=utf-8');
-    $sessionId = trim((string)($jsonBody['session_id'] ?? $jsonBody['sessionId'] ?? 'ALL'));
-    echo json_encode($authController->cerrarSesionUnicaSSO($sessionId !== '' ? $sessionId : 'ALL'));
+    $sessionId = trim((string)($jsonBody['session_id'] ?? $jsonBody['sessionId'] ?? $_GET['session_id'] ?? 'ALL'));
+    $logoutRes = $authController->cerrarSesionUnicaSSO($sessionId !== '' ? $sessionId : 'ALL');
+    $logoutRes['authenticated'] = false;
+    $logoutRes['active_session'] = null;
+    echo json_encode($logoutRes);
     exit;
 }
 

@@ -7,11 +7,14 @@ import {
   CotizacionResultado,
   ResultadoValidacionNitidezLocal,
   ColaSincronizacionOfflineItem,
-  TipoPlan
+  TipoPlan,
+  RolSSO
 } from './core/models/aegiscore.models';
 import { ValidadorNitidezLocalWebControl } from './core/ai/ValidadorNitidezLocalWebControl';
 import { AuthOIDCService, PERFILES_SSO_DEMO, PerfilSSOActivo } from './core/auth/AuthOIDCService';
 import { ApolloFederationClient } from './core/graphql/ApolloFederationClient';
+
+const MS1_PUBLIC_URL = (import.meta as any)?.env?.VITE_MS1_URL || (typeof window !== 'undefined' && (window as any).__AEGIS_MS1_URL) || 'http://localhost:8001';
 
 type ActiveTab = 'resumen' | 'cotizador' | 'catalogo' | 'facturacion_qr' | 'seguridad';
 
@@ -32,7 +35,8 @@ export const App: React.FC = () => {
   const resumenCacheRef = useRef<Record<string, ResumenUnificadoPayload>>({});
 
   // Estado de Sesión e Identidad (CU01)
-  const [sesionSSO, setSesionSSO] = useState<PerfilSSOActivo>(() => authService.obtenerSesionInicial());
+  const [sesionSSO, setSesionSSO] = useState<PerfilSSOActivo | null>(() => authService.obtenerSesionInicial());
+  const [authChecked, setAuthChecked] = useState<boolean>(false);
   const [clienteActivoId, setClienteActivoId] = useState<string>('b0000001-0000-0000-0000-000000000001');
   const [sesionesSSOList, setSesionesSSOList] = useState<
     Array<{
@@ -300,13 +304,14 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  const cargarDatosIniciales = useCallback(async (targetClienteId?: string) => {
+  const cargarDatosIniciales = useCallback(async (targetClienteId?: string, overrideToken?: string) => {
     const cid = targetClienteId ?? clienteActivoId;
+    const token = overrideToken ?? sesionSSO?.access_token ?? '';
     setLoading(true);
     try {
       const [resumenResp, catalogoResp, pagosQrResp, ssoSessionsResp] = await Promise.all([
-        apolloClient.consultarResumenUnificadoAsegurado(cid, sesionSSO.access_token),
-        apolloClient.listarCatalogoYClientes(sesionSSO.access_token),
+        apolloClient.consultarResumenUnificadoAsegurado(cid, token),
+        apolloClient.listarCatalogoYClientes(token),
         apolloClient.listarPagosQrRegistrados(),
         apolloClient.listarSesionesSSO()
       ]);
@@ -326,23 +331,76 @@ export const App: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [apolloClient, clienteActivoId, sesionSSO.access_token, sincronizarEstadoResumen, validadorIA]);
+  }, [apolloClient, clienteActivoId, sesionSSO?.access_token, sincronizarEstadoResumen, validadorIA]);
 
-  // Carga inicial única al montar la aplicación + Handoff SSO desde :8080 (?sso_email=...)
+  // Pestañas disponibles según el rol institucional gobernado por OIDC
+  const tabsDisponibles = useMemo(() => {
+    const rol = sesionSSO?.rol || 'CLIENTE';
+    if (rol === 'CLIENTE') {
+      return [
+        { id: 'resumen', label: 'Mi Póliza y Cobertura', icon: 'verified_user' },
+        { id: 'cotizador', label: 'Cotizar y Emitir Póliza', icon: 'document_scanner' },
+        { id: 'facturacion_qr', label: 'Facturación y Pagos QR', icon: 'qr_code_2' },
+        { id: 'seguridad', label: 'Cuenta y Seguridad', icon: 'shield_lock' }
+      ];
+    }
+    if (rol === 'PERITO') {
+      return [
+        { id: 'resumen', label: 'Inspección de Pólizas', icon: 'verified_user' },
+        { id: 'cotizador', label: 'Verificador de Nitidez IA', icon: 'document_scanner' },
+        { id: 'seguridad', label: 'Cuenta y Seguridad', icon: 'shield_lock' }
+      ];
+    }
+    // ACTUARIO y ADMIN
+    return [
+      { id: 'resumen', label: 'Mi Póliza y Cobertura', icon: 'verified_user' },
+      { id: 'cotizador', label: 'Cotizar y Emitir Póliza', icon: 'document_scanner' },
+      { id: 'catalogo', label: 'Planes y Asegurados', icon: 'workspace_premium' },
+      { id: 'facturacion_qr', label: 'Facturación y Pagos QR', icon: 'qr_code_2' },
+      { id: 'seguridad', label: 'Cuenta y Seguridad', icon: 'shield_lock' }
+    ];
+  }, [sesionSSO?.rol]);
+
+  useEffect(() => {
+    if (tabsDisponibles.length > 0 && !tabsDisponibles.some((t) => t.id === activeTab)) {
+      setActiveTab('resumen');
+    }
+  }, [tabsDisponibles, activeTab]);
+
+  // Carga inicial autoritativa: Consulta sesión única distribuida en DynamoDB
   const initialLoadDoneRef = useRef<boolean>(false);
   useEffect(() => {
     if (!initialLoadDoneRef.current) {
       initialLoadDoneRef.current = true;
       const params = new URLSearchParams(window.location.search);
       const handoffEmail = params.get('sso_email');
-      if (handoffEmail) {
-        authService.autenticarUsuarioOIDC(handoffEmail).then((nuevoPerfil) => {
-          setSesionSSO(nuevoPerfil);
-          apolloClient.listarSesionesSSO().then(setSesionesSSOList);
-          showToast('success', `Sesión corporativa propagada automáticamente: ${nuevoPerfil.nombre_completo} (${nuevoPerfil.rol}).`);
-        });
-      }
-      cargarDatosIniciales();
+      const handoffRol = params.get('sso_rol') as RolSSO | null;
+
+      authService.sincronizarConSesionActivaRemota(handoffEmail, handoffRol).then((nuevoPerfil) => {
+        setAuthChecked(true);
+        if (!nuevoPerfil) {
+          setSesionSSO(null);
+          // Redirección automática si se abre directamente fuera de iframe
+          if (window.self === window.top) {
+            setTimeout(() => {
+              window.location.href = 'http://localhost:8080';
+            }, 1800);
+          }
+          return;
+        }
+
+        setSesionSSO(nuevoPerfil);
+        if (nuevoPerfil.cliente_id) {
+          setClienteActivoId(nuevoPerfil.cliente_id);
+          cargarDatosIniciales(nuevoPerfil.cliente_id, nuevoPerfil.access_token);
+        } else {
+          cargarDatosIniciales(undefined, nuevoPerfil.access_token);
+        }
+        apolloClient.listarSesionesSSO().then(setSesionesSSOList);
+        if (handoffEmail) {
+          showToast('success', `Sesión corporativa propagada: ${nuevoPerfil.nombre_completo} (${nuevoPerfil.rol}).`);
+        }
+      });
     }
   }, [apolloClient, authService, cargarDatosIniciales, showToast]);
 
@@ -384,7 +442,8 @@ export const App: React.FC = () => {
       const tieneInternet = await verificarConexionInternetReal();
       if (tieneInternet && isMounted) {
         setIsOffline(false);
-        const actualizada = await apolloClient.sincronizarColaOffline(sesionSSO.access_token);
+        const token = sesionSSO?.access_token || '';
+        const actualizada = await apolloClient.sincronizarColaOffline(token);
         setColaOffline(actualizada);
         showToast('success', 'Conexión a Internet restablecida: Datos sincronizados.');
       }
@@ -405,7 +464,8 @@ export const App: React.FC = () => {
           return true;
         }
         if (onlineReal && prevOffline) {
-          apolloClient.sincronizarColaOffline(sesionSSO.access_token).then((act) => {
+          const token = sesionSSO?.access_token || '';
+          apolloClient.sincronizarColaOffline(token).then((act) => {
             if (isMounted) setColaOffline(act);
           });
           showToast('success', 'Internet restablecido: Sincronización en línea activa.');
@@ -421,7 +481,7 @@ export const App: React.FC = () => {
       window.removeEventListener('online', handleBrowserOnline);
       clearInterval(intervalId);
     };
-  }, [apolloClient, manualOfflineMode, sesionSSO.access_token, showToast]);
+  }, [apolloClient, manualOfflineMode, sesionSSO?.access_token, showToast]);
 
   useEffect(() => {
     if (activeTab === 'cotizador' && !camaraActiva) {
@@ -457,7 +517,8 @@ export const App: React.FC = () => {
     setIsOffline(nextOffline);
     setManualOfflineMode(nextOffline);
     if (!nextOffline) {
-      const actualizada = await apolloClient.sincronizarColaOffline(sesionSSO.access_token);
+      const token = sesionSSO?.access_token || '';
+      const actualizada = await apolloClient.sincronizarColaOffline(token);
       setColaOffline(actualizada);
       showToast('success', 'Conexión restablecida: Las operaciones pendientes han sido sincronizadas.');
       await cargarDatosIniciales();
@@ -488,7 +549,8 @@ export const App: React.FC = () => {
 
     setPendingAction('switch-client');
     try {
-      const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(nuevoId, sesionSSO.access_token);
+      const token = sesionSSO?.access_token || '';
+      const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(nuevoId, token);
       sincronizarEstadoResumen(resumenResp.payload);
       showToast(
         'success',
@@ -516,6 +578,34 @@ export const App: React.FC = () => {
     }
   };
 
+  const obtenerSsoHubUrl = useCallback(() => {
+    if (typeof window !== 'undefined' && (window as any).__AEGIS_SSO_URL) {
+      return (window as any).__AEGIS_SSO_URL;
+    }
+    return 'http://localhost:8080';
+  }, []);
+
+  const volverAlHubCentral = useCallback(() => {
+    const ssoUrl = obtenerSsoHubUrl();
+    if (typeof window !== 'undefined') {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: 'AEGIS_VOLVER_HUB' }, '*');
+          const hubEl = window.parent.document.getElementById('hub-modules-section') || window.parent.document.getElementById('workspace-hub');
+          if (hubEl) {
+            hubEl.scrollIntoView({ behavior: 'smooth' });
+            return;
+          }
+        } catch {}
+      }
+      if (window.top) {
+        window.top.location.href = ssoUrl;
+      } else {
+        window.location.href = ssoUrl;
+      }
+    }
+  }, [obtenerSsoHubUrl]);
+
   const handleCustomLoginSSO = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customLoginForm.email.trim()) return;
@@ -526,13 +616,14 @@ export const App: React.FC = () => {
     if (pendingAction) return;
     setPendingAction(`logout-${sessionId}`);
     try {
-      const res = await apolloClient.cerrarSesionSSO(sessionId);
-      setSesionesSSOList(res.sesiones);
-      if (sessionId === 'ALL') {
-        showToast('warning', `Cierre de Sesión Global ejecutado: ${res.revoked_count} sesión(es) revocada(s) en la nube.`);
-      } else {
-        showToast('warning', `Sesión ${sessionId} revocada exitosamente.`);
-      }
+      await authService.cerrarSesionSSO();
+      setSesionSSO(null);
+      showToast('warning', 'Sesión corporativa cerrada. Redirigiendo a Bóveda Central...');
+      setTimeout(() => {
+        window.location.href = obtenerSsoHubUrl();
+      }, 400);
+    } catch {
+      window.location.href = obtenerSsoHubUrl();
     } finally {
       setPendingAction(null);
     }
@@ -559,7 +650,7 @@ export const App: React.FC = () => {
         `Certificado ${cert.filename} generado y publicado en Amazon S3 (${numeroPoliza}).`
       );
     } catch {
-      window.open(`http://localhost:8001/api/v1/polizas/${encodeURIComponent(polizaId)}/certificado-pdf`, '_blank', 'noopener,noreferrer');
+      window.open(`${MS1_PUBLIC_URL}/api/v1/polizas/${encodeURIComponent(polizaId)}/certificado-pdf`, '_blank', 'noopener,noreferrer');
     } finally {
       setPendingAction(null);
     }
@@ -567,7 +658,7 @@ export const App: React.FC = () => {
 
   const jwtDecodificado = useMemo(() => {
     try {
-      const parts = (sesionSSO.access_token || '').split('.');
+      const parts = (sesionSSO?.access_token || '').split('.');
       if (parts.length === 3) {
         const header = JSON.parse(atob(parts[0].replace(/-/g, '+').replace(/_/g, '/')));
         const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
@@ -580,10 +671,10 @@ export const App: React.FC = () => {
       header: { alg: 'RS256', typ: 'JWT', kid: 'aegiscore-keycloak-rs256-key-2026' },
       payload: {
         iss: 'http://localhost:8080/realms/aegiscore',
-        sub: sesionSSO.keycloak_sub,
-        name: sesionSSO.nombre_completo,
-        email: sesionSSO.email,
-        rol: sesionSSO.rol,
+        sub: sesionSSO?.keycloak_sub || 'kc-cliente-001',
+        name: sesionSSO?.nombre_completo || 'Carlos Mendoza Roca',
+        email: sesionSSO?.email || 'carlos.mendoza@gmail.com',
+        rol: sesionSSO?.rol || 'CLIENTE',
         pkce_challenge_method: 'S256',
         pkce_verified: true
       }
@@ -598,7 +689,8 @@ export const App: React.FC = () => {
     setPendingAction(actionKey);
     try {
       await apolloClient.ejecutarAccionSagaMS1(accion, polizaId, montoIndividual);
-      const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(clienteActivoId, sesionSSO.access_token);
+      const token = sesionSSO?.access_token || '';
+      const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(clienteActivoId, token);
       sincronizarEstadoResumen(resumenResp.payload);
       if (accion === 'descontar-cobertura') {
         showToast('success', `Se aplicó el descuento por indemnización de USD ${montoIndividual.toLocaleString()} sobre la póliza seleccionada.`);
@@ -619,7 +711,8 @@ export const App: React.FC = () => {
     setPendingAction('crear-plan');
     setLoading(true);
     try {
-      const plan = await apolloClient.registrarPlanSeguroGraphQL(nuevoPlanForm, sesionSSO.access_token);
+      const token = sesionSSO?.access_token || '';
+      const plan = await apolloClient.registrarPlanSeguroGraphQL(nuevoPlanForm, token);
       setPlanes((prev) => [...prev, plan]);
       showToast('success', `Plan "${plan.nombre}" incorporado al catálogo corporativo.`);
     } finally {
@@ -634,8 +727,9 @@ export const App: React.FC = () => {
     setPendingAction('agregar-cobertura');
     setLoading(true);
     try {
-      await apolloClient.agregarCoberturaPlanGraphQL(nuevaCoberturaForm, sesionSSO.access_token);
-      const catalogoResp = await apolloClient.listarCatalogoYClientes(sesionSSO.access_token);
+      const token = sesionSSO?.access_token || '';
+      await apolloClient.agregarCoberturaPlanGraphQL(nuevaCoberturaForm, token);
+      const catalogoResp = await apolloClient.listarCatalogoYClientes(token);
       setPlanes(catalogoResp.planes);
       showToast('success', `Cobertura "${nuevaCoberturaForm.nombre}" añadida exitosamente al plan.`);
     } finally {
@@ -650,10 +744,11 @@ export const App: React.FC = () => {
     setPendingAction('crear-cliente');
     setLoading(true);
     try {
-      const cliente = await apolloClient.registrarClienteGraphQL(nuevoClienteForm, sesionSSO.access_token);
+      const token = sesionSSO?.access_token || '';
+      const cliente = await apolloClient.registrarClienteGraphQL(nuevoClienteForm, token);
       setClientesList((prev) => [cliente, ...prev]);
       setClienteActivoId(cliente.id);
-      const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(cliente.id, sesionSSO.access_token);
+      const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(cliente.id, token);
       sincronizarEstadoResumen(resumenResp.payload);
       showToast('success', `Asegurado "${cliente.nombreCompleto}" registrado y seleccionado como cliente activo.`);
     } finally {
@@ -967,7 +1062,7 @@ export const App: React.FC = () => {
             valorComercial: cotizadorForm.valorComercial
           }
         },
-        sesionSSO.access_token
+        sesionSSO?.access_token || ''
       );
       setCotizacionActual(cot);
       showToast('success', `Cotización lista: USD ${cot.primaCalculadaAnual.toLocaleString()} anuales (USD ${cot.primaCalculadaMensual}/mes).`);
@@ -987,6 +1082,7 @@ export const App: React.FC = () => {
     setPendingAction('emitir-poliza');
     setLoading(true);
     try {
+      const token = sesionSSO?.access_token || '';
       const res = await apolloClient.emitirPolizaEnLinea(
         {
           clienteId: clienteActivoId,
@@ -1006,7 +1102,7 @@ export const App: React.FC = () => {
           tokenValidacionNitidezLocal: validacionNitidez.tokenValidacionNitidezLocal
         },
         isOffline,
-        sesionSSO.access_token
+        token
       );
 
       if (res.encoladoOffline) {
@@ -1017,7 +1113,7 @@ export const App: React.FC = () => {
         if (!documentoS3Info && docCanvasRef.current) {
           handleRespaldarDocumentoS3(docCanvasRef.current.toDataURL('image/png')).catch(() => {});
         }
-        const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(clienteActivoId, sesionSSO.access_token);
+        const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(clienteActivoId, token);
         sincronizarEstadoResumen(resumenResp.payload);
         showToast('success', `¡Felicidades! Póliza ${res.poliza.numeroPoliza} emitida y activada.`);
       }
@@ -1046,7 +1142,8 @@ export const App: React.FC = () => {
         monto: res.factura.total
       }));
       setQrKeyUuid(ApolloFederationClient.generarUUIDv4());
-      const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(clienteActivoId, sesionSSO.access_token);
+      const token = sesionSSO?.access_token || '';
+      const resumenResp = await apolloClient.consultarResumenUnificadoAsegurado(clienteActivoId, token);
       sincronizarEstadoResumen(resumenResp.payload);
       showToast('success', `Póliza ${res.poliza.numeroPoliza} y Factura ${res.factura.numeroFactura} generadas.`);
     } catch (err: unknown) {
@@ -1128,6 +1225,79 @@ export const App: React.FC = () => {
     ? Math.min(100, Math.max(5, Math.round((polizaPrincipal.saldoCoberturaRestante / techoReferencia) * 100)))
     : 100;
 
+  // Verificación en progreso
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 border-3 border-teal-200 border-t-[#005C55] rounded-full animate-spin" />
+        <p className="text-xs font-mono text-slate-600 font-semibold">Verificando sesión OIDC en DynamoDB...</p>
+      </div>
+    );
+  }
+
+  // Guardia de Autenticación OIDC Estricta (Requerimiento 3)
+  if (!sesionSSO) {
+    return (
+      <div className="min-h-screen bg-[#070E1A] text-slate-100 flex flex-col justify-between selection:bg-[#005C55]/30">
+        <header className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#005C55] to-[#0F766E] text-white flex items-center justify-center shadow-lg border border-teal-400/20">
+              <span className="material-symbols-outlined text-[22px]">shield_lock</span>
+            </div>
+            <div>
+              <span className="font-headline font-bold text-sm tracking-tight text-white block">
+                AegisCore <span className="text-teal-400">Portal Asegurados</span>
+              </span>
+              <span className="text-[10px] font-mono text-slate-400">Autenticación Requerida · OIDC PKCE S256</span>
+            </div>
+          </div>
+          <a
+            href="http://localhost:8080"
+            className="text-xs font-mono text-teal-300 hover:text-teal-200 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all"
+          >
+            <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+            <span>Bóveda Central</span>
+          </a>
+        </header>
+
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-slate-900/90 border border-white/15 rounded-3xl p-8 text-center space-y-6 shadow-2xl backdrop-blur-xl">
+            <div className="w-16 h-16 rounded-2xl bg-teal-950/70 border border-teal-500/30 text-teal-400 mx-auto flex items-center justify-center shadow-lg">
+              <span className="material-symbols-outlined text-3xl">lock</span>
+            </div>
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-teal-400 font-semibold">
+                Control de Acceso Centralizado
+              </span>
+              <h2 className="text-2xl font-bold font-headline text-white mt-1">
+                Autenticación Corporativa Requerida
+              </h2>
+              <p className="text-xs text-slate-300 mt-2.5 leading-relaxed">
+                No se detectó una sesión activa en la Bóveda de Identidad OIDC. Para acceder a sus pólizas, certificados y pasarela de pago, debe autenticarse en el Workspace Hub corporativo.
+              </p>
+            </div>
+            <div className="pt-2">
+              <a
+                href="http://localhost:8080"
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#005C55] to-[#0F766E] text-white text-xs font-bold font-headline tracking-wide hover:brightness-110 active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-950/60"
+              >
+                <span className="material-symbols-outlined text-[18px]">login</span>
+                <span>Iniciar Sesión en Workspace Hub (:8080)</span>
+              </a>
+            </div>
+            <p className="text-[11px] font-mono text-slate-500">
+              Redirigiendo automáticamente a la Bóveda Central...
+            </p>
+          </div>
+        </div>
+
+        <footer className="py-4 text-center text-xs text-slate-500 border-t border-white/5 font-mono">
+          © 2026 AegisCore AI Seguros — OIDC PKCE S256 & DynamoDB Idempotency
+        </footer>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
       {/* HEADER CORPORATIVO LIMPIO Y MODERNO */}
@@ -1158,42 +1328,52 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Controles Superiores: Selector de Cliente + Estado de Red en Tiempo Real + Perfil */}
+          {/* Controles Superiores: Selector de Cliente (RBAC) + Estado de Red + Perfil + Logout */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {clientesList.length > 0 && (
-              <div
-                className={`flex items-center gap-2 border rounded-full px-3 py-1.5 transition-all ${
-                  pendingAction === 'switch-client'
-                    ? 'bg-teal-50 border-teal-300 ring-2 ring-teal-500/20'
-                    : 'bg-slate-100/90 border-slate-200/90 hover:border-teal-300'
-                }`}
-              >
-                <span
-                  className={`material-symbols-outlined text-[16px] text-[#005C55] ${
-                    pendingAction === 'switch-client' ? 'animate-spin' : ''
+            {sesionSSO.rol === 'CLIENTE' ? (
+              <div className="flex items-center gap-2 border rounded-full px-3.5 py-1.5 bg-teal-50/90 border-teal-200 text-teal-950 shadow-2xs">
+                <span className="material-symbols-outlined text-[16px] text-[#005C55]">badge</span>
+                <span className="text-xs font-bold font-headline">{sesionSSO.nombre_completo}</span>
+                <span className="text-[10px] font-mono font-bold bg-[#005C55] text-white px-2 py-0.5 rounded-full">
+                  Asegurado Titular
+                </span>
+              </div>
+            ) : (
+              clientesList.length > 0 && (
+                <div
+                  className={`flex items-center gap-2 border rounded-full px-3 py-1.5 transition-all ${
+                    pendingAction === 'switch-client'
+                      ? 'bg-teal-50 border-teal-300 ring-2 ring-teal-500/20'
+                      : 'bg-slate-100/90 border-slate-200/90 hover:border-teal-300'
                   }`}
                 >
-                  {pendingAction === 'switch-client' ? 'progress_activity' : 'person'}
-                </span>
-                <select
-                  value={clienteActivoId}
-                  disabled={pendingAction === 'switch-client'}
-                  onChange={(e) => handleSelectClienteActivo(e.target.value)}
-                  className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer disabled:opacity-60"
-                  title="Cambiar asegurado activo"
-                >
-                  {clientesList.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombreCompleto} ({c.numeroDocumento})
-                    </option>
-                  ))}
-                </select>
-                {pendingAction === 'switch-client' && (
-                  <span className="text-[10px] font-bold text-[#005C55] animate-pulse">
-                    Cargando...
+                  <span
+                    className={`material-symbols-outlined text-[16px] text-[#005C55] ${
+                      pendingAction === 'switch-client' ? 'animate-spin' : ''
+                    }`}
+                  >
+                    {pendingAction === 'switch-client' ? 'progress_activity' : 'person'}
                   </span>
-                )}
-              </div>
+                  <select
+                    value={clienteActivoId}
+                    disabled={pendingAction === 'switch-client'}
+                    onChange={(e) => handleSelectClienteActivo(e.target.value)}
+                    className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer disabled:opacity-60"
+                    title="Cambiar asegurado activo"
+                  >
+                    {clientesList.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombreCompleto} ({c.numeroDocumento})
+                      </option>
+                    ))}
+                  </select>
+                  {pendingAction === 'switch-client' && (
+                    <span className="text-[10px] font-bold text-[#005C55] animate-pulse">
+                      Cargando...
+                    </span>
+                  )}
+                </div>
+              )
             )}
 
             <button
@@ -1223,6 +1403,26 @@ export const App: React.FC = () => {
 
             <button
               type="button"
+              onClick={volverAlHubCentral}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#005C55] hover:bg-[#0F766E] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+              title="Volver a la Bóveda Central SSO (Selector de Módulos)"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Bóveda Central</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCerrarSesionSSO('ALL')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold transition-all shadow-2xs"
+              title="Cerrar sesión corporativa en todos los microservicios"
+            >
+              <span className="material-symbols-outlined text-[16px]">logout</span>
+              <span className="hidden sm:inline">Cerrar Sesión</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('seguridad')}
               className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200/70 border border-slate-200/90 transition-colors"
             >
@@ -1241,16 +1441,10 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* BARRA DE NAVEGACIÓN PRINCIPAL */}
+        {/* BARRA DE NAVEGACIÓN PRINCIPAL (FILTRADA POR RBAC) */}
         <div className="border-t border-slate-200/60 bg-slate-50/70">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex overflow-x-auto no-scrollbar gap-1.5 py-2">
-            {[
-              { id: 'resumen', label: 'Mi Póliza y Cobertura', icon: 'verified_user' },
-              { id: 'cotizador', label: 'Cotizar y Emitir Póliza', icon: 'document_scanner' },
-              { id: 'catalogo', label: 'Planes y Asegurados', icon: 'workspace_premium' },
-              { id: 'facturacion_qr', label: 'Facturación y Pagos QR', icon: 'qr_code_2' },
-              { id: 'seguridad', label: 'Cuenta y Seguridad', icon: 'shield_lock' }
-            ].map((tab) => {
+            {tabsDisponibles.map((tab) => {
               const active = activeTab === tab.id;
               return (
                 <button
@@ -1666,63 +1860,65 @@ export const App: React.FC = () => {
                               </div>
                             )}
 
-                            {/* Simulador con estado individual por cada póliza */}
-                            <div className="pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-slate-600">
-                                  Simular liquidación sobre cobertura (USD):
-                                </span>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={montoPoliza}
-                                  onChange={(e) => {
-                                    const val = Number(e.target.value);
-                                    setMontosAjustePorPoliza((prev) => ({
-                                      ...prev,
-                                      [pol.id]: val
-                                    }));
-                                  }}
-                                  className="w-24 px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#005C55]"
-                                />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  disabled={pendingAction !== null}
-                                  onClick={() => handleAjusteCobertura('descontar-cobertura', pol.id)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait transition-all"
-                                >
-                                  {pendingAction === `descontar-cobertura-${pol.id}` && (
-                                    <span className="material-symbols-outlined text-[14px] animate-spin">
-                                      progress_activity
-                                    </span>
-                                  )}
-                                  <span>
-                                    {pendingAction === `descontar-cobertura-${pol.id}`
-                                      ? 'Aplicando...'
-                                      : 'Aplicar Descuento'}
+                            {/* Simulador de liquidación administrativo (Exclusivo para ADMIN y ACTUARIO) */}
+                            {(sesionSSO.rol === 'ADMIN' || sesionSSO.rol === 'ACTUARIO') && (
+                              <div className="pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-slate-600">
+                                    Simular liquidación sobre cobertura (USD):
                                   </span>
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={pendingAction !== null}
-                                  onClick={() => handleAjusteCobertura('compensar-cobertura', pol.id)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900 active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait transition-all"
-                                >
-                                  {pendingAction === `compensar-cobertura-${pol.id}` && (
-                                    <span className="material-symbols-outlined text-[14px] animate-spin">
-                                      progress_activity
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={montoPoliza}
+                                    onChange={(e) => {
+                                      const val = Number(e.target.value);
+                                      setMontosAjustePorPoliza((prev) => ({
+                                        ...prev,
+                                        [pol.id]: val
+                                      }));
+                                    }}
+                                    className="w-24 px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#005C55]"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={pendingAction !== null}
+                                    onClick={() => handleAjusteCobertura('descontar-cobertura', pol.id)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait transition-all"
+                                  >
+                                    {pendingAction === `descontar-cobertura-${pol.id}` && (
+                                      <span className="material-symbols-outlined text-[14px] animate-spin">
+                                        progress_activity
+                                      </span>
+                                    )}
+                                    <span>
+                                      {pendingAction === `descontar-cobertura-${pol.id}`
+                                        ? 'Aplicando...'
+                                        : 'Aplicar Descuento'}
                                     </span>
-                                  )}
-                                  <span>
-                                    {pendingAction === `compensar-cobertura-${pol.id}`
-                                      ? 'Restituyendo...'
-                                      : 'Restituir Saldo'}
-                                  </span>
-                                </button>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={pendingAction !== null}
+                                    onClick={() => handleAjusteCobertura('compensar-cobertura', pol.id)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900 active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait transition-all"
+                                  >
+                                    {pendingAction === `compensar-cobertura-${pol.id}` && (
+                                      <span className="material-symbols-outlined text-[14px] animate-spin">
+                                        progress_activity
+                                      </span>
+                                    )}
+                                    <span>
+                                      {pendingAction === `compensar-cobertura-${pol.id}`
+                                        ? 'Restituyendo...'
+                                        : 'Restituir Saldo'}
+                                    </span>
+                                  </button>
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         );
                       })}
@@ -1887,7 +2083,7 @@ export const App: React.FC = () => {
 
                         <div className="flex items-center gap-2">
                           <a
-                            href={fac.urlPdfAlmacenado || `http://localhost:8001/api/v1/facturas/${fac.id}/pdf`}
+                            href={fac.urlPdfAlmacenado || `${MS1_PUBLIC_URL}/api/v1/facturas/${fac.id}/pdf`}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50"
@@ -3457,7 +3653,7 @@ export const App: React.FC = () => {
                         {qrPagoResult.fechaPago.slice(0, 19).replace('T', ' ')} UTC
                       </span>
                       <a
-                        href={qrPagoResult.sandboxVoucherUrl || `http://localhost:8001/sandbox/qr-checkout/${qrPagoResult.id}`}
+                        href={qrPagoResult.sandboxVoucherUrl || `${MS1_PUBLIC_URL}/sandbox/qr-checkout/${qrPagoResult.id}`}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
@@ -3520,7 +3716,7 @@ export const App: React.FC = () => {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <a
-                              href={`http://localhost:8001/sandbox/qr-checkout/${item.id}`}
+                              href={`${MS1_PUBLIC_URL}/sandbox/qr-checkout/${item.id}`}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-1 text-[#005C55] font-semibold hover:underline"

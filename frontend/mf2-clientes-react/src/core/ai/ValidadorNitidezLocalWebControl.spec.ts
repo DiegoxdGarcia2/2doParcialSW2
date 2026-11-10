@@ -30,7 +30,7 @@ describe('Perfil A — Pruebas Unitarias MF2 React PWA (CU01, CU02, CU04, CU10)'
 
   it('CU01: AuthOIDCService.obtenerSesionInicial() genera sesión OIDC + PKCE S256 y JWT RS256', () => {
     const authService = new AuthOIDCService();
-    const sesion = authService.obtenerSesionInicial();
+    const sesion = authService.obtenerPerfilPorDefecto();
 
     expect(sesion.email).toBe(PERFILES_SSO_DEMO[0].email);
     expect(sesion.pkce_challenge).toContain('pkce-s256');

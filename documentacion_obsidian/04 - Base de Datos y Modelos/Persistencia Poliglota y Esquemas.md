@@ -1,7 +1,7 @@
 # 💾 Persistencia Políglota y Esquemas Físicos (Cloud Ready)
 
 ## 1. Neon Serverless PostgreSQL (`neondb` / AWS us-east-2)
-- **Host:** `ep-damp-salad-b5enofaj-pooler.c-7.us-east-2.aws.neon.tech` (SSL `require`)
+- **Host:** `ep-your-pooler-instance.us-east-2.aws.neon.tech` (SSL `require`)
 - **Microservicios Conectados:**
   - `ms1-polizas-php` (PHP 8.3 / Laravel DDD via `config/database.php`)
   - `ms3-actuarial-springboot` (Java 21 / Spring Boot 3 Hexagonal via `application.yml` + HikariCP)

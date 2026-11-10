@@ -1,137 +1,652 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<xmi:XMI xmi:version="2.1" xmlns:uml="http://schema.omg.org/spec/UML/2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1">
-  <xmi:Documentation exporter="AegisCore_AI_UML_Engine" exporterVersion="17.0" />
-  <uml:Model xmi:type="uml:Model" xmi:id="EA_Model_AegisCore_PerfilA" name="AegisCore_AI_Perfil_A">
-
-    <!-- PAQUETE 1: METODOLOGÍA ICONIX - OBJETOS ROBUSTEZ BCE (CU01 AL CU05 + SAGA CU09) -->
-    <packagedElement xmi:type="uml:Package" xmi:id="PKG_ICONIX_Robustez_Perfil_A" name="01_ICONIX_Robustness_Perfil_A">
-
-      <!-- CU01: Iniciar Sesión Único Multi-Aplicación (SSO) y Control de Roles -->
-      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU01" name="CU01_SingleSignOn_Keycloak_OIDC_PKCE">
-        <packagedElement xmi:type="uml:Class" xmi:id="B_LoginUnificadoSSOView" name="LoginUnificadoSSOView">
-          <ownedOperation xmi:id="op_b_sso_1" name="iniciarLoginFederadoOIDC" />
-          <ownedOperation xmi:id="op_b_sso_2" name="generarParPKCE_S256" />
+<?xml version="1.0" encoding="utf-8"?>
+<xmi:XMI xmlns:uml="http://schema.omg.org/spec/UML/2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1">
+  <xmi:Documentation exporter="Enterprise Architect" exporterVersion="17.2" name="AegisCore_AI_Perfil_A_ICONIX"/>
+  <uml:Model xmi:type="uml:Model" name="EA_Model_AegisCore_Perfil_A" visibility="public">
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_USUARIO" name="Usuario / Asegurado / Admin" visibility="public"/>
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_ASEGURADO" name="Cliente Asegurado" visibility="public"/>
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_ADMIN_COMERCIAL" name="Administrador Comercial" visibility="public"/>
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_KAFKA_SAGA" name="Broker Apache Kafka (Saga)" visibility="public"/>
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_PAGOS_QR" name="Pasarela de Pago QR / BCB" visibility="public"/>
+    <packagedElement xmi:type="uml:Actor" xmi:id="EAID_ACT_WHATSAPP_N8N" name="Motor de Flujos n8n &amp; WhatsApp" visibility="public"/>
+    <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_USECASES_A" name="01_Casos_de_Uso_Perfil_A">
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC01" name="CU01: Autenticación Centralizada SSO con Keycloak (OAuth2 / OIDC PKCE S256)" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC02" name="CU02: Consulta Estado Unificado Asegurado en GraphQL (Apollo Federation + DynamoDB)" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC03" name="CU03: Administrar Catálogo de Planes, Coberturas FK y Clientes (DDD)" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC04" name="CU04: Cotización Web PWA con Validación Documental IA Local (Laplaciano)" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC05" name="CU05: Automatización Pedido WhatsApp a Factura PDF con n8n y AWS S3" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC09" name="CU09-MS1: Reserva de Techo Anual y Compensación Saga Transversal" visibility="public"/>
+      <packagedElement xmi:type="uml:UseCase" xmi:id="EAID_UC10" name="CU10-MS1: Pasarela de Cobro y Confirmación Pago QR EMVCo Idempotente" visibility="public"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_ICONIX_A" name="02_Analisis_y_Diseno_ICONIX_BCE">
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU01" name="CU01_Autenticacion_SSO_Keycloak_OIDC_PKCE">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU01_1" name="LoginKeycloakSSOView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU01_1_37423" name="iniciarFlujoOIDCPkce()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU01_1_89271" name="cambiarIdentidadRapida()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU01_1_29558" name="cerrarSesionGlobal()"/>
         </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="C_AuthOIDCController" name="AuthOIDCController">
-          <ownedOperation xmi:id="op_c_sso_1" name="autenticarUsuarioOIDC" />
-          <ownedOperation xmi:id="op_c_sso_2" name="validarTokenJwtRS256" />
-          <ownedOperation xmi:id="op_c_sso_3" name="registrarSesionUnificadaDynamoDB" />
-          <ownedOperation xmi:id="op_c_sso_4" name="sincronizarUsuarioRolPostgreSQL" />
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU01_1" name="AuthOIDCService" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU01_1_4786" name="generarParPkceS256()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU01_1_37423" name="iniciarFlujoOIDCPkce()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU01_1_76969" name="construirAuthorizationHeaders()"/>
         </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="E_UsuarioRol" name="UsuarioRol">
-          <ownedAttribute xmi:id="att_usr_1" name="id" type="UUID" />
-          <ownedAttribute xmi:id="att_usr_2" name="keycloakSub" type="String" />
-          <ownedAttribute xmi:id="att_usr_3" name="email" type="String" />
-          <ownedAttribute xmi:id="att_usr_4" name="rol" type="RolSSO" />
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU01_2" name="AuthOIDCController" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU01_2_1596" name="autenticarUsuarioOIDC()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU01_2_92875" name="validarTokenJwtRS256()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU01_2_19636" name="sincronizarUsuarioRolPostgreSQL()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU01_2_83961" name="registrarSesionUnificadaDynamoDB()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU01_2_32828" name="revocarSesionUnificada()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU01_2_9252" name="obtenerEstadoSesionesSSO()"/>
         </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="E_SesionUnificadaToken" name="SesionUnificadaToken">
-          <ownedAttribute xmi:id="att_ses_1" name="session_id" type="String" />
-          <ownedAttribute xmi:id="att_ses_2" name="keycloak_sub" type="String" />
-          <ownedAttribute xmi:id="att_ses_3" name="jwt_signature_hash" type="SHA256" />
-          <ownedAttribute xmi:id="att_ses_4" name="ttl" type="Long" />
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU01_1" name="DynamoDbSessionCacheRepository" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU01_1_6023" name="tableName"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU01_1_65708" name="endpoint"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU01_1_28255" name="awsRegion"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU01_1_94817" name="guardarSesionSSO()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU01_1_91285" name="obtenerSesionSSO()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU01_1_13129" name="eliminarSesionSSO()"/>
         </packagedElement>
-      </packagedElement>
-
-      <!-- CU02: Consultar Estado Unificado de Pólizas, Vehículos y Siniestros (Federación GraphQL) -->
-      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU02" name="CU02_EstadoUnificado_GraphQL_Federation">
-        <packagedElement xmi:type="uml:Class" xmi:id="B_ResumenCoberturaClienteView" name="ResumenCoberturaClienteView">
-          <ownedOperation xmi:id="op_b_res_1" name="abrirDashboardAsegurado" />
-          <ownedOperation xmi:id="op_b_res_2" name="inspeccionarQuerySupergraph" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="C_ApolloFederationResolver" name="ApolloFederationResolver">
-          <ownedOperation xmi:id="op_c_fed_1" name="resolverResumenUnificadoAsegurado" />
-          <ownedOperation xmi:id="op_c_fed_2" name="consultarOActualizarCacheCoberturaActiva" />
-          <ownedOperation xmi:id="op_c_fed_3" name="federarExpedientesSiniestrosMongoDB" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="E_CacheCoberturaActiva" name="CacheCoberturaActiva">
-          <ownedAttribute xmi:id="att_cac_1" name="cliente_id" type="UUID" />
-          <ownedAttribute xmi:id="att_cac_2" name="total_saldo_cobertura" type="Decimal" />
-          <ownedAttribute xmi:id="att_cac_3" name="updated_at" type="DateTime" />
-        </packagedElement>
-      </packagedElement>
-
-      <!-- CU03: Gestionar Catálogo de Planes de Seguro, Coberturas (FK) y Clientes -->
-      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU03" name="CU03_CatalogoPlanes_CoberturasFK_Clientes_DDD">
-        <packagedElement xmi:type="uml:Class" xmi:id="B_GestionCatalogoSegurosView" name="GestionCatalogoSegurosView">
-          <ownedOperation xmi:id="op_b_cat_1" name="enviarFormularioNuevoPlan" />
-          <ownedOperation xmi:id="op_b_cat_2" name="enviarFormularioNuevoCliente" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="C_CatalogoPolizaApplicationService" name="CatalogoPolizaApplicationService">
-          <ownedOperation xmi:id="op_c_cat_1" name="listarPlanesSeguro" />
-          <ownedOperation xmi:id="op_c_cat_2" name="registrarPlanSeguroDDD" />
-          <ownedOperation xmi:id="op_c_cat_3" name="agregarCoberturaAPlan" />
-          <ownedOperation xmi:id="op_c_cat_4" name="registrarClienteDDD" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="E_PlanSeguro" name="PlanSeguro">
-          <ownedAttribute xmi:id="att_pln_1" name="id" type="UUID" />
-          <ownedAttribute xmi:id="att_pln_2" name="codigo" type="String" />
-          <ownedAttribute xmi:id="att_pln_3" name="nombre" type="String" />
-          <ownedAttribute xmi:id="att_pln_4" name="primaBaseAnual" type="Decimal" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="E_Cobertura" name="Cobertura">
-          <ownedAttribute xmi:id="att_cob_1" name="id" type="UUID" />
-          <ownedAttribute xmi:id="att_cob_2" name="planId" type="UUID_FK" />
-          <ownedAttribute xmi:id="att_cob_3" name="codigo" type="String" />
-          <ownedAttribute xmi:id="att_cob_4" name="sumaAseguradaMax" type="Decimal" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="E_Cliente" name="Cliente">
-          <ownedAttribute xmi:id="att_cli_1" name="id" type="UUID" />
-          <ownedAttribute xmi:id="att_cli_2" name="numeroDocumento" type="String" />
-          <ownedAttribute xmi:id="att_cli_3" name="nombreCompleto" type="String" />
-          <ownedAttribute xmi:id="att_cli_4" name="scoreCrediticio" type="Integer" />
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU01_2" name="UsuarioRolEntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU01_2_95299" name="id"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU01_2_38875" name="keycloakSub"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU01_2_96191" name="email"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU01_2_34289" name="rol"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU01_2_16966" name="findSub()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU01_2_68391" name="save()"/>
         </packagedElement>
       </packagedElement>
-
-      <!-- CU04: Cotizar y Emitir Póliza en Línea con Validación de Documentos por IA Local Web -->
-      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU04" name="CU04_CotizacionEmision_IALocalWeb_ONNX_TFJS">
-        <packagedElement xmi:type="uml:Class" xmi:id="B_CotizadorInscripcionWebView" name="CotizadorInscripcionWebView">
-          <ownedOperation xmi:id="op_b_cot_1" name="ingresarDatosVehiculoYAdjuntarDocumento" />
-          <ownedOperation xmi:id="op_b_cot_2" name="confirmarEmisionPoliza" />
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU02" name="CU02_Estado_Unificado_GraphQL_Federation">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU02_1" name="PortalClientesGraphQLView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU02_1_47698" name="cargarEstadoAsegurado()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU02_1_39982" name="seleccionarAsegurado()"/>
         </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="C_ValidadorNitidezLocalWebControl" name="ValidadorNitidezLocalWebControl">
-          <ownedOperation xmi:id="op_c_iaw_1" name="validarNitidez" />
-          <ownedOperation xmi:id="op_c_iaw_2" name="generarTensorSimulado" />
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU02_1" name="ApolloFederationClient" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU02_1_94496" name="consultarEstadoUnificadoAsegurado()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU02_1_31176" name="ejecutarOperacion()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU02_1_59118" name="guardarCacheOffline()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU02_1_43056" name="leerCacheOffline()"/>
         </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="C_EmisionPolizaGraphQLController" name="EmisionPolizaGraphQLController">
-          <ownedOperation xmi:id="op_c_emi_1" name="cotizarPolizaEnLinea" />
-          <ownedOperation xmi:id="op_c_emi_2" name="validarNitidez" />
-          <ownedOperation xmi:id="op_c_emi_3" name="insertarPoliza" />
-          <ownedOperation xmi:id="op_c_emi_4" name="emitirPoliza" />
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU02_2" name="ApolloFederationResolver" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU02_2_6337" name="resolverResumenUnificadoAsegurado()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU02_2_25600" name="consultarOActualizarCacheCoberturaActiva()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU02_2_31514" name="federarExpedientesSiniestrosMongoDB()"/>
         </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="E_Poliza" name="Poliza">
-          <ownedAttribute xmi:id="att_pol_1" name="id" type="UUID" />
-          <ownedAttribute xmi:id="att_pol_2" name="numeroPoliza" type="String" />
-          <ownedAttribute xmi:id="att_pol_3" name="primaAnual" type="Decimal" />
-          <ownedAttribute xmi:id="att_pol_4" name="saldoCoberturaRestante" type="Decimal" />
-          <ownedOperation xmi:id="op_e_pol_1" name="descontarTechoAnualPoliza" />
-          <ownedOperation xmi:id="op_e_pol_2" name="compensarCoberturaSaga" />
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU02_1" name="PostgresPolizaRepository" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU02_1_80155" name="dbConnection"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU02_1_6023" name="tableName"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU02_1_27438" name="findByClienteId()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU02_1_68391" name="save()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU02_1_28605" name="findById()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU02_1_19482" name="actualizarSaldoCobertura()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU02_1_62270" name="restituirSaldoCobertura()"/>
         </packagedElement>
-      </packagedElement>
-
-      <!-- CU05: Contratar o Renovar Póliza por WhatsApp y Emitir Factura PDF con n8n -->
-      <packagedElement xmi:type="uml:Package" xmi:id="PKG_CU05" name="CU05_PedidoWhatsApp_n8n_FacturaPDF">
-        <packagedElement xmi:type="uml:Class" xmi:id="B_BotConversacionalWhatsAppPoliza" name="BotConversacionalWhatsAppPoliza">
-          <ownedOperation xmi:id="op_b_wa_1" name="enviarSolicitudPolizaWhatsApp" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="C_WebhookTriggerN8N" name="WebhookTriggerN8N">
-          <ownedOperation xmi:id="op_c_n8n_1" name="dispararWebhookContratacion" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="C_RecepcionPedidoService" name="RecepcionPedidoService">
-          <ownedOperation xmi:id="op_c_ped_1" name="procesarPedidoPolizaWhatsApp" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="C_FacturacionService" name="FacturacionService">
-          <ownedOperation xmi:id="op_c_fac_1" name="generarFacturaNotaVentaPDF" />
-          <ownedOperation xmi:id="op_c_fac_2" name="obtenerBinarioPdfFactura" />
-        </packagedElement>
-        <packagedElement xmi:type="uml:Class" xmi:id="E_FacturaNotaVenta" name="FacturaNotaVenta">
-          <ownedAttribute xmi:id="att_fac_1" name="id" type="UUID" />
-          <ownedAttribute xmi:id="att_fac_2" name="numeroFactura" type="String" />
-          <ownedAttribute xmi:id="att_fac_3" name="total" type="Decimal" />
-          <ownedAttribute xmi:id="att_fac_4" name="hashDigitalSha256" type="SHA256" />
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU02_2" name="ExpedienteSiniestroMongoMirror" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU02_2_37332" name="mongoUri"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU02_2_30314" name="collectionName"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU02_2_27713" name="buscarSiniestrosPorPoliza()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU02_2_43846" name="obtenerUltimoSiniestro()"/>
         </packagedElement>
       </packagedElement>
-
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU03" name="CU03_Catalogo_Planes_CoberturasFK_Clientes_DDD">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU03_1" name="CatalogoPlanesYClientesView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU03_1_28069" name="handleCrearPlan()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU03_1_64433" name="handleAgregarCobertura()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU03_1_73146" name="handleRegistrarCliente()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU03_1" name="CatalogoPolizaApplicationService" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU03_1_56210" name="listarPlanesSeguro()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU03_1_74776" name="registrarPlanSeguroDDD()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU03_1_46383" name="agregarCoberturaAPlan()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU03_1_73084" name="registrarClienteDDD()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU03_1_35474" name="obtenerClientePorId()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU03_1_54054" name="buscarClientePorDocumento()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU03_1_99649" name="listarClientes()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU03_1" name="PostgresPlanSeguroRepository" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU03_1_80155" name="dbConnection"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU03_1_6023" name="tableName"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU03_1_68391" name="save()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU03_1_85080" name="findAll()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU03_1_28605" name="findById()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU03_1_97319" name="agregarCobertura()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU03_2" name="PostgresClienteRepository" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU03_2_80155" name="dbConnection"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU03_2_6023" name="tableName"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU03_2_68391" name="save()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU03_2_85080" name="findAll()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU03_2_28605" name="findById()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU03_2_83968" name="findByDocumento()"/>
+        </packagedElement>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU04" name="CU04_Cotizacion_Emision_IALocalWeb_ONNX_TFJS">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU04_1" name="CotizadorWebPWAView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU04_1_99540" name="handleAnalizarImagenIA()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU04_1_48239" name="handleCotizarEnLinea()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU04_1_65630" name="handleEmitirPoliza()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU04_1_80609" name="sincronizarColaOffline()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU04_1" name="ValidadorNitidezLocalWebControl" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU04_1_11205" name="analizarNitidezImagen()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU04_1_49752" name="calcularVarianzaLaplaciana()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU04_1_8545" name="generarImagenPruebaNitida()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU04_1_77890" name="generarImagenPruebaBorrosa()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU04_2" name="EmisionPolizaGraphQLController" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU04_2_47974" name="cotizarPolizaEnLinea()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU04_2_46037" name="validarNitidez()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU04_2_48560" name="insertarPoliza()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU04_2_56988" name="emitirPoliza()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU04_3" name="CotizacionPolizaDomainService" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU04_3_52588" name="calcularCotizacion()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU04_1" name="PostgresFacturaRepository" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU04_1_80155" name="dbConnection"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU04_1_6023" name="tableName"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU04_1_68391" name="save()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU04_1_28605" name="findById()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU04_1_70803" name="findByPolizaId()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU04_1_56881" name="confirmarPagoQr()"/>
+        </packagedElement>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU05" name="CU05_PedidoWhatsApp_n8n_FacturaPDF_AWS_S3">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU05_1" name="CanalWhatsAppWebhookView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU05_1_4532" name="handleDispararWebhookWhatsApp()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU05_1_91964" name="handleGenerarFacturaPdf()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU05_2" name="N8nWebhookHandler" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU05_2_47692" name="do_POST()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU05_2_82030" name="subir_pdf_a_s3()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU05_1" name="RecepcionPedidoService" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU05_1_21568" name="procesarPedidoPolizaWhatsApp()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU05_2" name="FacturacionService" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU05_2_85338" name="generarFacturaNotaVentaPDF()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU05_2_65298" name="obtenerFacturaPorId()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU05_2_90852" name="obtenerBinarioPdfFactura()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU05_3" name="FacturacionDomainService" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU05_3_64524" name="emitirComprobanteParaPoliza()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU05_3_18749" name="registrarPagoQrConfirmado()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU05_1" name="FacturaPdfGenerator" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU05_1_80376" name="tmpDirectory"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU05_1_2944" name="fontPath"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU05_1_47026" name="compilarArchivoFacturaPdf()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU05_1_60808" name="subirFacturaPdfAS3()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_E_CU05_2" name="AwsS3BucketEntity" visibility="public">
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU05_2_32792" name="bucketName"/>
+          <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_E_CU05_2_89477" name="region"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU05_2_56965" name="putObject()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU05_2_22958" name="getObject()"/>
+          <ownedOperation xmi:id="OP_EAID_E_CU05_2_51823" name="getPresignedUrl()"/>
+        </packagedElement>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU09" name="CU09_Saga_Reserva_Compensacion_Cobertura">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU09_1" name="SimuladorSagaCoberturaView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU09_1_91713" name="handleSimularSaga()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU09_1" name="PolizaCoberturaService" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU09_1_17642" name="descontarTechoAnualPoliza()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU09_1_2996" name="compensarCoberturaSaga()"/>
+          <ownedOperation xmi:id="OP_EAID_C_CU09_1_62270" name="restituirSaldoCobertura()"/>
+        </packagedElement>
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_C_CU09_2" name="SagaKafkaConsumer" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_C_CU09_2_3354" name="procesarMensajeTopico()"/>
+        </packagedElement>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_BCE_CU10" name="CU10_Pasarela_Cobro_PagoQR_EMVCo">
+        <packagedElement xmi:type="uml:Class" xmi:id="EAID_B_CU10_1" name="PasarelaPagoQREMVCoView" visibility="public">
+          <ownedOperation xmi:id="OP_EAID_B_CU10_1_42125" name="handleAbrirModalQr()"/>
+          <ownedOperation xmi:id="OP_EAID_B_CU10_1_36609" name="handleConfirmarPagoQr()"/>
+        </packagedElement>
+      </packagedElement>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Package" xmi:id="EAID_PKG_DOMAIN_A" name="03_Modelo_Dominio_DDD_Perfil_A">
+      <packagedElement xmi:type="uml:Class" xmi:id="EAID_DOM_USUARIO_ROL" name="UsuarioRol" visibility="public">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_USUARIO_ROL_95299" name="id" type="UUID"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_USUARIO_ROL_38875" name="keycloakSub" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_USUARIO_ROL_96191" name="email" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_USUARIO_ROL_29233" name="nombreCompleto" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_USUARIO_ROL_34289" name="rol" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_USUARIO_ROL_27557" name="sessionId" type="String"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_USUARIO_ROL_1596" name="autenticarUsuarioOIDC()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_USUARIO_ROL_92875" name="validarTokenJwtRS256()"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="EAID_DOM_SESION_TOKEN" name="SesionUnificadaToken" visibility="public">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_SESION_TOKEN_7061" name="idempotencyKey" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_SESION_TOKEN_27557" name="sessionId" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_SESION_TOKEN_38875" name="keycloakSub" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_SESION_TOKEN_34289" name="rol" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_SESION_TOKEN_69027" name="tokenSha256" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_SESION_TOKEN_23896" name="status" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_SESION_TOKEN_381" name="ttl" type="Integer"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_SESION_TOKEN_31022" name="guardarSesionUnificada()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_SESION_TOKEN_32828" name="revocarSesionUnificada()"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="EAID_DOM_CLIENTE" name="Cliente" visibility="public">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_95299" name="id" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_92343" name="documento" type="DocumentoIdentidad"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_36739" name="nombres" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_2069" name="apellidos" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_96191" name="email" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_96825" name="telefono" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_18540" name="direccion" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_90863" name="ciudad" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_208" name="perfilRiesgo" type="PerfilRiesgoCliente"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CLIENTE_21041" name="usuarioId" type="String"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_CLIENTE_24591" name="nombreCompleto()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_CLIENTE_9213" name="toGraphQLArray()"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="EAID_DOM_PLAN_SEGURO" name="PlanSeguro" visibility="public">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_PLAN_SEGURO_95299" name="id" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_PLAN_SEGURO_47238" name="codigo" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_PLAN_SEGURO_3594" name="nombre" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_PLAN_SEGURO_88841" name="tipo" type="TipoPlanVO"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_PLAN_SEGURO_46520" name="primaBaseAnual" type="PrimaMonetaria"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_PLAN_SEGURO_59075" name="deducibleBasePorcentaje" type="Float"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_PLAN_SEGURO_56945" name="descripcion" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_PLAN_SEGURO_93595" name="activo" type="Boolean"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_PLAN_SEGURO_52942" name="coberturas" type="Cobertura[]"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_PLAN_SEGURO_24526" name="techoCoberturaMaximo()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_PLAN_SEGURO_97319" name="agregarCobertura()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_PLAN_SEGURO_9213" name="toGraphQLArray()"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="EAID_DOM_COBERTURA" name="Cobertura" visibility="public">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_COBERTURA_95299" name="id" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_COBERTURA_88717" name="planId" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_COBERTURA_47238" name="codigo" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_COBERTURA_3594" name="nombre" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_COBERTURA_5277" name="sumaAseguradaMax" type="Float"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_COBERTURA_53697" name="deducibleMinimo" type="Float"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_COBERTURA_68998" name="deduciblePorcentaje" type="Float"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_COBERTURA_64085" name="obligatoria" type="Boolean"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_COBERTURA_9213" name="toGraphQLArray()"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="EAID_DOM_POLIZA" name="Poliza" visibility="public">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_95299" name="id" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_73379" name="numeroPoliza" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_22178" name="clienteId" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_88717" name="planId" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_2572" name="vigencia" type="VigenciaPoliza"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_80343" name="primaAnual" type="PrimaMonetaria"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_93011" name="primaMensual" type="PrimaMonetaria"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_44029" name="techoCoberturaAnual" type="PrimaMonetaria"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_34473" name="saldoCoberturaRestante" type="PrimaMonetaria"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_29719" name="estado" type="EstadoPolizaVO"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_93836" name="bienAsegurado" type="BienAseguradoVehiculo"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_POLIZA_57569" name="canalVenta" type="String"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_POLIZA_47250" name="emitirNueva()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_POLIZA_17642" name="descontarTechoAnualPoliza()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_POLIZA_2996" name="compensarCoberturaSaga()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_POLIZA_32938" name="pullDomainEvents()"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="EAID_DOM_VEHICULO" name="BienAseguradoVehiculo" visibility="public">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_VEHICULO_25286" name="placa" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_VEHICULO_80116" name="vin" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_VEHICULO_55985" name="marca" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_VEHICULO_35971" name="modelo" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_VEHICULO_86414" name="anio" type="Integer"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_VEHICULO_39947" name="uso" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_VEHICULO_26777" name="color" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_VEHICULO_91307" name="valorComercial" type="Float"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_VEHICULO_88072" name="fromArray()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_VEHICULO_49672" name="toArray()"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="EAID_DOM_FACTURA" name="FacturaNotaVenta" visibility="public">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_95299" name="id" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_85466" name="numeroFactura" type="NumeroComprobanteFiscal"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_23045" name="polizaId" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_22178" name="clienteId" type="UuidId"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_83733" name="tipoComprobante" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_61752" name="subtotal" type="Float"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_85176" name="iva" type="Float"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_72578" name="it" type="Float"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_29631" name="total" type="Float"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_48604" name="moneda" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_45459" name="nitCliente" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_88643" name="razonSocial" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_85074" name="codigoControl" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_28229" name="urlPdf" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_46751" name="hashDigitalSha256" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_FACTURA_21998" name="estadoPago" type="String"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_FACTURA_47250" name="emitirNueva()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_FACTURA_38026" name="vincularPdfFirmado()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_FACTURA_56881" name="confirmarPagoQr()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_FACTURA_99124" name="estaPagada()"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="EAID_DOM_CACHE_COBERTURA" name="CacheCoberturaActiva" visibility="public">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CACHE_COBERTURA_7061" name="idempotencyKey" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CACHE_COBERTURA_22178" name="clienteId" type="String"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CACHE_COBERTURA_91974" name="totalSaldoCobertura" type="Float"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CACHE_COBERTURA_85288" name="cantidadPolizas" type="Integer"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CACHE_COBERTURA_20316" name="updatedAt" type="DateTime"/>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="ATT_EAID_DOM_CACHE_COBERTURA_381" name="ttl" type="Integer"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_CACHE_COBERTURA_24083" name="guardarCacheCoberturaActiva()"/>
+        <ownedOperation xmi:id="OP_EAID_DOM_CACHE_COBERTURA_94366" name="obtenerCacheCoberturaActiva()"/>
+      </packagedElement>
     </packagedElement>
   </uml:Model>
+  <xmi:Extension extender="Enterprise Architect" extenderID="6.5">
+    <elements>
+      <element xmi:idref="EAID_B_CU01_1" name="LoginKeycloakSSOView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU01_1" name="AuthOIDCService" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_C_CU01_2" name="AuthOIDCController" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU01_1" name="DynamoDbSessionCacheRepository" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU01_2" name="UsuarioRolEntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_B_CU02_1" name="PortalClientesGraphQLView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU02_1" name="ApolloFederationClient" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_C_CU02_2" name="ApolloFederationResolver" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU02_1" name="PostgresPolizaRepository" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU02_2" name="ExpedienteSiniestroMongoMirror" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_B_CU03_1" name="CatalogoPlanesYClientesView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU03_1" name="CatalogoPolizaApplicationService" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU03_1" name="PostgresPlanSeguroRepository" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU03_2" name="PostgresClienteRepository" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_B_CU04_1" name="CotizadorWebPWAView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU04_1" name="ValidadorNitidezLocalWebControl" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_C_CU04_2" name="EmisionPolizaGraphQLController" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_C_CU04_3" name="CotizacionPolizaDomainService" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU04_1" name="PostgresFacturaRepository" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_B_CU05_1" name="CanalWhatsAppWebhookView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_B_CU05_2" name="N8nWebhookHandler" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU05_1" name="RecepcionPedidoService" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_C_CU05_2" name="FacturacionService" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_C_CU05_3" name="FacturacionDomainService" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_E_CU05_1" name="FacturaPdfGenerator" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_E_CU05_2" name="AwsS3BucketEntity" type="Entity">
+        <properties sType="Entity" scope="public"/>
+        <extendedProperties stereotype="entity"/>
+      </element>
+      <element xmi:idref="EAID_B_CU09_1" name="SimuladorSagaCoberturaView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_C_CU09_1" name="PolizaCoberturaService" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_C_CU09_2" name="SagaKafkaConsumer" type="Control">
+        <properties sType="Control" scope="public"/>
+        <extendedProperties stereotype="control"/>
+      </element>
+      <element xmi:idref="EAID_B_CU10_1" name="PasarelaPagoQREMVCoView" type="Boundary">
+        <properties sType="Boundary" scope="public"/>
+        <extendedProperties stereotype="boundary"/>
+      </element>
+      <element xmi:idref="EAID_DOM_USUARIO_ROL" name="UsuarioRol" type="Class">
+        <properties sType="Class" scope="public"/>
+      </element>
+      <element xmi:idref="EAID_DOM_SESION_TOKEN" name="SesionUnificadaToken" type="Class">
+        <properties sType="Class" scope="public"/>
+      </element>
+      <element xmi:idref="EAID_DOM_CLIENTE" name="Cliente" type="Class">
+        <properties sType="Class" scope="public"/>
+      </element>
+      <element xmi:idref="EAID_DOM_PLAN_SEGURO" name="PlanSeguro" type="Class">
+        <properties sType="Class" scope="public"/>
+      </element>
+      <element xmi:idref="EAID_DOM_COBERTURA" name="Cobertura" type="Class">
+        <properties sType="Class" scope="public"/>
+      </element>
+      <element xmi:idref="EAID_DOM_POLIZA" name="Poliza" type="Class">
+        <properties sType="Class" scope="public"/>
+      </element>
+      <element xmi:idref="EAID_DOM_VEHICULO" name="BienAseguradoVehiculo" type="Class">
+        <properties sType="Class" scope="public"/>
+      </element>
+      <element xmi:idref="EAID_DOM_FACTURA" name="FacturaNotaVenta" type="Class">
+        <properties sType="Class" scope="public"/>
+      </element>
+      <element xmi:idref="EAID_DOM_CACHE_COBERTURA" name="CacheCoberturaActiva" type="Class">
+        <properties sType="Class" scope="public"/>
+      </element>
+    </elements>
+    <diagrams>
+      <diagram xmi:id="EAID_DIAG_UC_A" name="01. Diagrama de Casos de Uso - Perfil A">
+        <properties type="Use Case" name="Casos de Uso Perfil A"/>
+        <elements>
+          <element subject="EAID_UC01" geometry="Left=380;Top=50;Right=780;Bottom=115;"/>
+          <element subject="EAID_UC02" geometry="Left=380;Top=135;Right=780;Bottom=200;"/>
+          <element subject="EAID_UC03" geometry="Left=380;Top=220;Right=780;Bottom=285;"/>
+          <element subject="EAID_UC04" geometry="Left=380;Top=305;Right=780;Bottom=370;"/>
+          <element subject="EAID_UC05" geometry="Left=380;Top=390;Right=780;Bottom=455;"/>
+          <element subject="EAID_UC09" geometry="Left=380;Top=475;Right=780;Bottom=540;"/>
+          <element subject="EAID_UC10" geometry="Left=380;Top=560;Right=780;Bottom=625;"/>
+          <element subject="EAID_ACT_USUARIO" geometry="Left=50;Top=60;Right=160;Bottom=135;"/>
+          <element subject="EAID_ACT_ASEGURADO" geometry="Left=50;Top=150;Right=160;Bottom=225;"/>
+          <element subject="EAID_ACT_ADMIN_COMERCIAL" geometry="Left=50;Top=240;Right=160;Bottom=315;"/>
+          <element subject="EAID_ACT_KAFKA_SAGA" geometry="Left=50;Top=330;Right=160;Bottom=405;"/>
+          <element subject="EAID_ACT_PAGOS_QR" geometry="Left=50;Top=420;Right=160;Bottom=495;"/>
+          <element subject="EAID_ACT_WHATSAPP_N8N" geometry="Left=50;Top=510;Right=160;Bottom=585;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_EAID_PKG_BCE_CU01" name="Robustez BCE - CU01_Autenticacion_SSO_Keycloak_OIDC_PKCE">
+        <properties type="Analysis" name="Robustez BCE CU01_Autenticacion_SSO_Keycloak_OIDC_PKCE"/>
+        <elements>
+          <element subject="EAID_B_CU01_1" geometry="Left=60;Top=80;Right=260;Bottom=160;"/>
+          <element subject="EAID_C_CU01_1" geometry="Left=360;Top=80;Right=600;Bottom=170;"/>
+          <element subject="EAID_C_CU01_2" geometry="Left=360;Top=200;Right=600;Bottom=290;"/>
+          <element subject="EAID_E_CU01_1" geometry="Left=740;Top=80;Right=980;Bottom=160;"/>
+          <element subject="EAID_E_CU01_2" geometry="Left=740;Top=190;Right=980;Bottom=270;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_EAID_PKG_BCE_CU02" name="Robustez BCE - CU02_Estado_Unificado_GraphQL_Federation">
+        <properties type="Analysis" name="Robustez BCE CU02_Estado_Unificado_GraphQL_Federation"/>
+        <elements>
+          <element subject="EAID_B_CU02_1" geometry="Left=60;Top=80;Right=260;Bottom=160;"/>
+          <element subject="EAID_C_CU02_1" geometry="Left=360;Top=80;Right=600;Bottom=170;"/>
+          <element subject="EAID_C_CU02_2" geometry="Left=360;Top=200;Right=600;Bottom=290;"/>
+          <element subject="EAID_E_CU02_1" geometry="Left=740;Top=80;Right=980;Bottom=160;"/>
+          <element subject="EAID_E_CU02_2" geometry="Left=740;Top=190;Right=980;Bottom=270;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_EAID_PKG_BCE_CU03" name="Robustez BCE - CU03_Catalogo_Planes_CoberturasFK_Clientes_DDD">
+        <properties type="Analysis" name="Robustez BCE CU03_Catalogo_Planes_CoberturasFK_Clientes_DDD"/>
+        <elements>
+          <element subject="EAID_B_CU03_1" geometry="Left=60;Top=80;Right=260;Bottom=160;"/>
+          <element subject="EAID_C_CU03_1" geometry="Left=360;Top=80;Right=600;Bottom=170;"/>
+          <element subject="EAID_E_CU03_1" geometry="Left=740;Top=80;Right=980;Bottom=160;"/>
+          <element subject="EAID_E_CU03_2" geometry="Left=740;Top=190;Right=980;Bottom=270;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_EAID_PKG_BCE_CU04" name="Robustez BCE - CU04_Cotizacion_Emision_IALocalWeb_ONNX_TFJS">
+        <properties type="Analysis" name="Robustez BCE CU04_Cotizacion_Emision_IALocalWeb_ONNX_TFJS"/>
+        <elements>
+          <element subject="EAID_B_CU04_1" geometry="Left=60;Top=80;Right=260;Bottom=160;"/>
+          <element subject="EAID_C_CU04_1" geometry="Left=360;Top=80;Right=600;Bottom=170;"/>
+          <element subject="EAID_C_CU04_2" geometry="Left=360;Top=200;Right=600;Bottom=290;"/>
+          <element subject="EAID_C_CU04_3" geometry="Left=360;Top=320;Right=600;Bottom=410;"/>
+          <element subject="EAID_E_CU04_1" geometry="Left=740;Top=80;Right=980;Bottom=160;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_EAID_PKG_BCE_CU05" name="Robustez BCE - CU05_PedidoWhatsApp_n8n_FacturaPDF_AWS_S3">
+        <properties type="Analysis" name="Robustez BCE CU05_PedidoWhatsApp_n8n_FacturaPDF_AWS_S3"/>
+        <elements>
+          <element subject="EAID_B_CU05_1" geometry="Left=60;Top=80;Right=260;Bottom=160;"/>
+          <element subject="EAID_B_CU05_2" geometry="Left=60;Top=190;Right=260;Bottom=270;"/>
+          <element subject="EAID_C_CU05_1" geometry="Left=360;Top=80;Right=600;Bottom=170;"/>
+          <element subject="EAID_C_CU05_2" geometry="Left=360;Top=200;Right=600;Bottom=290;"/>
+          <element subject="EAID_C_CU05_3" geometry="Left=360;Top=320;Right=600;Bottom=410;"/>
+          <element subject="EAID_E_CU05_1" geometry="Left=740;Top=80;Right=980;Bottom=160;"/>
+          <element subject="EAID_E_CU05_2" geometry="Left=740;Top=190;Right=980;Bottom=270;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_EAID_PKG_BCE_CU09" name="Robustez BCE - CU09_Saga_Reserva_Compensacion_Cobertura">
+        <properties type="Analysis" name="Robustez BCE CU09_Saga_Reserva_Compensacion_Cobertura"/>
+        <elements>
+          <element subject="EAID_B_CU09_1" geometry="Left=60;Top=80;Right=260;Bottom=160;"/>
+          <element subject="EAID_C_CU09_1" geometry="Left=360;Top=80;Right=600;Bottom=170;"/>
+          <element subject="EAID_C_CU09_2" geometry="Left=360;Top=200;Right=600;Bottom=290;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_ROB_EAID_PKG_BCE_CU10" name="Robustez BCE - CU10_Pasarela_Cobro_PagoQR_EMVCo">
+        <properties type="Analysis" name="Robustez BCE CU10_Pasarela_Cobro_PagoQR_EMVCo"/>
+        <elements>
+          <element subject="EAID_B_CU10_1" geometry="Left=60;Top=80;Right=260;Bottom=160;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU01_A" name="10. Secuencia UML 2.5+ - CU01 (Flujo OAuth 2.0 PKCE S256, JWT RS256 y Sesión DynamoDB)">
+        <properties type="Sequence" name="10. Secuencia UML 2.5+ - CU01 (Flujo OAuth 2.0 PKCE S256, JWT RS256 y Sesión DynamoDB)"/>
+        <elements>
+          <element name="LoginKeycloakSSOView" geometry="Left=50;Top=40;Right=190;Bottom=620;"/>
+          <element name="AuthOIDCService" geometry="Left=230;Top=40;Right=370;Bottom=620;"/>
+          <element name="AuthOIDCController" geometry="Left=410;Top=40;Right=550;Bottom=620;"/>
+          <element name="DynamoDbSessionCacheRepository" geometry="Left=590;Top=40;Right=730;Bottom=620;"/>
+          <element name="UsuarioRolEntity" geometry="Left=770;Top=40;Right=910;Bottom=620;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU02_A" name="11. Secuencia UML 2.5+ - CU02 (Resolución Federada GraphQL y CacheCoberturaActiva)">
+        <properties type="Sequence" name="11. Secuencia UML 2.5+ - CU02 (Resolución Federada GraphQL y CacheCoberturaActiva)"/>
+        <elements>
+          <element name="PortalClientesGraphQLView" geometry="Left=50;Top=40;Right=190;Bottom=620;"/>
+          <element name="ApolloFederationClient" geometry="Left=230;Top=40;Right=370;Bottom=620;"/>
+          <element name="ApolloFederationResolver" geometry="Left=410;Top=40;Right=550;Bottom=620;"/>
+          <element name="PostgresPolizaRepository" geometry="Left=590;Top=40;Right=730;Bottom=620;"/>
+          <element name="DynamoDbSessionCacheRepository" geometry="Left=770;Top=40;Right=910;Bottom=620;"/>
+          <element name="ExpedienteSiniestroMongoMirror" geometry="Left=950;Top=40;Right=1090;Bottom=620;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU03_A" name="12. Secuencia UML 2.5+ - CU03 (Registro DDD de PlanSeguro, Cobertura FK y Cliente)">
+        <properties type="Sequence" name="12. Secuencia UML 2.5+ - CU03 (Registro DDD de PlanSeguro, Cobertura FK y Cliente)"/>
+        <elements>
+          <element name="CatalogoPlanesYClientesView" geometry="Left=50;Top=40;Right=190;Bottom=620;"/>
+          <element name="CatalogoPolizaApplicationService" geometry="Left=230;Top=40;Right=370;Bottom=620;"/>
+          <element name="PostgresPlanSeguroRepository" geometry="Left=410;Top=40;Right=550;Bottom=620;"/>
+          <element name="PostgresClienteRepository" geometry="Left=590;Top=40;Right=730;Bottom=620;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU04_A" name="13. Secuencia UML 2.5+ - CU04 (Validación IA Local Nitidez, Cotización y Emisión de Póliza)">
+        <properties type="Sequence" name="13. Secuencia UML 2.5+ - CU04 (Validación IA Local Nitidez, Cotización y Emisión de Póliza)"/>
+        <elements>
+          <element name="CotizadorWebPWAView" geometry="Left=50;Top=40;Right=190;Bottom=620;"/>
+          <element name="ValidadorNitidezLocalWebControl" geometry="Left=230;Top=40;Right=370;Bottom=620;"/>
+          <element name="EmisionPolizaGraphQLController" geometry="Left=410;Top=40;Right=550;Bottom=620;"/>
+          <element name="CotizacionPolizaDomainService" geometry="Left=590;Top=40;Right=730;Bottom=620;"/>
+          <element name="PostgresPolizaRepository" geometry="Left=770;Top=40;Right=910;Bottom=620;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU05_A" name="14. Secuencia UML 2.5+ - CU05 (Webhook WhatsApp n8n, Emisión Póliza, PDF SHA-256 y Upload AWS S3)">
+        <properties type="Sequence" name="14. Secuencia UML 2.5+ - CU05 (Webhook WhatsApp n8n, Emisión Póliza, PDF SHA-256 y Upload AWS S3)"/>
+        <elements>
+          <element name="CanalWhatsAppWebhookView" geometry="Left=50;Top=40;Right=190;Bottom=620;"/>
+          <element name="N8nWebhookHandler" geometry="Left=230;Top=40;Right=370;Bottom=620;"/>
+          <element name="RecepcionPedidoService" geometry="Left=410;Top=40;Right=550;Bottom=620;"/>
+          <element name="FacturacionService" geometry="Left=590;Top=40;Right=730;Bottom=620;"/>
+          <element name="FacturaPdfGenerator" geometry="Left=770;Top=40;Right=910;Bottom=620;"/>
+          <element name="AwsS3BucketEntity" geometry="Left=950;Top=40;Right=1090;Bottom=620;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU09_A" name="15. Secuencia UML 2.5+ - CU09-MS1 (Reserva de Cobertura y Rollback Compensatorio Saga)">
+        <properties type="Sequence" name="15. Secuencia UML 2.5+ - CU09-MS1 (Reserva de Cobertura y Rollback Compensatorio Saga)"/>
+        <elements>
+          <element name="Broker Apache Kafka (Saga)" geometry="Left=50;Top=40;Right=190;Bottom=620;"/>
+          <element name="SagaKafkaConsumer" geometry="Left=230;Top=40;Right=370;Bottom=620;"/>
+          <element name="PolizaCoberturaService" geometry="Left=410;Top=40;Right=550;Bottom=620;"/>
+          <element name="PostgresPolizaRepository" geometry="Left=590;Top=40;Right=730;Bottom=620;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_SEQ_CU10_A" name="16. Secuencia UML 2.5+ - CU10-MS1 (Generación QR EMVCo y Conciliación de Pago Fiscal)">
+        <properties type="Sequence" name="16. Secuencia UML 2.5+ - CU10-MS1 (Generación QR EMVCo y Conciliación de Pago Fiscal)"/>
+        <elements>
+          <element name="Cliente Asegurado" geometry="Left=50;Top=40;Right=190;Bottom=620;"/>
+          <element name="PasarelaPagoQREMVCoView" geometry="Left=230;Top=40;Right=370;Bottom=620;"/>
+          <element name="ApolloFederationClient" geometry="Left=410;Top=40;Right=550;Bottom=620;"/>
+          <element name="FacturacionDomainService" geometry="Left=590;Top=40;Right=730;Bottom=620;"/>
+          <element name="PostgresFacturaRepository" geometry="Left=770;Top=40;Right=910;Bottom=620;"/>
+        </elements>
+      </diagram>
+      <diagram xmi:id="EAID_DIAG_DOM_A" name="02. Modelo de Dominio DDD - Perfil A">
+        <properties type="Logical" name="Modelo de Dominio DDD Perfil A"/>
+        <elements>
+          <element subject="EAID_DOM_USUARIO_ROL" geometry="Left=100;Top=100;Right=350;Bottom=280;"/>
+          <element subject="EAID_DOM_SESION_TOKEN" geometry="Left=100;Top=100;Right=350;Bottom=280;"/>
+          <element subject="EAID_DOM_CLIENTE" geometry="Left=100;Top=100;Right=350;Bottom=280;"/>
+          <element subject="EAID_DOM_PLAN_SEGURO" geometry="Left=100;Top=100;Right=350;Bottom=280;"/>
+          <element subject="EAID_DOM_COBERTURA" geometry="Left=100;Top=100;Right=350;Bottom=280;"/>
+          <element subject="EAID_DOM_POLIZA" geometry="Left=100;Top=100;Right=350;Bottom=280;"/>
+          <element subject="EAID_DOM_VEHICULO" geometry="Left=100;Top=100;Right=350;Bottom=280;"/>
+          <element subject="EAID_DOM_FACTURA" geometry="Left=100;Top=100;Right=350;Bottom=280;"/>
+          <element subject="EAID_DOM_CACHE_COBERTURA" geometry="Left=100;Top=100;Right=350;Bottom=280;"/>
+        </elements>
+      </diagram>
+    </diagrams>
+  </xmi:Extension>
 </xmi:XMI>
-

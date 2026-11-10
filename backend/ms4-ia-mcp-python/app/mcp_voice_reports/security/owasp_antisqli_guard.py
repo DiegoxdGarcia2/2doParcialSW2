@@ -13,7 +13,10 @@
 import re
 import html
 from typing import List, Tuple
-import sqlparse
+try:
+    import sqlparse
+except ImportError:
+    sqlparse = None
 from app.entities.voice_mcp_dto import OwaspSecurityAuditDTO
 
 
@@ -118,20 +121,21 @@ class OwaspAntiSqliGuard:
                 detalles.append(f"Patrón malicioso detectado [{regla}]: '{match.group(0)}'")
 
         # 2. Análisis sintáctico de AST con sqlparse
-        try:
-            parsed = sqlparse.parse(texto_limpio)
-            for statement in parsed:
-                # Si sqlparse detecta sentencias DDL destructivas o tokens peligrosos
-                tokens = [t.value.upper() for t in statement.flatten()]
-                dangerous_keywords = {"DROP", "ALTER", "TRUNCATE", "DELETE", "UNION"}
-                interseccion = set(tokens).intersection(dangerous_keywords)
-                if interseccion:
-                    threat_score = max(threat_score, 0.95)
-                    if not regla_disparada:
-                        regla_disparada = "OWASP-A03:SQLi-DDL-Interception"
-                    detalles.append(f"Palabras clave destructivas detectadas en AST: {list(interseccion)}")
-        except Exception as e:
-            detalles.append(f"Análisis sintáctico AST: {str(e)}")
+        if sqlparse:
+            try:
+                parsed = sqlparse.parse(texto_limpio)
+                for statement in parsed:
+                    # Si sqlparse detecta sentencias DDL destructivas o tokens peligrosos
+                    tokens = [t.value.upper() for t in statement.flatten()]
+                    dangerous_keywords = {"DROP", "ALTER", "TRUNCATE", "DELETE", "UNION"}
+                    interseccion = set(tokens).intersection(dangerous_keywords)
+                    if interseccion:
+                        threat_score = max(threat_score, 0.95)
+                        if not regla_disparada:
+                            regla_disparada = "OWASP-A03:SQLi-DDL-Interception"
+                        detalles.append(f"Palabras clave destructivas detectadas en AST: {list(interseccion)}")
+            except Exception as e:
+                detalles.append(f"Análisis sintáctico AST: {str(e)}")
 
         es_amenaza = threat_score >= 0.70
 

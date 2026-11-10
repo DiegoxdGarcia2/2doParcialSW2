@@ -68,22 +68,79 @@ export class AuthOIDCService {
   private readonly ms1Url: string;
   private readonly storageKey = 'aegiscore_sso_session_react_v1';
 
-  constructor(ms1Url = 'http://localhost:8001') {
+  constructor(ms1Url = (import.meta as any)?.env?.VITE_MS1_URL || (typeof window !== 'undefined' && (window as any).__AEGIS_MS1_URL) || 'http://localhost:8001') {
     this.ms1Url = ms1Url.replace(/\/$/, '');
   }
 
-  public obtenerSesionInicial(): PerfilSSOActivo {
+  public obtenerSesionInicial(): PerfilSSOActivo | null {
     if (typeof localStorage !== 'undefined') {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
         try {
           return JSON.parse(saved) as PerfilSSOActivo;
         } catch {
-          // Continúa a sesión por defecto
+          // Continúa a null
         }
       }
     }
+    return null;
+  }
+
+  public obtenerPerfilPorDefecto(): PerfilSSOActivo {
     return this.construirPerfilLocal(PERFILES_SSO_DEMO[0]);
+  }
+
+  /**
+   * Sincroniza la sesión con los parámetros recibidos por URL (?sso_email=...&sso_rol=...)
+   * o consulta la sesión autoritativa en MS1 / DynamoDB (GET /api/v1/auth/sso-sessions).
+   * Si no hay sesión iniciada en el sistema, devuelve null (requiere autenticación).
+   */
+  public async sincronizarConSesionActivaRemota(
+    emailParam?: string | null,
+    rolParam?: string | null
+  ): Promise<PerfilSSOActivo | null> {
+    if (emailParam && emailParam.trim() !== '') {
+      return this.autenticarUsuarioOIDC(emailParam.trim(), (rolParam as RolSSO) || undefined);
+    }
+
+    try {
+      const res = await fetch(`${this.ms1Url}/api/v1/auth/sso-sessions`);
+      if (res.ok) {
+        const data = await res.json();
+        // Si el backend indica explícitamente que no hay sesión activa:
+        if (data.authenticated === false || !data.active_session) {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(this.storageKey);
+          }
+          return null;
+        }
+
+        const active = data.active_session;
+        if (active && active.email) {
+          return this.autenticarUsuarioOIDC(active.email, (active.rol as RolSSO) || undefined);
+        }
+      }
+    } catch {
+      // En caso de corte total de red, revisar si había sesión previa en cache
+    }
+
+    return this.obtenerSesionInicial();
+  }
+
+  /**
+   * Revoca la sesión única distribuida en DynamoDB y limpia almacenamiento local.
+   */
+  public async cerrarSesionSSO(): Promise<void> {
+    try {
+      await fetch(`${this.ms1Url}/api/v1/auth/sso-logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: 'ALL' }),
+      });
+    } catch {}
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(this.storageKey);
+    }
   }
 
   /**

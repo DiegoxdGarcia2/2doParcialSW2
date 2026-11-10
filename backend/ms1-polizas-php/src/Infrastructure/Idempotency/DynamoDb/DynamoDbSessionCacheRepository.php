@@ -29,6 +29,20 @@ class DynamoDbSessionCacheRepository
         string $nombreCompleto = 'Carlos Mendoza Roca',
         string $dispositivo = 'Web Browser / OIDC PKCE S256'
     ): array {
+        $this->cargarDesdeDisco();
+
+        // Regla estricta: Solo UNA sesión activa vigente en todo el ecosistema (Single Active Session)
+        // Cualquier sesión previa pasa a SUPERSEDED_BY_NEW_LOGIN
+        foreach ($this->memoryStore as $k => &$v) {
+            if (str_starts_with((string)$k, 'sso:') && is_array($v)) {
+                if (($v['status'] ?? '') === 'ACTIVE_SSO_SESSION') {
+                    $v['status'] = 'SUPERSEDED_BY_NEW_LOGIN';
+                    $v['superseded_at'] = gmdate('Y-m-d\TH:i:s\Z');
+                }
+            }
+        }
+        unset($v);
+
         $ttl = time() + 7200;
         $record = [
             'table' => 'SesionesSSO',
@@ -48,6 +62,25 @@ class DynamoDbSessionCacheRepository
         $this->memoryStore['sso:' . $sessionId] = $record;
         $this->persistirEnDisco();
         return $record;
+    }
+
+    /**
+     * Devuelve la única sesión activa actual (status === 'ACTIVE_SSO_SESSION') o null si no hay sesión.
+     */
+    public function obtenerSesionActivaActual(): ?array
+    {
+        $this->cargarDesdeDisco();
+        $activas = [];
+        foreach ($this->memoryStore as $k => $v) {
+            if (str_starts_with((string)$k, 'sso:') && is_array($v) && ($v['status'] ?? '') === 'ACTIVE_SSO_SESSION') {
+                $activas[] = $v;
+            }
+        }
+        if (empty($activas)) {
+            return null;
+        }
+        usort($activas, static fn(array $a, array $b) => strcmp((string)($b['created_at'] ?? ''), (string)($a['created_at'] ?? '')));
+        return $activas[0];
     }
 
     public function listarSesionesSSOActivas(): array

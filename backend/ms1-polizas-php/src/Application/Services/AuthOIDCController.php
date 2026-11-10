@@ -138,7 +138,7 @@ class AuthOIDCController
                 'id' => 'e0000001-0000-0000-0000-000000000002',
                 'keycloak_sub' => 'kc-perito-001',
                 'email' => 'perito.campo@aegiscore.com',
-                'nombre_completo' => 'Ing. Roberto Paz (Perito)',
+                'nombre_completo' => 'Ing. Roberto Paz (Perito de Siniestros)',
                 'rol' => 'PERITO',
                 'cliente_id' => 'b0000001-0000-0000-0000-000000000001',
             ],
@@ -146,7 +146,7 @@ class AuthOIDCController
                 'id' => 'e0000001-0000-0000-0000-000000000003',
                 'keycloak_sub' => 'kc-actuario-001',
                 'email' => 'actuario@aegiscore.com',
-                'nombre_completo' => 'Lic. Mariana Vargas (Actuario)',
+                'nombre_completo' => 'Lic. Mariana Vargas (Actuario Senior)',
                 'rol' => 'ACTUARIO',
                 'cliente_id' => 'b0000001-0000-0000-0000-000000000001',
             ],
@@ -160,21 +160,27 @@ class AuthOIDCController
             ],
         ];
 
-        $perfil = $catalogoUsuarios[$email] ?? [
-            'id' => 'e0000001-0000-0000-0000-000000000004',
-            'keycloak_sub' => 'kc-user-' . substr(md5($email), 0, 8),
-            'email' => $email,
-            'nombre_completo' => ucwords(str_replace(['.', '@aegiscore.com', '@gmail.com'], [' ', '', ''], $email)),
-            'rol' => $rolSolicitado !== '' ? $rolSolicitado : 'CLIENTE',
-            'cliente_id' => 'b0000001-0000-0000-0000-000000000001',
-        ];
-
-        if ($rolSolicitado !== '' && in_array($rolSolicitado, ['ADMIN', 'AJUSTADOR', 'PERITO', 'ACTUARIO', 'CLIENTE'], true)) {
-            $perfil['rol'] = $rolSolicitado;
+        // Asignación estricta autoritativa basada en la cuenta institucional
+        if (isset($catalogoUsuarios[$email])) {
+            $perfil = $catalogoUsuarios[$email];
+        } else {
+            $perfil = [
+                'id' => 'e0000001-0000-0000-0000-000000000004',
+                'keycloak_sub' => 'kc-user-' . substr(md5($email), 0, 8),
+                'email' => $email,
+                'nombre_completo' => ucwords(str_replace(['.', '@aegiscore.com', '@gmail.com'], [' ', '', ''], $email)),
+                'rol' => 'CLIENTE', // Por seguridad nunca asignar roles de gestión sin estar en catálogo
+                'cliente_id' => 'b0000001-0000-0000-0000-000000000001',
+            ];
         }
 
         $perfil['session_id'] = 'sso-sess-' . substr(hash('sha256', $perfil['keycloak_sub'] . date('YmdH')), 0, 16);
         return $perfil;
+    }
+
+    public function obtenerSesionActivaActual(): ?array
+    {
+        return $this->dynamoSessionRepository->obtenerSesionActivaActual();
     }
 
     /**

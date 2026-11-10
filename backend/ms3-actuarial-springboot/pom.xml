@@ -18,7 +18,7 @@
     <description>MS3: Motor Actuarial, Cobranzas QR y Orquestador Saga en Spring Boot 3 (Arquitectura Hexagonal)</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
     </properties>
 
     <dependencies>

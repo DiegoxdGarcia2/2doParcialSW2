@@ -391,7 +391,7 @@ class McpProtocolServer:
                     ROUND(SUM(prima_anual_calculada)::numeric, 2) as volumen_total_usd,
                     ROUND(AVG(prima_anual_calculada)::numeric, 2) as prima_promedio_usd,
                     ROUND(AVG(valor_comercial_usd)::numeric, 2) as valor_comercial_promedio_usd,
-                    ROUND((SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN 1 ELSE 0 END)::numeric / COUNT(*) * 100)::numeric, 1) as tasa_siniestralidad_pct,
+                    ROUND((COALESCE(SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN 1 ELSE 0 END), 0)::numeric / NULLIF(COUNT(*), 0) * 100)::numeric, 1) as tasa_siniestralidad_pct,
                     ROUND(AVG(perfil_riesgo_score)::numeric, 1) as score_riesgo_promedio
                 FROM dataset_historico_ml_polizas
                 {where_clause}
@@ -407,7 +407,7 @@ class McpProtocolServer:
                     COUNT(*), 
                     ROUND(SUM(prima_anual_calculada)::numeric, 2),
                     ROUND(AVG(prima_anual_calculada)::numeric, 2),
-                    ROUND((SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN 1 ELSE 0 END)::numeric / COUNT(*) * 100)::numeric, 1)
+                    ROUND((COALESCE(SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN 1 ELSE 0 END), 0)::numeric / NULLIF(COUNT(*), 0) * 100)::numeric, 1)
                 FROM dataset_historico_ml_polizas
                 {where_clause};
             """
@@ -485,7 +485,7 @@ class McpProtocolServer:
                     COUNT(*), 
                     ROUND(SUM(prima_anual_calculada)::numeric, 2),
                     ROUND(AVG(prima_anual_calculada)::numeric, 2),
-                    ROUND((SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN 1 ELSE 0 END)::numeric / COUNT(*) * 100)::numeric, 1)
+                    ROUND((COALESCE(SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN 1 ELSE 0 END), 0)::numeric / NULLIF(COUNT(*), 0) * 100)::numeric, 1)
                 FROM dataset_historico_ml_polizas
                 {where_clause};
             """

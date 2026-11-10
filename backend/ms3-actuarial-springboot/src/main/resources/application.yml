@@ -5,9 +5,9 @@ spring:
   application:
     name: ms3-actuarial-springboot
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://ep-damp-salad-b5enofaj-pooler.c-7.us-east-2.aws.neon.tech:5432/neondb?sslmode=require}
-    username: ${SPRING_DATASOURCE_USERNAME:neondb_owner}
-    password: ${SPRING_DATASOURCE_PASSWORD:npg_JiV18QkLUMwF}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/aegiscore_erp}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5

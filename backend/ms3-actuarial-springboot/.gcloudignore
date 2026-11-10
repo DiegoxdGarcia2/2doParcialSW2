@@ -1,0 +1,4 @@
+.git
+!target/
+!target/ms3-actuarial-springboot-*.jar
+

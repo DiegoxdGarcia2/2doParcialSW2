@@ -138,7 +138,7 @@ export class ApolloFederationClient {
   private readonly ms1BaseUrl: string;
   private readonly queueKey = 'aegiscore_react_pwa_offline_queue_v1';
 
-  constructor(ms1BaseUrl = 'http://localhost:8001') {
+  constructor(ms1BaseUrl = (import.meta as any)?.env?.VITE_MS1_URL || (typeof window !== 'undefined' && (window as any).__AEGIS_MS1_URL) || 'http://localhost:8001') {
     this.ms1BaseUrl = ms1BaseUrl.replace(/\/$/, '');
   }
 
@@ -172,18 +172,40 @@ export class ApolloFederationClient {
       headers['Idempotency-Key'] = idempotencyKey;
     }
 
-    const res = await fetch(`${this.ms1BaseUrl}/graphql`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ query, variables }),
-    });
+    try {
+      const res = await fetch(`${this.ms1BaseUrl}/graphql`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ query, variables }),
+      });
 
-    const json = await res.json();
-    return {
-      data: json.data as T,
-      errors: json.errors,
-      fromBackend: true,
-    };
+      if (!res.ok) {
+        return {
+          fromBackend: false,
+          errors: [{ message: `HTTP Error ${res.status}: ${res.statusText}` }],
+        };
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return {
+          fromBackend: false,
+          errors: [{ message: 'El servidor no devolvió una respuesta JSON válida.' }],
+        };
+      }
+
+      const json = await res.json();
+      return {
+        data: json.data as T,
+        errors: json.errors,
+        fromBackend: true,
+      };
+    } catch (err: any) {
+      return {
+        fromBackend: false,
+        errors: [{ message: err?.message || 'Error de red o conexión hacia MS1 GraphQL' }],
+      };
+    }
   }
 
   /**
