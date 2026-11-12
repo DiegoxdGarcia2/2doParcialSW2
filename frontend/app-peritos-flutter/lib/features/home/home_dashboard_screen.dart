@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../core/theme/aegis_theme.dart';
 import '../../core/config/app_config.dart';
 import '../../core/database/database_helper.dart';
@@ -12,6 +11,8 @@ import '../inspection_peritaje/peritaje_capture_screen.dart';
 import '../offline_sync/sync_queue_screen.dart';
 import '../saga_tracking/saga_timeline_screen.dart';
 import '../qr_payments/qr_payment_screen.dart';
+import '../notifications/notifications_sheet.dart';
+import '../../core/services/push_notification_service.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({super.key});
@@ -47,47 +48,135 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
   void _mostrarConfiguracionIp() {
     final ipController = TextEditingController(text: AppConfig.hostIp);
+    bool esProduccion = AppConfig.isProduction;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AegisTheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AegisTheme.surfaceBorder),
-        ),
-        title: const Text('Configuración de IP Backend', style: TextStyle(color: AegisTheme.textPrimary)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Ajusta la IP del host si estás probando con un teléfono físico por Wi-Fi:',
-              style: TextStyle(color: AegisTheme.textSecondary, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ipController,
-              decoration: const InputDecoration(
-                labelText: 'Host IP (ej. 192.168.1.5 o 10.0.2.2)',
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AegisTheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AegisTheme.surfaceBorder),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.cloud_sync, color: AegisTheme.primary),
+              SizedBox(width: 8),
+              Text('Entorno de Conectividad', style: TextStyle(color: AegisTheme.textPrimary, fontSize: 17)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Switch Producción vs Local
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: esProduccion ? AegisTheme.primary.withOpacity(0.12) : Colors.black26,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: esProduccion ? AegisTheme.primary.withOpacity(0.4) : Colors.white12,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      esProduccion ? Icons.cloud_done : Icons.computer,
+                      color: esProduccion ? AegisTheme.primary : Colors.grey,
+                      size: 26,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            esProduccion ? '☁️ Producción Tri-Cloud' : '💻 Modo Local (LAN/Dev)',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                          ),
+                          Text(
+                            esProduccion
+                                ? 'AWS ECS (MS2) · Azure (MS3) · GCP (MS4)'
+                                : 'Apunta a servidor en máquina local',
+                            style: const TextStyle(fontSize: 11, color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: esProduccion,
+                      activeColor: AegisTheme.primary,
+                      onChanged: (val) {
+                        setDialogState(() {
+                          esProduccion = val;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(height: 16),
+              if (!esProduccion) ...[
+                const Text(
+                  'IP de máquina local para emulador o Wi-Fi:',
+                  style: TextStyle(color: AegisTheme.textSecondary, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: ipController,
+                  decoration: const InputDecoration(
+                    labelText: 'Host IP (10.0.2.2 o 192.168.x.x)',
+                    prefixIcon: Icon(Icons.settings_ethernet, size: 20),
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('• MS2 Siniestros: AWS API Gateway HTTPS', style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+                      SizedBox(height: 4),
+                      Text('• MS3 Actuarial: azurecontainerapps.io (Azure)', style: TextStyle(fontSize: 11, color: Colors.lightGreenAccent)),
+                      SizedBox(height: 4),
+                      Text('• MS4 IA & Vision: run.app (Google Cloud)', style: TextStyle(fontSize: 11, color: Colors.amberAccent)),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancelar', style: TextStyle(color: AegisTheme.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  AppConfig.isProduction = esProduccion;
+                  if (!esProduccion) {
+                    AppConfig.hostIp = ipController.text.trim();
+                  }
+                });
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Entorno activo: ${AppConfig.environmentLabel}'),
+                    backgroundColor: AegisTheme.primary,
+                  ),
+                );
+              },
+              child: const Text('Aplicar'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancelar', style: TextStyle(color: AegisTheme.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                AppConfig.hostIp = ipController.text.trim();
-              });
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
       ),
     );
   }
@@ -759,9 +848,47 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           ],
         ),
         actions: [
+          // Campana de notificaciones push en tiempo real
+          ValueListenableBuilder<int>(
+            valueListenable: PushNotificationService().unreadCountNotifier,
+            builder: (context, count, _) {
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined),
+                    tooltip: 'Centro de Notificaciones Push',
+                    onPressed: () => NotificationsSheet.show(context),
+                  ),
+                  if (count > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        child: Text(
+                          '$count',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings_ethernet),
-            tooltip: 'Configurar IP Backend',
+            tooltip: 'Configurar Entorno Cloud / Local',
             onPressed: _mostrarConfiguracionIp,
           ),
           IconButton(

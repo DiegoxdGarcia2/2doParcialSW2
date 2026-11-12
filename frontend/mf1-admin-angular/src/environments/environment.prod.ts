@@ -1,5 +1,6 @@
-const ms4Host = (typeof window !== 'undefined' && (window as any).__AEGIS_MS4_URL) || 'http://127.0.0.1:8004';
-const ms4Ws = (typeof window !== 'undefined' && (window as any).__AEGIS_MS4_WS_URL) || 'ws://127.0.0.1:8004';
+const isLocalHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const ms4Host = (typeof window !== 'undefined' && (window as any).__AEGIS_MS4_URL) || (isLocalHost ? 'http://127.0.0.1:8004' : 'https://aegiscore-ms4-ia-400568277774.us-central1.run.app');
+const ms4Ws = (typeof window !== 'undefined' && (window as any).__AEGIS_MS4_WS_URL) || (isLocalHost ? 'ws://127.0.0.1:8004' : 'wss://aegiscore-ms4-ia-400568277774.us-central1.run.app');
 
 export const environment = {
   production: true,

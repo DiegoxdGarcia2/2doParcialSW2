@@ -11,7 +11,7 @@
 import io
 import re
 import struct
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any, Optional, List
 
 
 class WhisperSTTEngine:
@@ -269,11 +269,20 @@ class WhisperSTTEngine:
         if formato_exp:
             params["formato_explicito"] = formato_exp
 
-        # Detección de herramienta
-        for keyword, tool_name in cls.HERRAMIENTAS_MAP.items():
-            if keyword in t:
-                herramienta = tool_name
-                break
+        # Detección de herramienta con prioridad contextual
+        if any(w in t for w in ["siniestro", "siniestros", "siniestralidad", "choque", "choques", "reclamo", "reclamos", "peritaje", "peritajes", "accidente", "accidentes", "crashnet"]):
+            herramienta = "tool_reporte_siniestralidad"
+        elif any(w in t for w in ["fraude", "fraudes", "anomalia", "anomalía", "anomalias", "anomalías", "siu", "sospechoso", "sospechosos", "isolation forest"]):
+            herramienta = "tool_reporte_auditoria_fraude_siu"
+        elif any(w in t for w in ["solvencia", "solvency", "reserva", "reservas", "fondo de reserva", "patrimonio", "liquidez"]):
+            herramienta = "tool_solvencia_reservas"
+        elif any(w in t for w in ["venta", "ventas", "demanda", "prima", "primas", "random forest"]):
+            herramienta = "tool_reporte_ventas_primas"
+        else:
+            for keyword, tool_name in cls.HERRAMIENTAS_MAP.items():
+                if keyword in t:
+                    herramienta = tool_name
+                    break
 
         # Extracción de parámetros según la herramienta
         if herramienta == "tool_reporte_siniestralidad":
@@ -285,6 +294,28 @@ class WhisperSTTEngine:
                 params["severidad"] = "BAJA"
             else:
                 params["severidad"] = "TODAS"
+
+            # Detección Geográfica de Ciudad / Departamento de Bolivia (Criterio ⑤)
+            ciudades_bolivia = {
+                "cochabamba": "Cochabamba",
+                "santa cruz": "Santa Cruz",
+                "la paz": "La Paz",
+                "el alto": "La Paz",
+                "sucre": "Sucre",
+                "tarija": "Tarija",
+                "oruro": "Oruro",
+                "potosi": "Potosí",
+                "potosí": "Potosí",
+                "beni": "Beni",
+                "trinidad": "Beni",
+                "pando": "Pando",
+                "cobija": "Pando"
+            }
+            for c_key, c_name in ciudades_bolivia.items():
+                if re.search(rf"\b{c_key}\b", t):
+                    params["ciudad"] = c_name
+                    params["departamento"] = c_name
+                    break
 
         elif herramienta == "tool_reporte_ventas_primas":
             # 1. Detección de Tipo de Vehículo Específico
@@ -387,4 +418,96 @@ class WhisperSTTEngine:
         elif herramienta == "tool_solvencia_reservas":
             params["umbral_minimo_cobertura"] = 1.60
 
+        # 5. Extracción Dinámica de Columnas y Criterios (Examen Criterio ⑤)
+        cols_dinamicas, orden_campo, orden_dir, filtro_monto = cls._extraer_columnas_y_criterios_dinamicos(t)
+        if cols_dinamicas:
+            params["columnas_seleccionadas"] = cols_dinamicas
+        if orden_campo:
+            params["ordenar_por"] = orden_campo
+        if orden_dir:
+            params["orden_direccion"] = orden_dir
+        if filtro_monto:
+            params["filtro_monto"] = filtro_monto
+
         return herramienta, params
+
+    @classmethod
+    def _extraer_columnas_y_criterios_dinamicos(
+        cls,
+        texto: str
+    ) -> Tuple[List[str], Optional[str], Optional[str], Optional[Dict[str, Any]]]:
+        """
+        Extrae columnas solicitadas en lenguaje natural, criterios de ordenamiento y filtros (Examen Criterio ⑤).
+        Retorna: (columnas_seleccionadas, ordenar_campo, orden_direccion, filtro_monto)
+        """
+        t = texto.lower()
+        cols: List[str] = []
+
+        # 1. Regex de búsqueda de cláusula de columnas/campos (soporta caracteres con tilde UTF-8)
+        m_cols = re.search(
+            r"(?:columnas?|campos?|con\s+las?\s+columnas?|con\s+columnas?|mostrar\s+solo|mostrar|incluyendo|filtrando\s+columnas?)\s*([a-zA-Z0-9_,\sáéíóúÁÉÍÓÚñÑ]+?)(?:\s+(?:ordenad|filtr|mayor|menor|donde|con\s+costo|en\s+excel|en\s+pdf|en\s+word|en\s+pantalla)|\s*$)",
+            t
+        )
+        if m_cols:
+            raw_chunk = m_cols.group(1)
+            tokens = [k.strip() for k in re.split(r"[,;\s]+(?:y|e)?\s*", raw_chunk) if k.strip()]
+            col_map = {
+                # Código / Reclamo
+                "codigo": "codigo", "código": "codigo", "cod": "codigo",
+                "reclamo": "codigo", "numero_reclamo": "codigo", "número_reclamo": "codigo",
+                "numero": "codigo", "número": "codigo",
+                "poliza": "poliza", "póliza": "poliza", "num_poliza": "poliza", "numero_poliza": "poliza",
+
+                # Fecha
+                "fecha": "fecha", "dia": "fecha", "día": "fecha", "fecha_siniestro": "fecha",
+                "fecha_inspeccion": "fecha",
+
+                # Costo / Monto
+                "costo": "costo", "monto": "costo", "reparacion": "costo", "reparación": "costo",
+                "costo_estimado": "costo", "monto_estimado": "costo", "precio": "costo",
+
+                # Ubicación
+                "ciudad": "ciudad", "departamento": "departamento", "ubicacion": "ciudad", "ubicación": "ciudad",
+
+                # Perito y Detalles
+                "perito": "perito", "inspector": "perito",
+                "severidad": "severidad", "gravedad": "severidad",
+                "tipo": "tipo_siniestro", "tipo_siniestro": "tipo_siniestro",
+                "estado": "estado",
+
+                # Cliente / Titular / Vehículo
+                "cliente": "titular", "titular": "titular",
+                "vehiculo": "tipo_vehiculo", "vehículo": "tipo_vehiculo", "tipo_vehiculo": "tipo_vehiculo",
+                "prima": "prima_emitida_usd", "taller": "taller_mecanico"
+            }
+            for tok in tokens:
+                if tok in col_map and col_map[tok] not in cols:
+                    cols.append(col_map[tok])
+
+        # 2. Dirección de ordenamiento
+        orden_dir = None
+        if any(w in t for w in ["mayor a menor", "descendente", "mas alto", "más alto", "decreciente", "mayores primero"]):
+            orden_dir = "descendente"
+        elif any(w in t for w in ["menor a mayor", "ascendente", "mas bajo", "más bajo", "creciente", "menores primero"]):
+            orden_dir = "ascendente"
+
+        # 3. Campo de ordenamiento
+        orden_campo = None
+        if "ordenad" in t or "ordenar" in t:
+            if "costo" in t or "monto" in t or "precio" in t:
+                orden_campo = "costo_estimado"
+            elif "prima" in t:
+                orden_campo = "prima_emitida_usd"
+            elif "fecha" in t:
+                orden_campo = "fecha_siniestro"
+            elif "tipo" in t or "vehiculo" in t or "vehículo" in t:
+                orden_campo = "tipo_vehiculo"
+
+        # 4. Filtro numérico (umbral)
+        m_filter = re.search(r"(mayores?|superiores?|mas de|más de|menores?|inferiores?|menos de)\s*(?:a|de)?\s*(\d+(?:\.\d+)?)", t)
+        filtro_monto = None
+        if m_filter:
+            op = "gte" if any(w in m_filter.group(1) for w in ["mayor", "superior", "mas", "más"]) else "lte"
+            filtro_monto = {"operador": op, "valor": float(m_filter.group(2))}
+
+        return cols, orden_campo, orden_dir, filtro_monto

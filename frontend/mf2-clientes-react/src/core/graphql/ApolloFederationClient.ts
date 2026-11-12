@@ -138,7 +138,13 @@ export class ApolloFederationClient {
   private readonly ms1BaseUrl: string;
   private readonly queueKey = 'aegiscore_react_pwa_offline_queue_v1';
 
-  constructor(ms1BaseUrl = (import.meta as any)?.env?.VITE_MS1_URL || (typeof window !== 'undefined' && (window as any).__AEGIS_MS1_URL) || 'http://localhost:8001') {
+  constructor(
+    ms1BaseUrl = (import.meta as any)?.env?.VITE_MS1_URL ||
+      (typeof window !== 'undefined' && (window as any).__AEGIS_MS1_URL) ||
+      (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:8001'
+        : 'https://aegiscore-ms1-polizas-jskh4rw62q-uc.a.run.app')
+  ) {
     this.ms1BaseUrl = ms1BaseUrl.replace(/\/$/, '');
   }
 

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'core/theme/aegis_theme.dart';
 import 'core/database/database_helper.dart';
 import 'core/ai/tflite_service.dart';
+import 'core/services/push_notification_service.dart';
+import 'core/services/crash_sensor_service.dart';
 import 'features/home/home_dashboard_screen.dart';
 
 void main() async {
@@ -17,6 +19,20 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
+
+  // Inicializar servicio de notificaciones push y canales locales
+  try {
+    await PushNotificationService().initialize();
+  } catch (e) {
+    debugPrint('[Push] Error inicializando: $e');
+  }
+
+  // Inicializar sensor de desaceleración/impacto (Criterio ② Examen)
+  try {
+    CrashSensorService().startMonitoring();
+  } catch (e) {
+    debugPrint('[Sensor] Error inicializando: $e');
+  }
 
   // Inicializar base de datos local SQLite para soporte 100% offline (CU07)
   try {

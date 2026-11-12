@@ -118,5 +118,9 @@ postgres_data/
 tmp/
 temp/
 scratch/
+test_production_services_qa.py
+
+# Binarios de Aplicación Móvil
+*.apk
 
 .agents/teamwork/

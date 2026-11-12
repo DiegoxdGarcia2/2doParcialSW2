@@ -79,6 +79,20 @@ export class VoiceMcpReportsComponent implements OnInit, OnDestroy {
   // Sugerencias dinámicas en lenguaje natural
   sugerenciasVoz = [
     {
+      titulo: 'Siniestros Cochabamba (Examen ⑤)',
+      frase: 'Reporte de siniestros en Cochabamba en Excel con columnas código, fecha y costo',
+      icono: 'table_chart',
+      formato: 'xlsx' as VoiceDeliveryFormat,
+      tag: 'Criterio ⑤ (Excel)'
+    },
+    {
+      titulo: 'Siniestros Cochabamba en PDF (Examen ⑤)',
+      frase: 'Reporte de siniestros en Cochabamba en PDF con columnas código, fecha y costo',
+      icono: 'picture_as_pdf',
+      formato: 'pdf' as VoiceDeliveryFormat,
+      tag: 'Criterio ⑤ (PDF)'
+    },
+    {
       titulo: 'Demanda de Vehículos en Pantalla',
       frase: 'demanda de vehículos ordenadas por tipo de vehículo del año en curso para ver en pantalla',
       icono: 'desktop_windows',

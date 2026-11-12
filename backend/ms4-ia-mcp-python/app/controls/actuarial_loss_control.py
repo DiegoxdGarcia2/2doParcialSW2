@@ -111,165 +111,165 @@ class ActuarialLossAnalysisControl:
         try:
             where_clause, params = self._construir_clausula_where(filtros)
 
-        # 1. Consulta SQL para Top 5 Bento KPIs
-        query_kpis = f"""
-            SELECT 
-                COUNT(*) as total_polizas,
-                COALESCE(SUM(tuvo_siniestro_en_anio), 0) as total_siniestros,
-                COALESCE(AVG(prima_anual_calculada), 0) as prima_media,
-                COALESCE(SUM(prima_anual_calculada), 0) as primas_totales,
-                COALESCE(SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE 0 END), 0) as costo_total_siniestros,
-                COALESCE(AVG(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE NULL END), 0) as severidad_media,
-                COALESCE(AVG(perfil_riesgo_score), 0) as score_medio_riesgo
-            FROM dataset_historico_ml_polizas
-            {where_clause};
-        """
-        cur.execute(query_kpis, params)
-        kpi_row = cur.fetchone()
-
-        total_polizas = int(kpi_row[0] or 0)
-        total_siniestros = int(kpi_row[1] or 0)
-        prima_media = float(kpi_row[2] or 0.0)
-        primas_totales = float(kpi_row[3] or 0.0)
-        costo_total_siniestros = float(kpi_row[4] or 0.0)
-        severidad_media = float(kpi_row[5] or 0.0)
-        score_medio_riesgo = float(kpi_row[6] or 0.0)
-
-        frecuencia_pct = round((total_siniestros / max(1, total_polizas)) * 100.0, 2)
-        loss_ratio_pct = round((costo_total_siniestros / max(1.0, primas_totales)) * 100.0, 2)
-
-        if loss_ratio_pct <= 65.0:
-            salud_label = "SUPERÁVIT TÉCNICO (Margen Actuarial Sano)"
-        elif loss_ratio_pct <= 80.0:
-            salud_label = "EQUILIBRADO (Monitoreo de Frecuencia)"
-        else:
-            salud_label = "DÉFICIT TÉCNICO (Ajustar Primas o Deducibles)"
-
-        # 2. Consulta SQL para la Matriz de Vehículos
-        query_vehiculos = f"""
-            SELECT 
-                tipo_vehiculo,
-                COUNT(*) as total_polizas,
-                COALESCE(SUM(tuvo_siniestro_en_anio), 0) as total_siniestros,
-                COALESCE(AVG(prima_anual_calculada), 0) as prima_media,
-                COALESCE(SUM(prima_anual_calculada), 0) as primas_totales,
-                COALESCE(SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE 0 END), 0) as costo_total_siniestros,
-                COALESCE(AVG(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE NULL END), 0) as severidad_media
-            FROM dataset_historico_ml_polizas
-            {where_clause}
-            GROUP BY tipo_vehiculo
-            ORDER BY total_polizas DESC, tipo_vehiculo ASC;
-        """
-        cur.execute(query_vehiculos, params)
-        vehiculo_rows = cur.fetchall()
-
-        desglose_vehiculos: List[VehicleLossMetricDTO] = []
-        for r in vehiculo_rows:
-            v_tipo = str(r[0])
-            v_tot = int(r[1] or 0)
-            v_sin = int(r[2] or 0)
-            v_prima_med = round(float(r[3] or 0.0), 2)
-            v_prima_tot = round(float(r[4] or 0.0), 2)
-            v_costo_tot = round(float(r[5] or 0.0), 2)
-            v_sev_med = round(float(r[6] or 0.0), 2)
-
-            v_frec_pct = round((v_sin / max(1, v_tot)) * 100.0, 1)
-            v_loss_ratio = round((v_costo_tot / max(1.0, v_prima_tot)) * 100.0, 1)
-
-            if v_loss_ratio <= 60.0:
-                v_semaforo = "SUPERÁVIT TÉCNICO"
-            elif v_loss_ratio <= 75.0:
-                v_semaforo = "EQUILIBRADO"
+            # 1. Consulta SQL para Top 5 Bento KPIs
+            query_kpis = f"""
+                SELECT 
+                    COUNT(*) as total_polizas,
+                    COALESCE(SUM(tuvo_siniestro_en_anio), 0) as total_siniestros,
+                    COALESCE(AVG(prima_anual_calculada), 0) as prima_media,
+                    COALESCE(SUM(prima_anual_calculada), 0) as primas_totales,
+                    COALESCE(SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE 0 END), 0) as costo_total_siniestros,
+                    COALESCE(AVG(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE NULL END), 0) as severidad_media,
+                    COALESCE(AVG(perfil_riesgo_score), 0) as score_medio_riesgo
+                FROM dataset_historico_ml_polizas
+                {where_clause};
+            """
+            cur.execute(query_kpis, params)
+            kpi_row = cur.fetchone()
+    
+            total_polizas = int(kpi_row[0] or 0)
+            total_siniestros = int(kpi_row[1] or 0)
+            prima_media = float(kpi_row[2] or 0.0)
+            primas_totales = float(kpi_row[3] or 0.0)
+            costo_total_siniestros = float(kpi_row[4] or 0.0)
+            severidad_media = float(kpi_row[5] or 0.0)
+            score_medio_riesgo = float(kpi_row[6] or 0.0)
+    
+            frecuencia_pct = round((total_siniestros / max(1, total_polizas)) * 100.0, 2)
+            loss_ratio_pct = round((costo_total_siniestros / max(1.0, primas_totales)) * 100.0, 2)
+    
+            if loss_ratio_pct <= 65.0:
+                salud_label = "SUPERÁVIT TÉCNICO (Margen Actuarial Sano)"
+            elif loss_ratio_pct <= 80.0:
+                salud_label = "EQUILIBRADO (Monitoreo de Frecuencia)"
             else:
-                v_semaforo = "ALTO RIESGO"
-
-            desglose_vehiculos.append(
-                VehicleLossMetricDTO(
-                    tipo_vehiculo=v_tipo,
-                    total_polizas=v_tot,
-                    siniestros_count=v_sin,
-                    frecuencia_siniestralidad_pct=v_frec_pct,
-                    costo_medio_usd=v_sev_med,
-                    prima_media_usd=v_prima_med,
-                    total_costo_siniestros_usd=v_costo_tot,
-                    total_primas_usd=v_prima_tot,
-                    loss_ratio_pct=v_loss_ratio,
-                    semaforo_tecnico=v_semaforo
+                salud_label = "DÉFICIT TÉCNICO (Ajustar Primas o Deducibles)"
+    
+            # 2. Consulta SQL para la Matriz de Vehículos
+            query_vehiculos = f"""
+                SELECT 
+                    tipo_vehiculo,
+                    COUNT(*) as total_polizas,
+                    COALESCE(SUM(tuvo_siniestro_en_anio), 0) as total_siniestros,
+                    COALESCE(AVG(prima_anual_calculada), 0) as prima_media,
+                    COALESCE(SUM(prima_anual_calculada), 0) as primas_totales,
+                    COALESCE(SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE 0 END), 0) as costo_total_siniestros,
+                    COALESCE(AVG(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE NULL END), 0) as severidad_media
+                FROM dataset_historico_ml_polizas
+                {where_clause}
+                GROUP BY tipo_vehiculo
+                ORDER BY total_polizas DESC, tipo_vehiculo ASC;
+            """
+            cur.execute(query_vehiculos, params)
+            vehiculo_rows = cur.fetchall()
+    
+            desglose_vehiculos: List[VehicleLossMetricDTO] = []
+            for r in vehiculo_rows:
+                v_tipo = str(r[0])
+                v_tot = int(r[1] or 0)
+                v_sin = int(r[2] or 0)
+                v_prima_med = round(float(r[3] or 0.0), 2)
+                v_prima_tot = round(float(r[4] or 0.0), 2)
+                v_costo_tot = round(float(r[5] or 0.0), 2)
+                v_sev_med = round(float(r[6] or 0.0), 2)
+    
+                v_frec_pct = round((v_sin / max(1, v_tot)) * 100.0, 1)
+                v_loss_ratio = round((v_costo_tot / max(1.0, v_prima_tot)) * 100.0, 1)
+    
+                if v_loss_ratio <= 60.0:
+                    v_semaforo = "SUPERÁVIT TÉCNICO"
+                elif v_loss_ratio <= 75.0:
+                    v_semaforo = "EQUILIBRADO"
+                else:
+                    v_semaforo = "ALTO RIESGO"
+    
+                desglose_vehiculos.append(
+                    VehicleLossMetricDTO(
+                        tipo_vehiculo=v_tipo,
+                        total_polizas=v_tot,
+                        siniestros_count=v_sin,
+                        frecuencia_siniestralidad_pct=v_frec_pct,
+                        costo_medio_usd=v_sev_med,
+                        prima_media_usd=v_prima_med,
+                        total_costo_siniestros_usd=v_costo_tot,
+                        total_primas_usd=v_prima_tot,
+                        loss_ratio_pct=v_loss_ratio,
+                        semaforo_tecnico=v_semaforo
+                    )
                 )
-            )
-
-        # 3. Consulta SQL para Gráfico 1: Cohortes de Edad (Siniestralidad vs Severidad)
-        query_edad = f"""
-            SELECT 
-                CASE 
-                    WHEN edad_asegurado BETWEEN 18 AND 25 THEN '18-25'
-                    WHEN edad_asegurado BETWEEN 26 AND 35 THEN '26-35'
-                    WHEN edad_asegurado BETWEEN 36 AND 50 THEN '36-50'
-                    WHEN edad_asegurado BETWEEN 51 AND 65 THEN '51-65'
-                    ELSE '65+'
-                END as rango_edad,
-                COUNT(*) as total_conductores,
-                COALESCE(SUM(tuvo_siniestro_en_anio), 0) as total_siniestros,
-                COALESCE(AVG(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE NULL END), 0) as costo_medio_usd
-            FROM dataset_historico_ml_polizas
-            {where_clause}
-            GROUP BY 1
-            ORDER BY MIN(edad_asegurado) ASC;
-        """
-        cur.execute(query_edad, params)
-        edad_rows = cur.fetchall()
-
-        cohortes_edad: List[AgeCohortMetricDTO] = []
-        for r in edad_rows:
-            e_rango = str(r[0])
-            e_tot = int(r[1] or 0)
-            e_sin = int(r[2] or 0)
-            e_costo = round(float(r[3] or 0.0), 2)
-            e_frec = round((e_sin / max(1, e_tot)) * 100.0, 1)
-
-            cohortes_edad.append(
-                AgeCohortMetricDTO(
-                    rango_edad=e_rango,
-                    total_conductores=e_tot,
-                    total_siniestros=e_sin,
-                    frecuencia_pct=e_frec,
-                    costo_medio_usd=e_costo
+    
+            # 3. Consulta SQL para Gráfico 1: Cohortes de Edad (Siniestralidad vs Severidad)
+            query_edad = f"""
+                SELECT 
+                    CASE 
+                        WHEN edad_asegurado BETWEEN 18 AND 25 THEN '18-25'
+                        WHEN edad_asegurado BETWEEN 26 AND 35 THEN '26-35'
+                        WHEN edad_asegurado BETWEEN 36 AND 50 THEN '36-50'
+                        WHEN edad_asegurado BETWEEN 51 AND 65 THEN '51-65'
+                        ELSE '65+'
+                    END as rango_edad,
+                    COUNT(*) as total_conductores,
+                    COALESCE(SUM(tuvo_siniestro_en_anio), 0) as total_siniestros,
+                    COALESCE(AVG(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE NULL END), 0) as costo_medio_usd
+                FROM dataset_historico_ml_polizas
+                {where_clause}
+                GROUP BY 1
+                ORDER BY MIN(edad_asegurado) ASC;
+            """
+            cur.execute(query_edad, params)
+            edad_rows = cur.fetchall()
+    
+            cohortes_edad: List[AgeCohortMetricDTO] = []
+            for r in edad_rows:
+                e_rango = str(r[0])
+                e_tot = int(r[1] or 0)
+                e_sin = int(r[2] or 0)
+                e_costo = round(float(r[3] or 0.0), 2)
+                e_frec = round((e_sin / max(1, e_tot)) * 100.0, 1)
+    
+                cohortes_edad.append(
+                    AgeCohortMetricDTO(
+                        rango_edad=e_rango,
+                        total_conductores=e_tot,
+                        total_siniestros=e_sin,
+                        frecuencia_pct=e_frec,
+                        costo_medio_usd=e_costo
+                    )
                 )
-            )
-
-        # 4. Consulta SQL para Gráfico 2: Evolución Mensual Cronológica (12 Meses en la BD)
-        query_mensual = f"""
-            SELECT 
-                TO_CHAR(mes_registro, 'YYYY-MM') as mes,
-                COUNT(*) as polizas_activas,
-                COALESCE(SUM(tuvo_siniestro_en_anio), 0) as siniestros_mes,
-                COALESCE(SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE 0 END), 0) as costo_total_mes_usd
-            FROM dataset_historico_ml_polizas
-            {where_clause}
-            GROUP BY 1
-            ORDER BY 1 ASC;
-        """
-        cur.execute(query_mensual, params)
-        mensual_rows = cur.fetchall()
-
-        tendencia_mensual: List[MonthlyTrendMetricDTO] = []
-        for r in mensual_rows:
-            m_mes = str(r[0])
-            m_pol = int(r[1] or 0)
-            m_sin = int(r[2] or 0)
-            m_costo = round(float(r[3] or 0.0), 2)
-            m_tasa = round((m_sin / max(1, m_pol)) * 100.0, 1)
-
-            tendencia_mensual.append(
-                MonthlyTrendMetricDTO(
-                    mes=m_mes,
-                    polizas_activas=m_pol,
-                    siniestros_mes=m_sin,
-                    costo_total_mes_usd=m_costo,
-                    tasa_incurrencia_pct=m_tasa
+    
+            # 4. Consulta SQL para Gráfico 2: Evolución Mensual Cronológica (12 Meses en la BD)
+            query_mensual = f"""
+                SELECT 
+                    TO_CHAR(mes_registro, 'YYYY-MM') as mes,
+                    COUNT(*) as polizas_activas,
+                    COALESCE(SUM(tuvo_siniestro_en_anio), 0) as siniestros_mes,
+                    COALESCE(SUM(CASE WHEN tuvo_siniestro_en_anio = 1 THEN costo_siniestro_usd ELSE 0 END), 0) as costo_total_mes_usd
+                FROM dataset_historico_ml_polizas
+                {where_clause}
+                GROUP BY 1
+                ORDER BY 1 ASC;
+            """
+            cur.execute(query_mensual, params)
+            mensual_rows = cur.fetchall()
+    
+            tendencia_mensual: List[MonthlyTrendMetricDTO] = []
+            for r in mensual_rows:
+                m_mes = str(r[0])
+                m_pol = int(r[1] or 0)
+                m_sin = int(r[2] or 0)
+                m_costo = round(float(r[3] or 0.0), 2)
+                m_tasa = round((m_sin / max(1, m_pol)) * 100.0, 1)
+    
+                tendencia_mensual.append(
+                    MonthlyTrendMetricDTO(
+                        mes=m_mes,
+                        polizas_activas=m_pol,
+                        siniestros_mes=m_sin,
+                        costo_total_mes_usd=m_costo,
+                        tasa_incurrencia_pct=m_tasa
+                    )
                 )
-            )
-
+    
         finally:
             try:
                 cur.close()

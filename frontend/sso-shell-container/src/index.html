@@ -695,23 +695,34 @@
     // Variables de Estado Global (Soporta Configuración Runtime e Inyección Cloud)
     const cfg = (typeof window !== 'undefined' && window.__AEGIS_CONFIG__) || {};
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const MS1_BASE_URL = cfg.MS1_URL || (isLocal ? 'http://localhost:8001' : 'https://aegiscore-ms1-polizas-<cloudrun-id>.a.run.app');
-    const REACT_BASE_URL = cfg.REACT_URL || (isLocal ? 'http://localhost:3000' : 'https://<aegiscore-bucket>.s3.us-east-2.amazonaws.com/index.html');
-    const ANGULAR_BASE_URL = cfg.ANGULAR_URL || (isLocal ? 'http://localhost:4200' : 'https://aegiscore-mf1-admin-<cloudrun-id>.us-central1.run.app');
-    const N8N_BASE_URL = cfg.N8N_URL || (isLocal ? 'http://localhost:5678' : 'https://aegiscore-n8n-<cloudrun-id>.us-central1.run.app');
+    
+    // URLs autoritativas en Producción Cloud (Tri-Cloud: GCP + Azure + AWS S3)
+    const CLOUD_MS1 = 'https://aegiscore-ms1-polizas-jskh4rw62q-uc.a.run.app';
+    const CLOUD_REACT = 'https://aegiscore-mf2-clientes-302263088715.s3.us-east-2.amazonaws.com/index.html';
+    const CLOUD_ANGULAR = 'https://aegiscore-mf1-admin-400568277774.us-central1.run.app';
+    const CLOUD_N8N = 'https://aegiscore-n8n-400568277774.us-central1.run.app';
+    const CLOUD_MS2 = 'https://6czu0fuvw6.execute-api.us-east-2.amazonaws.com';
+    const CLOUD_MS3 = 'https://aegiscore-ms3-actuarial.mangosea-88948a0a.eastus.azurecontainerapps.io';
+    const CLOUD_MS4 = 'https://aegiscore-ms4-ia-400568277774.us-central1.run.app';
+
+    const useLocalStack = isLocal && (window.location.search.includes('local=true') || window.location.search.includes('env=local'));
+    const MS1_BASE_URL = cfg.MS1_URL || (useLocalStack ? 'http://localhost:8001' : CLOUD_MS1);
+    const REACT_BASE_URL = cfg.REACT_URL || (useLocalStack ? 'http://localhost:3000' : CLOUD_REACT);
+    const ANGULAR_BASE_URL = cfg.ANGULAR_URL || (useLocalStack ? 'http://localhost:4200' : CLOUD_ANGULAR);
+    const N8N_BASE_URL = cfg.N8N_URL || (useLocalStack ? 'http://localhost:5678' : CLOUD_N8N);
     let sesionActiva = null;
     let urlActualVisor = '';
     let moduloActualVisor = 'react';
 
     // Lista de Servicios para el Health Monitor (dinámica local/cloud)
     const SERVICIOS_ECOSISTEMA = [
-      { id: 'ms1', nombre: 'MS1: Pólizas & Contratos', puerto: 8001, url: isLocal ? 'http://localhost:8001/health' : (cfg.MS1_URL ? `${cfg.MS1_URL}/health` : 'https://aegiscore-ms1-polizas-<cloudrun-id>.a.run.app/health'), rol: 'Suscripción & DDD' },
-      { id: 'ms2', nombre: 'MS2: Siniestros', puerto: 8002, url: isLocal ? 'http://localhost:8002/health' : (cfg.MS2_URL ? `${cfg.MS2_URL}/health` : 'http://<ec2-host>:8002/health'), rol: 'Expedientes & CQRS' },
-      { id: 'ms3', nombre: 'MS3: Actuarial', puerto: 8003, url: isLocal ? 'http://localhost:8003/actuator/health' : (cfg.MS3_URL ? `${cfg.MS3_URL}/actuator/health` : 'https://aegiscore-ms3-actuarial.<aca-id>.eastus.azurecontainerapps.io/actuator/health'), rol: 'Hexagonal & Saga' },
-      { id: 'ms4', nombre: 'MS4: Peritaje IA & MCP', puerto: 8004, url: isLocal ? 'http://localhost:8004/health' : (cfg.MS4_URL ? `${cfg.MS4_URL}/health` : 'https://aegiscore-ms4-ia-<cloudrun-id>.us-central1.run.app/health'), rol: 'Visión & Asistente' },
+      { id: 'ms1', nombre: 'MS1: Pólizas & Contratos', puerto: 8001, url: isLocal ? 'http://localhost:8001/health' : (cfg.MS1_URL ? `${cfg.MS1_URL}/health` : `${CLOUD_MS1}/health`), rol: 'Suscripción & DDD' },
+      { id: 'ms2', nombre: 'MS2: Siniestros', puerto: 8002, url: isLocal ? 'http://localhost:8002/health' : (cfg.MS2_URL ? `${cfg.MS2_URL}/health` : `${CLOUD_MS2}/health`), rol: 'Expedientes & CQRS' },
+      { id: 'ms3', nombre: 'MS3: Actuarial', puerto: 8003, url: isLocal ? 'http://localhost:8003/actuator/health' : (cfg.MS3_URL ? `${cfg.MS3_URL}/actuator/health` : `${CLOUD_MS3}/actuator/health`), rol: 'Hexagonal & Saga' },
+      { id: 'ms4', nombre: 'MS4: Peritaje IA & MCP', puerto: 8004, url: isLocal ? 'http://localhost:8004/health' : (cfg.MS4_URL ? `${cfg.MS4_URL}/health` : `${CLOUD_MS4}/health`), rol: 'Visión & Asistente' },
       { id: 'pwa', nombre: 'Portal Asegurados (React)', puerto: 3000, url: REACT_BASE_URL, rol: 'PWA Clientes' },
       { id: 'ang', nombre: 'Centro Actuarial (Angular)', puerto: 4200, url: ANGULAR_BASE_URL, rol: 'Dashboard & BI' },
-      { id: 'n8n', nombre: 'Orquestador Cloud', puerto: 5678, url: isLocal ? 'http://localhost:5678/healthz' : (cfg.N8N_URL ? `${cfg.N8N_URL}/healthz` : 'https://aegiscore-n8n-<cloudrun-id>.us-central1.run.app'), rol: 'WhatsApp / S3 Flow' },
+      { id: 'n8n', nombre: 'Orquestador Cloud', puerto: 5678, url: isLocal ? 'http://localhost:5678/healthz' : (cfg.N8N_URL ? `${cfg.N8N_URL}/healthz` : CLOUD_N8N), rol: 'WhatsApp / S3 Flow' },
       { id: 'oidc', nombre: 'Bóveda de Identidad', puerto: 8080, url: window.location.href, rol: 'Control de Acceso' }
     ];
 

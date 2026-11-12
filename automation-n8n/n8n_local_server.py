@@ -422,7 +422,9 @@ HTML_STUDIO = """<!DOCTYPE html>
 
   <script>
     function volverAlHubCentral() {
-      const hubUrl = (typeof window !== 'undefined' && window.__AEGIS_CONFIG__ && window.__AEGIS_CONFIG__.SSO_URL) || 'http://localhost:8080';
+      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const hubUrl = (typeof window !== 'undefined' && window.__AEGIS_CONFIG__ && window.__AEGIS_CONFIG__.SSO_URL) ||
+        (isLocal ? 'http://localhost:8080' : 'https://aegiscore-mf2-clientes-302263088715.s3.us-east-2.amazonaws.com/sso.html');
       if (window.parent && window.parent !== window) {
         try {
           window.parent.postMessage({ type: 'AEGIS_VOLVER_HUB' }, '*');
@@ -545,6 +547,12 @@ class N8nLocalHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204)
         self._send_cors()
+        self.end_headers()
+
+    def do_HEAD(self):
+        self.send_response(200)
+        self._send_cors()
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
 
     def do_GET(self):

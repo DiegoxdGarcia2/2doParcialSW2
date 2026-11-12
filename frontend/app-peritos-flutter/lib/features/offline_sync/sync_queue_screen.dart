@@ -4,6 +4,7 @@ import '../../core/theme/aegis_theme.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/config/app_config.dart';
 import '../../core/network/api_client.dart';
+import '../../core/services/push_notification_service.dart';
 
 class SyncQueueScreen extends StatefulWidget {
   const SyncQueueScreen({super.key});
@@ -19,7 +20,6 @@ class _SyncQueueScreenState extends State<SyncQueueScreen> {
   bool _isSyncing = false;
   String? _syncReportMessage;
   bool _lastSyncHadError = false;
-  String? _ultimoErrorDetalle;
   int _vistaActualTab = 0; // 0: Pendientes, 1: Sincronizados
 
   final currencyFormatter = NumberFormat.currency(locale: 'es_BO', symbol: 'BOB ');
@@ -49,7 +49,6 @@ class _SyncQueueScreenState extends State<SyncQueueScreen> {
       _isSyncing = true;
       _syncReportMessage = null;
       _lastSyncHadError = false;
-      _ultimoErrorDetalle = null;
     });
 
     int sincronizadosOk = 0;
@@ -113,10 +112,23 @@ class _SyncQueueScreenState extends State<SyncQueueScreen> {
 
     await _cargarCola();
 
+    if (sincronizadosOk > 0) {
+      PushNotificationService().showPeritajeSyncNotification(
+        folio: '$sincronizadosOk expediente(s)',
+        exitoso: true,
+        detalle: 'Sincronizados exitosamente con MongoDB Atlas Cloud (AWS).',
+      );
+    } else if (fallidos > 0) {
+      PushNotificationService().showPeritajeSyncNotification(
+        folio: '$fallidos expediente(s)',
+        exitoso: false,
+        detalle: errorDetalle,
+      );
+    }
+
     setState(() {
       _isSyncing = false;
       _lastSyncHadError = fallidos > 0;
-      _ultimoErrorDetalle = errorDetalle;
       if (modoSimulacionDemo) {
         _syncReportMessage = '✅ Demostración Exitosa:\n'
             '• Sincronizado en MongoDB Atlas: $sincronizadosOk\n'
@@ -126,7 +138,7 @@ class _SyncQueueScreenState extends State<SyncQueueScreen> {
       } else if (fallidos > 0) {
         _syncReportMessage = '⚠️ No se pudo conectar con el microservicio MS2:\n'
             '• URL intentada: ${AppConfig.endpointSyncPeritaje}\n'
-            '• Causa: El backend NestJS (puerto 8002) no está corriendo en la PC.\n'
+            '• Detalle: $errorDetalle\n'
             '• Seguridad Offline: El registro se mantuvo en SQLite local sin perderse.';
       } else {
         _syncReportMessage = '✅ Sincronización exitosa con la Nube:\n'

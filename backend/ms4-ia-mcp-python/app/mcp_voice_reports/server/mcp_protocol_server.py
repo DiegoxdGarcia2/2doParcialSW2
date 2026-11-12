@@ -234,6 +234,15 @@ class McpProtocolServer:
             titulo, kpis, cols, filas, fuente = cls._query_siniestralidad(arguments)
             tool_name = "tool_reporte_siniestralidad"
 
+        # Post-procesamiento: Selección dinámica de columnas, ordenamiento y filtros (Examen Criterio ⑤)
+        titulo, kpis, cols, filas = cls._aplicar_proyeccion_y_criterios_dinamicos(
+            titulo=titulo,
+            kpis=kpis,
+            columnas=cols,
+            filas=filas,
+            arguments=arguments
+        )
+
         elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
         traza = McpToolInvocationTraceDTO(
@@ -248,34 +257,141 @@ class McpProtocolServer:
         return titulo, kpis, cols, filas, traza
 
     # -------------------------------------------------------------------------
+    # Selección Dinámica de Columnas, Ordenamiento y Filtros (Examen Criterio ⑤)
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def _aplicar_proyeccion_y_criterios_dinamicos(
+        cls,
+        titulo: str,
+        kpis: Dict[str, Any],
+        columnas: List[str],
+        filas: List[Dict[str, Any]],
+        arguments: Dict[str, Any]
+    ) -> Tuple[str, Dict[str, Any], List[str], List[Dict[str, Any]]]:
+        """
+        Aplica selección dinámica de columnas arbitrarias, filtros y ordenamiento en tiempo de ejecución.
+        Permite al usuario filtrar por umbrales, ordenar asc/desc y seleccionar subconjuntos de columnas.
+        """
+        if not filas:
+            return titulo, kpis, columnas, filas
+
+        # 1. Filtro numérico dinámico
+        filtro_monto = arguments.get("filtro_monto")
+        if filtro_monto and isinstance(filtro_monto, dict):
+            op = filtro_monto.get("operador", "gte")
+            umbral = float(filtro_monto.get("valor", 0.0))
+            num_fields = ["costo_estimado", "monto_estimado", "prima_emitida_usd", "prima_mensual_usd", "monto", "monto_reclamado"]
+            target_field = next((f for f in num_fields if f in filas[0]), None)
+            if target_field:
+                if op == "gte":
+                    filas = [r for r in filas if float(r.get(target_field) or 0) >= umbral]
+                else:
+                    filas = [r for r in filas if float(r.get(target_field) or 0) <= umbral]
+                kpis["filtro_aplicado"] = f"{target_field} {'≥' if op == 'gte' else '≤'} ${umbral:,.2f}"
+
+        # 2. Ordenamiento dinámico
+        orden_dir = arguments.get("orden_direccion")
+        orden_campo = arguments.get("ordenar_por")
+        sort_key = None
+        if orden_campo and orden_campo in filas[0]:
+            sort_key = orden_campo
+        else:
+            sort_key = next((f for f in ["costo_estimado", "prima_emitida_usd", "fecha_siniestro", "numero_reclamo"] if f in filas[0]), None)
+
+        if sort_key:
+            is_desc = (orden_dir == "descendente") or (orden_dir is None and "ordenar_por" in arguments)
+            try:
+                filas.sort(key=lambda x: (x.get(sort_key) is not None, x.get(sort_key)), reverse=is_desc)
+                kpis["criterio_orden"] = f"{sort_key} ({'Descendente' if is_desc else 'Ascendente'})"
+            except Exception:
+                pass
+
+        # 3. Selección y Proyección Dinámica de Columnas
+        cols_solicitadas = arguments.get("columnas_seleccionadas") or arguments.get("columnas")
+        if cols_solicitadas and isinstance(cols_solicitadas, list):
+            matched = [c for c in cols_solicitadas if any(c in row for row in filas[:1])]
+            if matched:
+                columnas = matched
+                filas = [{col: r.get(col, '') for col in columnas} for r in filas]
+                ciudad_tit = arguments.get("ciudad") or "Nacional"
+                titulo = f"Reporte Dinámico de Siniestros — {ciudad_tit} [Columnas: {', '.join(c.upper() for c in columnas)}]"
+                kpis["columnas_dinamicas_activas"] = len(columnas)
+                kpis["columnas_seleccionadas"] = ", ".join(columnas)
+                if arguments.get("ciudad"):
+                    kpis["ciudad_filtro"] = arguments.get("ciudad")
+                if "costo" in columnas or "costo_estimado" in columnas:
+                    monto_key = "costo" if "costo" in columnas else "costo_estimado"
+                    total_monto = sum(float(r.get(monto_key) or 0) for r in filas)
+                    kpis["costo_total_usd"] = f"${total_monto:,.2f}"
+                    kpis["costo_promedio_usd"] = f"${(total_monto / max(len(filas), 1)):,.2f}"
+
+        # 4. Actualizar métricas dinámicas
+        kpis["registros_procesados"] = len(filas)
+        return titulo, kpis, columnas, filas
+
+    # -------------------------------------------------------------------------
     # Handlers con consultas ORM 100% Parametrizadas y Persistencia Real Cloud
     # -------------------------------------------------------------------------
 
     @classmethod
     def _query_siniestralidad(cls, args: Dict[str, Any]):
         severidad = args.get("severidad", "TODAS").upper()
+        ciudad = args.get("ciudad")
         db = get_mongo_db()
 
         # Consultar expedientes reales de MongoDB Atlas Cloud
-        filtro: Dict[str, Any] = {}
+        condiciones = []
         if severidad in ["ALTA", "GRAVE", "TOTAL"]:
-            filtro["$or"] = [
-                {"severidad": {"$in": ["ALTA", "GRAVE", "TOTAL"]}},
-                {"monto_estimado_reparacion": {"$gte": 3000.0}}
-            ]
+            condiciones.append({
+                "$or": [
+                    {"severidad": {"$in": ["ALTA", "GRAVE", "TOTAL"]}},
+                    {"monto_estimado_reparacion": {"$gte": 3000.0}}
+                ]
+            })
         elif severidad in ["MEDIA", "MODERADA"]:
-            filtro["$or"] = [
-                {"severidad": {"$in": ["MEDIA", "MODERADA"]}},
-                {"monto_estimado_reparacion": {"$lt": 3000.0, "$gte": 1000.0}}
-            ]
+            condiciones.append({
+                "$or": [
+                    {"severidad": {"$in": ["MEDIA", "MODERADA"]}},
+                    {"monto_estimado_reparacion": {"$lt": 3000.0, "$gte": 1000.0}}
+                ]
+            })
         elif severidad in ["BAJA", "LEVE"]:
-            filtro["$or"] = [
-                {"severidad": {"$in": ["BAJA", "LEVE"]}},
-                {"monto_estimado_reparacion": {"$lt": 1000.0}}
-            ]
+            condiciones.append({
+                "$or": [
+                    {"severidad": {"$in": ["BAJA", "LEVE"]}},
+                    {"monto_estimado_reparacion": {"$lt": 1000.0}}
+                ]
+            })
+
+        # Filtro de Ciudad / Departamento de Bolivia (Criterio ⑤)
+        if ciudad and ciudad.upper() != "TODAS":
+            condiciones.append({
+                "$or": [
+                    {"ciudad": {"$regex": ciudad, "$options": "i"}},
+                    {"departamento": {"$regex": ciudad, "$options": "i"}},
+                    {"ubicacion_texto": {"$regex": ciudad, "$options": "i"}}
+                ]
+            })
+
+        if len(condiciones) == 1:
+            filtro = condiciones[0]
+        elif len(condiciones) > 1:
+            filtro = {"$and": condiciones}
+        else:
+            filtro = {}
 
         docs = list(db.expedientes_siniestros.find(filtro).limit(50))
-        if not docs:
+        if not docs and ciudad:
+            # Si no hay match estricto con severidad, intentar sólo por ciudad
+            docs = list(db.expedientes_siniestros.find({
+                "$or": [
+                    {"ciudad": {"$regex": ciudad, "$options": "i"}},
+                    {"departamento": {"$regex": ciudad, "$options": "i"}},
+                    {"ubicacion_texto": {"$regex": ciudad, "$options": "i"}}
+                ]
+            }).limit(50))
+        elif not docs:
             docs = list(db.expedientes_siniestros.find({}).limit(50))
 
         filas = []
@@ -289,27 +405,48 @@ class McpProtocolServer:
             sev = d.get("severidad") or ("ALTA" if monto >= 3000.0 else "MEDIA")
             costo_acumulado += monto
 
+            # Fecha del siniestro formateada ISO
+            raw_fecha = d.get("fecha_siniestro") or d.get("created_at") or "2026-10-20"
+            if hasattr(raw_fecha, "strftime"):
+                fecha_str = raw_fecha.strftime("%Y-%m-%d")
+            else:
+                fecha_str = str(raw_fecha)[:10]
+
+            ciudad_val = d.get("ciudad") or (ciudad if ciudad else "Cochabamba")
+            depto_val = d.get("departamento") or ciudad_val
+            ubicacion_val = d.get("ubicacion_texto") or f"Av. Principal, {ciudad_val}"
+
             peritaje = d.get("peritaje_campo") or {}
             perito = peritaje.get("perito_nombre") or peritaje.get("perito_id") or "Ing. Roberto Paz (Peritaje Móvil TFLite)"
 
+            # Estructura dual con nombres canónicos solicitados y técnicos
             filas.append({
+                "codigo": num,
+                "fecha": fecha_str,
+                "costo": monto,
+                "ciudad": ciudad_val,
+                "departamento": depto_val,
+                "ubicacion": ubicacion_val,
                 "numero_reclamo": num,
+                "fecha_siniestro": fecha_str,
+                "costo_estimado": monto,
                 "poliza": pol,
                 "tipo_siniestro": tipo,
                 "severidad": sev,
                 "estado": est,
-                "perito": perito,
-                "costo_estimado": monto
+                "perito": perito
             })
 
+        titulo_base = f"Reporte de Siniestros en {ciudad}" if ciudad else "Reporte Ejecutivo de Siniestralidad y Peritajes Técnicos"
         kpis = {
             "total_siniestros": len(filas),
+            "ciudad_filtro": ciudad or "Nacional (Todas)",
             "costo_total_usd": f"${costo_acumulado:,.2f}",
             "costo_promedio_usd": f"${(costo_acumulado / max(len(filas), 1)):,.2f}",
             "severidad_predominante": severidad if severidad != "TODAS" else "MEDIA-ALTA (100% Real)"
         }
-        columnas = ["numero_reclamo", "poliza", "tipo_siniestro", "severidad", "estado", "perito", "costo_estimado"]
-        return "Reporte Ejecutivo de Siniestralidad y Peritajes Técnicos — Expedientes Reales MongoDB Atlas", kpis, columnas, filas, "MongoDB Atlas Cloud (expedientes_siniestros)"
+        columnas = ["codigo", "fecha", "costo", "ciudad", "poliza", "tipo_siniestro", "severidad", "estado", "perito"]
+        return f"{titulo_base} — Expedientes Reales MongoDB Atlas", kpis, columnas, filas, "MongoDB Atlas Cloud (expedientes_siniestros)"
 
     @classmethod
     def _query_ventas_primas(cls, args: Dict[str, Any]):

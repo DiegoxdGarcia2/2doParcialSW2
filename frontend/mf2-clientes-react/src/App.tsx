@@ -14,7 +14,11 @@ import { ValidadorNitidezLocalWebControl } from './core/ai/ValidadorNitidezLocal
 import { AuthOIDCService, PERFILES_SSO_DEMO, PerfilSSOActivo } from './core/auth/AuthOIDCService';
 import { ApolloFederationClient } from './core/graphql/ApolloFederationClient';
 
-const MS1_PUBLIC_URL = (import.meta as any)?.env?.VITE_MS1_URL || (typeof window !== 'undefined' && (window as any).__AEGIS_MS1_URL) || 'http://localhost:8001';
+const isLocalEnv = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const CLOUD_MS1_URL = 'https://aegiscore-ms1-polizas-jskh4rw62q-uc.a.run.app';
+const CLOUD_SSO_HUB = 'https://aegiscore-mf2-clientes-302263088715.s3.us-east-2.amazonaws.com/sso.html';
+
+const MS1_PUBLIC_URL = (import.meta as any)?.env?.VITE_MS1_URL || (typeof window !== 'undefined' && (window as any).__AEGIS_MS1_URL) || (isLocalEnv ? 'http://localhost:8001' : CLOUD_MS1_URL);
 
 type ActiveTab = 'resumen' | 'cotizador' | 'catalogo' | 'facturacion_qr' | 'seguridad';
 
@@ -376,31 +380,39 @@ export const App: React.FC = () => {
       const handoffEmail = params.get('sso_email');
       const handoffRol = params.get('sso_rol') as RolSSO | null;
 
-      authService.sincronizarConSesionActivaRemota(handoffEmail, handoffRol).then((nuevoPerfil) => {
-        setAuthChecked(true);
-        if (!nuevoPerfil) {
-          setSesionSSO(null);
-          // Redirección automática si se abre directamente fuera de iframe
-          if (window.self === window.top) {
-            setTimeout(() => {
-              window.location.href = 'http://localhost:8080';
-            }, 1800);
+      authService.sincronizarConSesionActivaRemota(handoffEmail, handoffRol)
+        .then((nuevoPerfil) => {
+          setAuthChecked(true);
+          if (!nuevoPerfil) {
+            setSesionSSO(null);
+            // Redirección automática si se abre directamente fuera de iframe
+            if (window.self === window.top) {
+              setTimeout(() => {
+                window.location.href = obtenerSsoHubUrl();
+              }, 1800);
+            }
+            return;
           }
-          return;
-        }
 
-        setSesionSSO(nuevoPerfil);
-        if (nuevoPerfil.cliente_id) {
-          setClienteActivoId(nuevoPerfil.cliente_id);
-          cargarDatosIniciales(nuevoPerfil.cliente_id, nuevoPerfil.access_token);
-        } else {
-          cargarDatosIniciales(undefined, nuevoPerfil.access_token);
-        }
-        apolloClient.listarSesionesSSO().then(setSesionesSSOList);
-        if (handoffEmail) {
-          showToast('success', `Sesión corporativa propagada: ${nuevoPerfil.nombre_completo} (${nuevoPerfil.rol}).`);
-        }
-      });
+          setSesionSSO(nuevoPerfil);
+          if (nuevoPerfil.cliente_id) {
+            setClienteActivoId(nuevoPerfil.cliente_id);
+            cargarDatosIniciales(nuevoPerfil.cliente_id, nuevoPerfil.access_token);
+          } else {
+            cargarDatosIniciales(undefined, nuevoPerfil.access_token);
+          }
+          apolloClient.listarSesionesSSO().then(setSesionesSSOList);
+          if (handoffEmail) {
+            showToast('success', `Sesión corporativa propagada: ${nuevoPerfil.nombre_completo} (${nuevoPerfil.rol}).`);
+          }
+        })
+        .catch((err) => {
+          console.warn('[React App] Error al sincronizar sesión SSO remota:', err);
+          setAuthChecked(true);
+          const fallback = authService.obtenerPerfilPorDefecto();
+          setSesionSSO(fallback);
+          cargarDatosIniciales(fallback.cliente_id, fallback.access_token);
+        });
     }
   }, [apolloClient, authService, cargarDatosIniciales, showToast]);
 
@@ -582,7 +594,8 @@ export const App: React.FC = () => {
     if (typeof window !== 'undefined' && (window as any).__AEGIS_SSO_URL) {
       return (window as any).__AEGIS_SSO_URL;
     }
-    return 'http://localhost:8080';
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    return isLocal ? 'http://localhost:8080' : CLOUD_SSO_HUB;
   }, []);
 
   const volverAlHubCentral = useCallback(() => {
@@ -1252,10 +1265,10 @@ export const App: React.FC = () => {
             </div>
           </div>
           <a
-            href="http://localhost:8080"
+            href={obtenerSsoHubUrl()}
             className="text-xs font-mono text-teal-300 hover:text-teal-200 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all"
           >
-            <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
             <span>Bóveda Central</span>
           </a>
         </header>
@@ -1278,11 +1291,11 @@ export const App: React.FC = () => {
             </div>
             <div className="pt-2">
               <a
-                href="http://localhost:8080"
+                href={obtenerSsoHubUrl()}
                 className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#005C55] to-[#0F766E] text-white text-xs font-bold font-headline tracking-wide hover:brightness-110 active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-950/60"
               >
                 <span className="material-symbols-outlined text-[18px]">login</span>
-                <span>Iniciar Sesión en Workspace Hub (:8080)</span>
+                <span>Iniciar Sesión en Portal Central SSO</span>
               </a>
             </div>
             <p className="text-[11px] font-mono text-slate-500">
@@ -1300,6 +1313,28 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
+      {/* BARRA SUPERIOR PERSISTENTE: RETORNO AL PORTAL CENTRAL SSO (MISMA PESTAÑA) */}
+      <div className="bg-[#0B1C30] text-slate-200 px-4 py-2 text-xs flex items-center justify-between border-b border-white/10 z-50 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={volverAlHubCentral}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-400/40 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            title="Volver al Portal Central SSO sin abrir pestañas nuevas"
+          >
+            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>← Volver al Portal Central SSO</span>
+          </button>
+          <span className="text-slate-500 hidden sm:inline">|</span>
+          <span className="text-slate-400 text-[11px] font-mono hidden sm:inline">
+            AegisCore Tri-Cloud · Navegación en una sola pestaña
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-[11px] font-mono text-teal-400">
+          <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+          <span>Sesión OIDC: {sesionSSO.email}</span>
+        </div>
+      </div>
       {/* HEADER CORPORATIVO LIMPIO Y MODERNO */}
       <header className="bg-white/90 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-40 shadow-[0_1px_6px_rgba(15,23,42,0.03)] relative">
         {(loading || pendingAction !== null) && (

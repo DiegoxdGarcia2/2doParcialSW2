@@ -4,6 +4,7 @@ import '../../core/config/app_config.dart';
 import '../../core/network/api_client.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/idempotency/idempotency_service.dart';
+import '../../core/services/push_notification_service.dart';
 
 class SosEmergencyScreen extends StatefulWidget {
   const SosEmergencyScreen({super.key});
@@ -75,9 +76,15 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
     setState(() => _isSubmitting = false);
 
     if (response.isSuccess) {
+      final reclamoId = response.data['reclamoId'] ?? 'REC-2026-ACTIVO';
+      PushNotificationService().showEmergencyAlert(
+        title: 'Despacho Pericial Activo: $reclamoId',
+        body: 'Siniestro SOS notificado. Severidad $_severidadCalculada en $_direccion.',
+        metadata: {'reclamoId': reclamoId, 'severidad': _severidadCalculada},
+      );
       _mostrarDialogoExito(
         titulo: '🚨 Siniestro SOS Reportado',
-        mensaje: 'Expediente: ${response.data['reclamoId'] ?? 'REC-2026-ACTIVO'}\n'
+        mensaje: 'Expediente: $reclamoId\n'
             'Severidad asignada: $_severidadCalculada\n'
             'Triaje automático notificado a peritos cercanos vía FCM Push.',
       );
@@ -98,6 +105,11 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
         'idempotency_key': idempotencyKey,
         'created_at': DateTime.now().toIso8601String(),
       });
+
+      PushNotificationService().showEmergencyAlert(
+        title: 'SOS Encolado Offline en SQLite',
+        body: 'Sin conexión inmediata. Reporte asegurado en base local con clave SHA-256.',
+      );
 
       _mostrarDialogoExito(
         titulo: '📡 Guardado en Cola Offline (CU06)',

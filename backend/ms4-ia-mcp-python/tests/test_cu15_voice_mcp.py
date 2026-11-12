@@ -234,3 +234,45 @@ class TestCU15VoiceMcpReports:
         assert doc.format == "xlsx"
         assert doc.file_size_bytes > 0
         assert len(doc.sha256_hash) == 64
+
+    def test_dynamic_columns_and_criteria_selection_criterion_5(self):
+        """Valida Criterio ⑤: Selección dinámica de columnas, ordenamiento y filtros por lenguaje natural."""
+        res = self.control.procesarComandoVozCompleto(
+            texto_dictado="generar reporte de siniestros en excel con columnas poliza, costo, perito ordenado de mayor a menor mayores a 1000"
+        )
+        assert res.auditoria_seguridad.es_amenaza is False
+        assert res.intencion_detectada == "tool_reporte_siniestralidad"
+        assert res.formato_solicitado == "xlsx"
+        assert res.documento is not None
+        assert res.documento.format == "xlsx"
+        
+        # Verificar proyección dinámica de columnas
+        assert res.columnas == ["poliza", "costo", "perito"]
+        assert len(res.filas) > 0
+        for fila in res.filas:
+            # Cada fila sólo debe exponer las columnas seleccionadas
+            assert set(fila.keys()) == {"poliza", "costo", "perito"}
+            # Verificar filtro de umbral > 1000
+            assert float(fila["costo"]) >= 1000.0
+
+        # Verificar ordenamiento descendente
+        costos = [float(f["costo"]) for f in res.filas]
+        assert costos == sorted(costos, reverse=True)
+
+    def test_dynamic_cochabamba_columns_codigo_fecha_costo_excel_exam_criterion_5(self):
+        """Valida Criterio ⑤ Oficial: 'Reporte de siniestros en Cochabamba en Excel con columnas código, fecha y costo'."""
+        prompt = "Reporte de siniestros en Cochabamba en Excel con columnas código, fecha y costo"
+        res = self.control.procesarComandoVozCompleto(texto_dictado=prompt)
+        assert res.auditoria_seguridad.es_amenaza is False
+        assert res.intencion_detectada == "tool_reporte_siniestralidad"
+        assert res.formato_solicitado == "xlsx"
+        assert res.documento is not None
+        assert res.documento.format == "xlsx"
+        assert res.columnas == ["codigo", "fecha", "costo"]
+        assert len(res.filas) > 0
+        assert res.kpis_resumen.get("ciudad_filtro") == "Cochabamba"
+        for fila in res.filas:
+            assert set(fila.keys()) == {"codigo", "fecha", "costo"}
+            assert fila["codigo"] is not None
+            assert fila["fecha"] is not None
+            assert isinstance(fila["costo"], (int, float))

@@ -4,6 +4,7 @@ import '../../core/theme/aegis_theme.dart';
 import '../../core/config/app_config.dart';
 import '../../core/network/api_client.dart';
 import '../../core/idempotency/idempotency_service.dart';
+import '../../core/services/push_notification_service.dart';
 
 class QrPaymentScreen extends StatefulWidget {
   const QrPaymentScreen({super.key});
@@ -51,6 +52,12 @@ class _QrPaymentScreenState extends State<QrPaymentScreen> {
     setState(() => _isProcessing = false);
 
     if (response.isSuccess) {
+      PushNotificationService().showQrPaymentNotification(
+        pagoId: _codigoTransaccion,
+        monto: _monto,
+        moneda: 'BOB',
+        estado: response.isCacheHit ? 'Confirmado (DynamoDB Cache Hit)' : 'Aprobado (MS3 ACID)',
+      );
       setState(() {
         _isCacheHit = response.isCacheHit;
         _resultadoPago = response.isCacheHit
